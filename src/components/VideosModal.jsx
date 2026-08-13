@@ -1,17 +1,24 @@
 import React, { useState } from 'react';
-import { X, Play, MapPin, Store, Video, MessageCircle, Award, CheckCircle2, Volume2, ShieldCheck } from 'lucide-react';
+import { X, MapPin, Store, Video, MessageCircle, Award, CheckCircle2 } from 'lucide-react';
 import { PRODUCT_VIDEOS } from '../data/videos';
+import { useLanguage } from '../context/LanguageContext';
+import { getTranslatedVideo } from '../utils/productTranslations';
 
 export default function VideosModal({ isOpen, onClose }) {
   const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const { lang, t } = useLanguage();
 
   if (!isOpen) return null;
 
-  const categories = ['Todas', 'Áudio & Headphones', 'Smartwatches', 'Carregadores & Powerbanks', 'Eletrodomésticos', 'Acessórios & Casa'];
+  const categories = lang === 'en'
+    ? ['All', 'Audio & Headphones', 'Smartwatches', 'Chargers & Powerbanks', 'Home Appliances', 'Accessories & Home']
+    : ['Todas', 'Áudio & Headphones', 'Smartwatches', 'Carregadores & Powerbanks', 'Eletrodomésticos', 'Acessórios & Casa'];
 
-  const filteredVideos = selectedCategory === 'Todas'
-    ? PRODUCT_VIDEOS
-    : PRODUCT_VIDEOS.filter(v => v.category === selectedCategory);
+  const allVideos = PRODUCT_VIDEOS.map(v => getTranslatedVideo(v, lang));
+
+  const filteredVideos = selectedCategory === 'Todas' || selectedCategory === 'All'
+    ? allVideos
+    : allVideos.filter(v => v.category === selectedCategory);
 
   return (
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
@@ -24,13 +31,16 @@ export default function VideosModal({ isOpen, onClose }) {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '2px solid var(--border-light)', paddingBottom: '16px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              <Video size={18} /> Vídeos & Unboxings de Produtos Oraimo
+              <Video size={18} /> {t('videosUnboxing')} Oraimo
             </div>
             <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '4px' }}>
-              Vídeos em Ação & Demonstrações Reais
+              {lang === 'en' ? 'Videos in Action & Real Product Demos' : 'Vídeos em Ação & Demonstrações Reais'}
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '4px' }}>
-              Assista aos unboxings, testes de qualidade e funcionalidades dos produtos da <strong>Aqui Tem</strong> rodando ao vivo.
+              {lang === 'en'
+                ? 'Watch unboxings, quality tests, and real feature demos of products from Aqui Tem running live.'
+                : 'Assista aos unboxings, testes de qualidade e funcionalidades dos produtos da Aqui Tem rodando ao vivo.'
+              }
             </p>
           </div>
           <button className="btn-close-modal" onClick={onClose} style={{ background: 'var(--bg-body)', border: '1px solid var(--border-light)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
@@ -80,7 +90,6 @@ export default function VideosModal({ isOpen, onClose }) {
             >
               <div>
                 <div style={{ position: 'relative', background: '#0F172A', borderRadius: '16px 16px 0 0', overflow: 'hidden' }}>
-                  {/* HTML5 Native Video Tag - Playing automatically and continuously */}
                   <video
                     key={`${item.id}-${item.videoUrl}`}
                     autoPlay
@@ -98,7 +107,7 @@ export default function VideosModal({ isOpen, onClose }) {
                   >
                     <source src={item.videoUrl} type="video/mp4" />
                     {item.fallbackUrl && <source src={item.fallbackUrl} type="video/mp4" />}
-                    Seu navegador não suporta a reprodução deste vídeo.
+                    {lang === 'en' ? 'Your browser does not support video playback.' : 'Seu navegador não suporta a reprodução deste vídeo.'}
                   </video>
                   <span style={{
                     position: 'absolute',
@@ -139,7 +148,7 @@ export default function VideosModal({ isOpen, onClose }) {
                   className="nav-btn nav-btn-orange"
                   style={{ width: '100%', padding: '10px 14px', fontSize: '0.85rem', justifyContent: 'center' }}
                 >
-                  <MessageCircle size={16} /> Comprar no WhatsApp
+                  <MessageCircle size={16} /> {t('buyWhatsapp')}
                 </button>
               </div>
             </div>
@@ -149,17 +158,17 @@ export default function VideosModal({ isOpen, onClose }) {
         {/* Footer CTA */}
         <div style={{ marginTop: '28px', textAlign: 'center', background: 'var(--bg-card)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
           <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '6px' }}>
-            Quer ver mais vídeos de demonstração ou testes ao vivo?
+            {lang === 'en' ? 'Want to see more product demo videos or live tests?' : 'Quer ver mais vídeos de demonstração ou testes ao vivo?'}
           </h4>
           <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-            A nossa equipe no WhatsApp envia vídeos em tempo real de qualquer produto antes do envio!
+            {lang === 'en' ? 'Our WhatsApp support team sends real-time videos of any product before dispatch!' : 'A nossa equipe no WhatsApp envia vídeos em tempo real de qualquer produto antes do envio!'}
           </p>
           <button
             onClick={() => window.open('https://wa.me/244950752933?text=Olá%20Aqui%20Tem!%20Quero%20ver%20mais%20vídeos%20de%20produtos.', '_blank')}
             className="nav-btn nav-btn-orange"
             style={{ padding: '12px 28px', fontSize: '0.95rem', margin: '0 auto', display: 'inline-flex' }}
           >
-            <MessageCircle size={18} /> Pedir Vídeo no WhatsApp 950752933
+            <MessageCircle size={18} /> {lang === 'en' ? 'Request Video on WhatsApp' : 'Pedir Vídeo no WhatsApp'} (950752933)
           </button>
         </div>
       </div>

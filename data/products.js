@@ -1,3 +1,5 @@
+import { getAssetUrl } from '../src/utils/assets';
+
 // Helper function to create clean SVG data URIs for embedded HTML image fallback
 const createSvgDataUri = (svgString) => {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
@@ -211,7 +213,7 @@ export const PRODUCTS = [
     rating: 5.0,
     reviewsCount: 178,
     badge: 'SUPER NOVIDADE',
-    image: '/product_boompop.jpg',
+    image: getAssetUrl('product_boompop.jpg'),
     fallbackImage: PRODUCT_FALLBACK_IMAGES.boompop,
     description: 'Headphone sem fio Oraimo Boom Pop Pro com graves profundos, estofamento ergonômico em couro ultra macio e autonomia estendida.',
     specs: ['Cancelamento de Ruído Passivo', 'Conexão Bluetooth 5.3', 'Bateria para até 40h de música']
@@ -225,7 +227,7 @@ export const PRODUCTS = [
     rating: 4.9,
     reviewsCount: 154,
     badge: 'OFERTA DO MÊS',
-    image: '/product_watchnova2.jpg',
+    image: getAssetUrl('product_watchnova2.jpg'),
     fallbackImage: PRODUCT_FALLBACK_IMAGES.watchnova2,
     description: 'Relógio Inteligente Oraimo Watch Nova 2 com tela HD sensível ao toque, monitoramento cardíaco, notificações de chamadas e modos esportivos.',
     specs: ['Resistência à água IP68', 'Notificações WhatsApp e Chamadas', 'Monitor de Saúde e Sono']
@@ -239,7 +241,7 @@ export const PRODUCTS = [
     rating: 4.9,
     reviewsCount: 120,
     badge: 'GRANDE PROMOÇÃO',
-    image: '/product_nutrifry.jpg',
+    image: getAssetUrl('product_nutrifry.jpg'),
     fallbackImage: PRODUCT_FALLBACK_IMAGES.nutrifry,
     description: 'Air Fryer Oraimo NutriFry S1 Ultra com visor transparente de 6 Litros. Prepare refeições crocantes e saudáveis sem usar óleo.',
     specs: ['Capacidade 6 Litros', 'Painel Digital Touch Screen', 'Janela de Visualização Panorâmica']
@@ -253,7 +255,7 @@ export const PRODUCTS = [
     rating: 4.8,
     reviewsCount: 96,
     badge: 'DESCONTO ESPECIAL',
-    image: '/product_flexicooker.jpg',
+    image: getAssetUrl('product_flexicooker.jpg'),
     fallbackImage: PRODUCT_FALLBACK_IMAGES.flexicooker,
     description: 'Placa de Indução Elétrica Oraimo FlexiCooker com controle digital de temperatura de alta precisão e aquecimento ultrarrápido.',
     specs: ['Painel Touch com Display LED', 'Economia de Energia Elétrica', 'Superfície de Vidro de Fácil Limpeza']
@@ -267,7 +269,7 @@ export const PRODUCTS = [
     rating: 4.9,
     reviewsCount: 142,
     badge: 'POPULAR',
-    image: '/product_thermogo.jpg',
+    image: getAssetUrl('product_thermogo.jpg'),
     fallbackImage: PRODUCT_FALLBACK_IMAGES.thermogo,
     description: 'Garrafa e Copo Térmico Vacuum Oraimo com retenção máxima de temperatura (quente e frio) por até 12 horas. Design fosco e ergonômico.',
     specs: ['Capacidade Térmica Avançada', 'Aço Inox de Alta Qualidade', 'Marca Oficial Oraimo']
@@ -281,7 +283,7 @@ export const PRODUCTS = [
     rating: 5.0,
     reviewsCount: 98,
     badge: 'PROMOÇÃO',
-    image: '/product_magpower.jpg',
+    image: getAssetUrl('product_magpower.jpg'),
     fallbackImage: PRODUCT_FALLBACK_IMAGES.magpower,
     description: 'Carregador portátil magnético Oraimo 15W sem fio. Adere perfeitamente ao seu smartphone para carregamento rápido e seguro em qualquer lugar.',
     specs: ['Carregamento Magnético Wireless 15W', 'Design Ultra Fino e Portátil', 'Certificação MFI & Segurança Oraimo']
@@ -295,7 +297,7 @@ export const PRODUCTS = [
     rating: 4.9,
     reviewsCount: 215,
     badge: 'MAIS VENDIDO',
-    image: '/product_opensnap.jpg',
+    image: getAssetUrl('product_opensnap.jpg'),
     fallbackImage: PRODUCT_FALLBACK_IMAGES.opensnap,
     description: 'Fones sem fio Oraimo OpenSnap com encaixe ergonômico, som cristalino de alta fidelidade e bateria de longa duração com estojo inteligente.',
     specs: ['Conexão Bluetooth 5.3', 'Resistente a suor e respingos', 'Estojo com bateria estendida']
@@ -379,98 +381,98 @@ export const ADVANTAGES = [
 export const HERO_COVER_IMAGES = [
   {
     id: 1,
-    url: '/banners/banner_1.jpg',
+    url: getAssetUrl('banners/banner_1.jpg'),
     remoteUrl: 'https://i.ibb.co/TMktX8Jn/AQUI-TEM-IDENTIDADE-VISUAL-01.jpg',
     title: 'Identidade Visual & Showroom Aqui Tem',
     badge: 'FLYER 01 - AQUI TEM ANGOLA'
   },
   {
     id: 4,
-    url: '/banners/banner_4.jpg',
+    url: getAssetUrl('banners/banner_4.jpg'),
     remoteUrl: 'https://i.ibb.co/9mHN3mQk/AQUI-TEM-IDENTIDADE-VISUAL-04.jpg',
     title: 'Entrega Rápida & Segura em Luanda',
     badge: 'FLYER 04 - AQUI TEM ANGOLA'
   },
   {
     id: 5,
-    url: '/banners/banner_5.jpg',
+    url: getAssetUrl('banners/banner_5.jpg'),
     remoteUrl: 'https://i.ibb.co/wNyCxwtX/AQUI-TEM-IDENTIDADE-VISUAL-05.jpg',
     title: 'Preços Acessíveis & Melhores Ofertas em Kz',
     badge: 'FLYER 05 - AQUI TEM ANGOLA'
   },
   {
     id: 6,
-    url: '/banners/banner_6.jpg',
+    url: getAssetUrl('banners/banner_6.jpg'),
     remoteUrl: 'https://i.ibb.co/qMSKVyXW/AQUI-TEM-IDENTIDADE-VISUAL-06.jpg',
     title: 'Atendimento Personalizado no WhatsApp 950752933',
     badge: 'FLYER 06 - AQUI TEM ANGOLA'
   },
   {
     id: 7,
-    url: '/banners/banner_7.jpg',
+    url: getAssetUrl('banners/banner_7.jpg'),
     remoteUrl: 'https://i.ibb.co/MyJ73mjQ/AQUI-TEM-IDENTIDADE-VISUAL-07.jpg',
     title: 'Garantia Oficial & Suporte Aqui Tem',
     badge: 'FLYER 07 - AQUI TEM ANGOLA'
   },
   {
     id: 8,
-    url: '/banners/banner_8.jpg',
+    url: getAssetUrl('banners/banner_8.jpg'),
     remoteUrl: 'https://i.ibb.co/prh7RQVM/AQUI-TEM-IDENTIDADE-VISUAL-08.jpg',
     title: 'Os Melhores Lançamentos de Tecnologia em Angola',
     badge: 'FLYER 08 - AQUI TEM ANGOLA'
   },
   {
     id: 9,
-    url: '/banners/banner_9.jpg',
+    url: getAssetUrl('banners/banner_9.jpg'),
     remoteUrl: 'https://i.ibb.co/W4Th26wg/AQUI-TEM-IDENTIDADE-VISUAL-09.jpg',
     title: 'Compre com Confiança na Aqui Tem',
     badge: 'FLYER 09 - AQUI TEM ANGOLA'
   },
   {
     id: 10,
-    url: '/banners/banner_10.jpg',
+    url: getAssetUrl('banners/banner_10.jpg'),
     remoteUrl: 'https://i.ibb.co/Z6h99Gnd/AQUI-TEM-IDENTIDADE-VISUAL-10.jpg',
     title: 'A Sua Loja de Confiança em Luanda',
     badge: 'FLYER 10 - AQUI TEM ANGOLA'
   },
   {
     id: 11,
-    url: '/banners/banner_11.jpg',
+    url: getAssetUrl('banners/banner_11.jpg'),
     remoteUrl: 'https://i.ibb.co/VY6ZtdfD/FLAYER-AQUI-TEM-03.jpg',
     title: 'Promoção Especial Aqui Tem',
     badge: 'FLYER 11 - OFERTA ESPECIAL'
   },
   {
     id: 12,
-    url: '/banners/banner_12.jpg',
+    url: getAssetUrl('banners/banner_12.jpg'),
     remoteUrl: 'https://i.ibb.co/3Ycyn5J0/FLAYER-MUNDIAL-copiar-Prancheta-1-c-pia.jpg',
     title: 'Campanha Mundial Aqui Tem',
     badge: 'FLYER 12 - CAMPANHA MUNDIAL'
   },
   {
     id: 13,
-    url: '/banners/banner_13.jpg',
+    url: getAssetUrl('banners/banner_13.jpg'),
     remoteUrl: 'https://i.ibb.co/vxF0LSdZ/FLAYER-MUNDIAL-OPSAO-Prancheta-1.jpg',
     title: 'Especiais de Tecnologia & Cozinha',
     badge: 'FLYER 13 - EDICÃO MUNDIAL'
   },
   {
     id: 14,
-    url: '/banners/banner_14.jpg',
+    url: getAssetUrl('banners/banner_14.jpg'),
     remoteUrl: 'https://i.ibb.co/5X9mTfk6/flayer-03.jpg',
     title: 'Lançamentos & Destaques da Semana',
     badge: 'FLYER 14 - DESTAQUE'
   },
   {
     id: 15,
-    url: '/banners/banner_15.jpg',
+    url: getAssetUrl('banners/banner_15.jpg'),
     remoteUrl: 'https://i.ibb.co/FbxrFhK9/5-04.jpg',
     title: 'Qualidade & Inovação no Seu Dia a Dia',
     badge: 'FLYER 15 - PROMOÇÃO'
   },
   {
     id: 16,
-    url: '/banners/banner_16.png',
+    url: getAssetUrl('banners/banner_16.png'),
     remoteUrl: 'https://i.ibb.co/nM1XLzQ6/ac.png',
     title: 'Loja Oficial Aqui Tem - Luanda, Angola',
     badge: 'FLYER 16 - AQUI TEM'

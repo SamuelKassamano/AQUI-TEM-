@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
+import { getAssetUrl } from '../utils/assets';
 
-export default function OriginalLogoImage({ src = '/logo.jpg', alt = 'Aqui Tem', height = 48, style = {}, className = '' }) {
-  const [processedSrc, setProcessedSrc] = useState(src);
+export default function OriginalLogoImage({ src = 'logo.jpg', alt = 'Aqui Tem', height = 48, style = {}, className = '' }) {
+  const targetSrc = getAssetUrl(src);
+  const [processedSrc, setProcessedSrc] = useState(targetSrc);
 
   useEffect(() => {
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = src;
+    img.src = targetSrc;
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');

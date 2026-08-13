@@ -308,12 +308,12 @@ a {
 .hero-banner {
   background: linear-gradient(135deg, #111827 0%, #1F2937 50%, #2B1500 100%);
   border-radius: var(--radius-lg);
-  padding: 48px 56px;
+  padding: 40px 48px;
   color: #FFFFFF;
   display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
+  grid-template-columns: 1fr 1.15fr;
   align-items: center;
-  gap: 40px;
+  gap: 36px;
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
@@ -378,22 +378,29 @@ a {
   position: relative;
   display: flex;
   justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 620px;
+  height: 360px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.98));
+  border-radius: var(--radius-lg);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  margin: 0 auto;
 }
 
 .hero-img-container img {
   width: 100%;
-  max-width: 420px;
-  height: 320px;
-  object-fit: cover;
-  border-radius: var(--radius-md);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-  border: 2px solid rgba(255, 255, 255, 0.1);
-  transform: perspective(1000px) rotateY(-8deg);
-  transition: var(--transition-normal);
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+  border-radius: calc(var(--radius-lg) - 2px);
+  transition: transform var(--transition-normal);
 }
 
 .hero-img-container:hover img {
-  transform: perspective(1000px) rotateY(0deg) scale(1.02);
+  transform: scale(1.02);
 }
 
 /* Category Filter Bar */
@@ -914,27 +921,35 @@ a {
 .footer {
   background: #0F172A;
   color: #94A3B8;
-  padding: 60px 0 24px;
-  border-top: 4px solid var(--primary-orange);
+  padding: 36px 0 18px;
+  border-top: 3px solid var(--primary-orange);
 }
 
 .footer-container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 20px;
   display: grid;
   grid-template-columns: 2fr repeat(3, 1fr);
-  gap: 40px;
+  gap: 24px;
 }
 
 .footer-brand .logo-title {
   color: #FFFFFF;
 }
 
+.footer-brand .logo-brand img {
+  filter: brightness(0) invert(1);
+}
+
+[data-theme="dark"] .header-nav .logo-brand img {
+  filter: brightness(0) invert(1);
+}
+
 .footer-bottom {
   max-width: 1280px;
-  margin: 40px auto 0;
-  padding: 24px 24px 0;
+  margin: 24px auto 0;
+  padding: 16px 20px 0;
   border-top: 1px solid #1E293B;
   display: flex;
   justify-content: space-between;

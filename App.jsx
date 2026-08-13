@@ -33,11 +33,18 @@ import {
 } from 'lucide-react';
 import { PRODUCTS, CATEGORIES, ADVANTAGES, HERO_BANNER_FALLBACK, HERO_COVER_IMAGES } from './data/products';
 import { PRODUCT_VIDEOS } from './src/data/videos';
+import { TESTIMONIALS } from './src/data/testimonials';
+import { getAssetUrl } from './src/utils/assets';
 import OriginalLogoImage from './src/components/OriginalLogoImage';
 import SocialProofModal from './src/components/SocialProofModal';
 import VideosModal from './src/components/VideosModal';
+import { useLanguage } from './src/context/LanguageContext';
+import LanguageSelector from './src/components/LanguageSelector';
+import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial } from './src/utils/productTranslations';
 
 export default function App() {
+  const { lang, t } = useLanguage();
+
   // State management
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,6 +105,7 @@ export default function App() {
 
   // Add item to cart
   const addToCart = (product, quantity = 1) => {
+    const translatedProd = getTranslatedProduct(product, lang);
     setCart(prevCart => {
       const existing = prevCart.find(item => item.id === product.id);
       if (existing) {
@@ -107,9 +115,9 @@ export default function App() {
             : item
         );
       }
-      return [...prevCart, { ...product, quantity }];
+      return [...prevCart, { ...translatedProd, quantity }];
     });
-    showToast(`"${product.name.slice(0, 25)}..." adicionado ao carrinho!`);
+    showToast(`"${translatedProd.name.slice(0, 25)}..." ${lang === 'en' ? 'added to cart!' : 'adicionado ao carrinho!'}`);
   };
 
   // Update item quantity
@@ -144,17 +152,22 @@ export default function App() {
     e.preventDefault();
     if (coupon.trim().toUpperCase() === 'AQUITEM10') {
       setAppliedDiscount(0.10);
-      showToast('Cupom AQUITEM10 aplicado! 10% de desconto.');
+      showToast(lang === 'en' ? 'Coupon AQUITEM10 applied! 10% discount.' : 'Cupom AQUITEM10 aplicado! 10% de desconto.');
     } else {
-      showToast('Cupom inválido. Tente AQUITEM10');
+      showToast(lang === 'en' ? 'Invalid coupon. Try AQUITEM10' : 'Cupom inválido. Tente AQUITEM10');
     }
   };
 
   // Filtered and Sorted Products
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter(p => {
+    return PRODUCTS.map(p => getTranslatedProduct(p, lang)).filter(p => {
+      const canonicalSelected = getTranslatedCategory(selectedCategory, 'pt');
       const matchesCategory =
-        selectedCategory === 'Todos' || p.category === selectedCategory;
+        selectedCategory === 'Todos' ||
+        selectedCategory === 'All' ||
+        p.category === canonicalSelected ||
+        p.originalCategory === canonicalSelected ||
+        getTranslatedCategory(p.category, lang) === selectedCategory;
       const matchesSearch =
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         p.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -165,7 +178,7 @@ export default function App() {
       if (sortBy === 'rating') return b.rating - a.rating;
       return 0; // Default recommended
     });
-  }, [selectedCategory, searchQuery, sortBy]);
+  }, [selectedCategory, searchQuery, sortBy, lang]);
 
   // Cart Calculations
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -178,7 +191,7 @@ export default function App() {
     e.preventDefault();
 
     if (!checkoutForm.name || !checkoutForm.address) {
-      alert('Por favor, preencha o seu nome e endereço de entrega em Angola.');
+      alert(lang === 'en' ? 'Please fill in your full name and delivery address in Angola.' : 'Por favor, preencha o seu nome e endereço de entrega em Angola.');
       return;
     }
 
@@ -192,7 +205,8 @@ export default function App() {
     message += `📦 *PRODUTOS SELECIONADOS:*\n\n`;
 
     cart.forEach(item => {
-      message += `• ${item.quantity}x ${item.name}\n  Valor: ${formatKz(item.price * item.quantity)}\n`;
+      const translatedItem = getTranslatedProduct(item, lang);
+      message += `• ${item.quantity}x ${translatedItem.name}\n  Valor: ${formatKz(item.price * item.quantity)}\n`;
     });
 
     message += `\n------------------------------------\n`;
@@ -213,6 +227,20 @@ export default function App() {
     setIsCheckoutOpen(false);
     setIsCartOpen(false);
   };
+
+  const translatedAdvantageTitles = [
+    t('advFastDeliveryTitle'),
+    t('advQualityTitle'),
+    t('advEasyPaymentTitle'),
+    t('advWhatsappTitle')
+  ];
+
+  const translatedAdvantageSubs = [
+    t('advFastDeliverySub'),
+    t('advQualitySub'),
+    t('advEasyPaymentSub'),
+    t('advWhatsappSub')
+  ];
 
   return (
     <div className="app-container">
@@ -241,11 +269,13 @@ export default function App() {
 
       {/* Top Announcement Bar */}
       <div className="top-bar">
-        <span><Zap size={15} /> <strong>aquitem</strong> - tudo em um só lugar</span>
+        <span><Zap size={15} /> <strong>aquitem</strong> - {t('topBarMsg')}</span>
         <span style={{ opacity: 0.6 }}>|</span>
-        <span>📱 whatsapp: <strong>950752933</strong></span>
+        <span>📱 {t('whatsappSupport')}</span>
         <span style={{ opacity: 0.6 }}>|</span>
-        <span>🇦🇴 entregas rápidas em luanda e todo angola</span>
+        <span>🇦🇴 {t('fastDelivery')}</span>
+        <span style={{ opacity: 0.6 }}>|</span>
+        <LanguageSelector variant="compact" />
       </div>
 
       {/* Header */}
@@ -262,7 +292,7 @@ export default function App() {
 
           {/* Logo AQUI TEM - Original Logo with Transparent Background */}
           <a href="#" className="logo-brand">
-            <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={62} />
+            <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={78} />
           </a>
 
           {/* Search Bar */}
@@ -271,7 +301,7 @@ export default function App() {
               <Search size={18} color="var(--text-muted)" />
               <input
                 type="text"
-                placeholder="pesquisar por fones, smartwatch, air fryer, etc..."
+                placeholder={t('searchPlaceholder')}
                 className="search-input"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
@@ -286,18 +316,20 @@ export default function App() {
 
           {/* Navigation Actions */}
           <div className="nav-actions">
+            <LanguageSelector />
+
             <button className="nav-btn" onClick={toggleTheme} title="Alternar Tema">
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
             </button>
 
-            <button className="nav-btn" onClick={() => showToast(`Desejos (${wishlist.length} itens)`)}>
+            <button className="nav-btn" onClick={() => showToast(`${t('wishlist')} (${wishlist.length} ${t('items')})`)}>
               <Heart size={20} color={wishlist.length > 0 ? '#F37021' : 'currentColor'} />
               {wishlist.length > 0 && <span className="badge-count">{wishlist.length}</span>}
             </button>
 
             <button className="nav-btn nav-btn-orange" onClick={() => setIsCartOpen(true)}>
               <ShoppingBag size={20} />
-              <span>Carrinho</span>
+              <span>{t('cart')}</span>
               {cart.length > 0 && (
                 <span className="badge-count" style={{ background: '#FFF', color: '#F37021' }}>
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
@@ -324,20 +356,39 @@ export default function App() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <div style={{ marginBottom: '8px' }}>
+                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>{t('selectLanguage')}:</span>
+                <LanguageSelector />
+              </div>
+
               <button
-                className={`category-chip ${selectedCategory === 'Todos' ? 'active' : ''}`}
+                className={`category-chip ${selectedCategory === 'Todos' || selectedCategory === 'All' ? 'active' : ''}`}
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
                 onClick={() => { setSelectedCategory('Todos'); setIsSideMenuOpen(false); }}
               >
-                <Grid size={16} /> Loja / Todos os Produtos
+                <Grid size={16} /> {t('catAll')}
               </button>
 
               <button
                 className="category-chip"
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255, 101, 0, 0.08)', color: 'var(--primary-orange)', borderColor: 'var(--primary-orange)' }}
-                onClick={() => { setIsSocialProofOpen(true); setIsSideMenuOpen(false); }}
+                onClick={() => {
+                  setIsSideMenuOpen(false);
+                  document.getElementById('prova-social')?.scrollIntoView({ behavior: 'smooth' });
+                }}
               >
-                <Award size={16} /> Prova Social (Avaliações)
+                <Award size={16} /> {t('socialProof')}
+              </button>
+
+              <button
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
+                onClick={() => {
+                  setIsSideMenuOpen(false);
+                  document.getElementById('sobre')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                <Store size={16} /> {t('aboutUs')}
               </button>
 
               <button
@@ -345,15 +396,7 @@ export default function App() {
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(30, 92, 158, 0.08)', color: '#1E5C9E', borderColor: '#1E5C9E' }}
                 onClick={() => { setIsVideosOpen(true); setIsSideMenuOpen(false); }}
               >
-                <Video size={16} /> Vídeos & Unboxings
-              </button>
-
-              <button
-                className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
-                onClick={() => { setActiveInfoModal('about'); setIsSideMenuOpen(false); }}
-              >
-                <Info size={16} /> Sobre a Aqui Tem
+                <Video size={16} /> {t('videos')}
               </button>
 
               <button
@@ -361,7 +404,7 @@ export default function App() {
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
                 onClick={() => { setActiveInfoModal('stores'); setIsSideMenuOpen(false); }}
               >
-                <MapPin size={16} /> Lojas & Atendimento
+                <MapPin size={16} /> {t('storesAndSupport')}
               </button>
 
               <button
@@ -369,11 +412,11 @@ export default function App() {
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
                 onClick={() => { setActiveInfoModal('warranty'); setIsSideMenuOpen(false); }}
               >
-                <ShieldCheck size={16} /> Garantia & Trocas
+                <ShieldCheck size={16} /> {t('warrantyAndExchanges')}
               </button>
 
               <div style={{ borderTop: '1px solid var(--border-light)', margin: '10px 0' }}></div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase' }}>Categorias</span>
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase' }}>{t('categories')}</span>
 
               {CATEGORIES.map(c => (
                 <button
@@ -382,7 +425,7 @@ export default function App() {
                   style={{ width: '100%', textAlign: 'left' }}
                   onClick={() => { setSelectedCategory(c); setIsSideMenuOpen(false); }}
                 >
-                  {c}
+                  {getTranslatedCategory(c, lang)}
                 </button>
               ))}
 
@@ -412,78 +455,77 @@ export default function App() {
             {activeInfoModal === 'about' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase' }}>
-                  <Store size={18} /> Nossa Estrutura & História
+                  <Store size={18} /> {t('aboutBadge')}
                 </div>
-                <h3 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '-8px' }}>
-                  Sobre a Aqui Tem
-                </h3>
-                <p style={{ lineHeight: 1.6, color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                  A <strong>Aqui Tem</strong> é a sua loja de referência em Angola para eletrónicos, smartphones, headphones Oraimo, smartwatches, garrafas térmicas, air fryers e eletrodomésticos de última geração. Oferecemos produtos 100% originais com garantia oficial, preços competitivos em Kwanzas e atendimento personalizado.
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>{t('aboutTitle')} AQUI TEM (Angola)</h3>
+                <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.95rem' }}>
+                  {t('aboutDesc1')}
                 </p>
-
-                {/* Portfolio Photo Gallery Grid (No Videos) */}
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, marginTop: '8px', color: 'var(--text-main)' }}>
-                  📸 Nossas Lojas, Armazém & Entregas em Angola
-                </h4>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                  <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-light)', background: 'var(--bg-card)' }}>
-                    <img src="/hero_banner_attendant.jpg" alt="Showroom Aqui Tem" style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
-                    <div style={{ padding: '8px 10px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      🏬 Showroom & Atendimento Presencial
-                    </div>
-                  </div>
-
-                  <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-light)', background: 'var(--bg-card)' }}>
-                    <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=600&q=80" alt="Estoque Selado" style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
-                    <div style={{ padding: '8px 10px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      📦 Estoque 100% Original Oraimo
-                    </div>
-                  </div>
-
-                  <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-light)', background: 'var(--bg-card)' }}>
-                    <img src="https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&w=600&q=80" alt="Entregas Luanda" style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
-                    <div style={{ padding: '8px 10px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      🛵 Estafetas para Entregas em Luanda
-                    </div>
-                  </div>
-
-                  <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-light)', background: 'var(--bg-card)' }}>
-                    <img src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&w=600&q=80" alt="Despachos Províncias" style={{ width: '100%', height: '130px', objectFit: 'cover' }} />
-                    <div style={{ padding: '8px 10px', fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                      🚚 Envios em 24h via Macon / Trans5
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ background: 'rgba(255,101,0,0.06)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-light)', fontSize: '0.88rem', lineHeight: '1.5', color: 'var(--text-main)' }}>
-                  <strong>📍 Localização & Cobertura:</strong> Atendimento presencial e entregas no mesmo dia em Luanda (Kilamba, Talatona, Maianga, Viana, Cazenga). Despachos diários com guia de transporte para todas as províncias de Angola (Benguela, Huambo, Lubango, Cabinda, Namibe, Soyo).
+                <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', fontSize: '0.95rem' }}>
+                  {t('aboutDesc2')}
+                </p>
+                <div style={{ background: 'var(--bg-card)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                  <strong>📍 {t('aboutLocTitle')}:</strong> {t('aboutLocDesc')}
                 </div>
               </div>
             )}
 
             {activeInfoModal === 'stores' && (
-              <div>
-                <h3 style={{ fontSize: '1.4rem', marginBottom: '12px', color: 'var(--primary-orange)' }}>Nossas Lojas & Atendimento</h3>
-                <p style={{ lineHeight: 1.6, color: 'var(--text-muted)', marginBottom: '10px' }}>
-                  📍 <strong>Luanda, Angola</strong>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                  <MapPin size={18} /> {t('storesAndSupport')}
+                </div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>{lang === 'en' ? 'Our Stores & Showrooms in Luanda' : 'Nossas Lojas & Atendimento Presencial em Luanda'}</h3>
+                <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>
+                  {lang === 'en'
+                    ? 'Visit our showrooms or place your order directly via WhatsApp for same-day delivery.'
+                    : 'Visite as nossas lojas físicas ou faça a sua encomenda pelo WhatsApp com entrega no mesmo dia.'
+                  }
                 </p>
-                <p style={{ lineHeight: 1.6, color: 'var(--text-muted)', marginBottom: '10px' }}>
-                  📱 <strong>WhatsApp Atendimento:</strong> 950752933
-                </p>
-                <p style={{ lineHeight: 1.6, color: 'var(--text-muted)' }}>
-                  🚚 Entregas rápidas ao domicílio em toda a província de Luanda e despachos seguros para todas as províncias de Angola.
-                </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                    <strong>🏪 Showroom Central Luanda (Kilamba):</strong> Bloco X, Luanda
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      {lang === 'en' ? 'Hours: Mon to Sat from 8:00 AM to 6:00 PM' : 'Horário: Segunda a Sábado das 08h00 às 18h00'}
+                    </div>
+                  </div>
+                  <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                    <strong>🚚 {lang === 'en' ? 'Luanda Fast Dispatch Center' : 'Centro de Logística e Entregas (Talatona & Viana)'}:</strong>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      {lang === 'en' ? 'Same-day delivery service with mobile POS terminal.' : 'Atendimento express com TPA no local de entrega.'}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
             {activeInfoModal === 'warranty' && (
-              <div>
-                <h3 style={{ fontSize: '1.4rem', marginBottom: '12px', color: 'var(--primary-orange)' }}>Garantia & Trocas</h3>
-                <p style={{ lineHeight: 1.6, color: 'var(--text-muted)' }}>
-                  Todos os produtos comercializados pela <strong>Aqui Tem</strong> possuem garantia oficial contra defeitos de fabricação. Verifique o seu equipamento no momento da entrega. Para trocas ou suporte, contate a nossa equipe pelo WhatsApp 950752933.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10B981', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase' }}>
+                  <ShieldCheck size={18} /> {t('warrantyAndExchanges')}
+                </div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>{lang === 'en' ? '100% Genuine Warranty & Exchange Terms' : 'Garantia Oficial & Política de Trocas'}</h3>
+                <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>
+                  {lang === 'en'
+                    ? 'All products sold at AQUI TEM come directly from factory sealed boxes with official warranty.'
+                    : 'Todos os produtos vendidos na AQUI TEM são 100% originais, selados na caixa e possuem garantia oficial de fábrica.'
+                  }
                 </p>
+                <ul style={{ paddingLeft: '20px', color: 'var(--text-muted)', lineHeight: '1.8' }}>
+                  <li>{lang === 'en' ? 'Immediate exchange in case of factory defect within 7 days.' : 'Troca imediata em caso de defeito de fabricação nos primeiros 7 dias.'}</li>
+                  <li>{lang === 'en' ? 'Official warranty on Oraimo equipment.' : 'Garantia oficial de fábrica para equipamentos Oraimo.'}</li>
+                  <li>{lang === 'en' ? 'Pre-dispatch testing available upon request.' : 'Suporte técnico e envio de vídeo de teste pré-despacho.'}</li>
+                </ul>
               </div>
             )}
+
+            <button
+              className="nav-btn nav-btn-orange"
+              style={{ marginTop: '16px', width: '100%', justifyContent: 'center' }}
+              onClick={() => setActiveInfoModal(null)}
+            >
+              {t('close')}
+            </button>
           </div>
         </div>
       )}
@@ -492,147 +534,68 @@ export default function App() {
       <section className="hero-section">
         <div className="hero-banner">
           <div>
-            <div className="hero-tag">
-              <Zap size={16} /> aproveita a nossa oferta do mês
-            </div>
-            <h1 className="hero-title">
-              Grande Promoção Na Aqui Tem
-            </h1>
-            <p className="hero-subtitle">
-              visite nossas lojas ou compre online! encontre fones oraimo, smartwatches, air fryers, placas de indução e eletrónicos com entrega rápida em luanda e todo angola.
-            </p>
+            <span className="hero-tag">
+              <Zap size={14} /> {t('heroTag')}
+            </span>
+            <h1 className="hero-title">{t('heroTitle')}</h1>
+            <p className="hero-subtitle">{t('heroSubtitle')}</p>
+
             <div className="hero-cta-group">
-              <a href="#catalogo" className="nav-btn nav-btn-orange" style={{ padding: '14px 28px', fontSize: '1rem' }}>
-                Ver Produtos <ArrowRight size={18} />
+              <a href="#catalogo" className="nav-btn nav-btn-orange" style={{ padding: '12px 24px', fontSize: '1rem' }}>
+                {t('buyNow')} <ArrowRight size={18} />
               </a>
-              <button
+              <a
+                href="https://wa.me/244950752933?text=Olá%20Aqui%20Tem!%20Quero%20saber%20mais%20sobre%20as%20promoções."
+                target="_blank"
+                rel="noreferrer"
                 className="nav-btn"
-                style={{ padding: '14px 24px', borderColor: '#25D366', color: '#25D366' }}
-                onClick={() => window.open('https://wa.me/244950752933?text=Olá%20AQUI%20TEM!%20Vim%20pelo%20site.', '_blank')}
+                style={{ padding: '12px 20px', fontSize: '1rem', background: '#25D366', color: '#FFF', borderColor: '#25D366' }}
               >
-                <MessageCircle size={20} /> WhatsApp: 950752933
-              </button>
+                <MessageCircle size={18} /> {t('chatWhatsapp')}
+              </a>
             </div>
           </div>
-          <div className="hero-img-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: '100%', maxWidth: '440px', overflow: 'hidden', borderRadius: 'var(--radius-md)', boxShadow: '0 20px 40px rgba(0, 0, 0, 0.4)', border: '2px solid rgba(255, 255, 255, 0.15)', background: '#0F172A' }}>
-              
-              {/* Invisible flow image to set exact natural container height and aspect ratio */}
-              <img
-                src={HERO_COVER_IMAGES[0]?.url}
-                alt=""
-                aria-hidden="true"
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  maxHeight: '380px',
-                  objectFit: 'cover',
-                  display: 'block',
-                  opacity: 0,
-                  pointerEvents: 'none'
-                }}
-              />
 
-              {/* Stacked Flyer Images for Smooth Crossfade Transition */}
-              {HERO_COVER_IMAGES.map((item, idx) => {
-                const isActive = heroImageIndex === idx;
-                return (
-                  <img
-                    key={item.id || idx}
-                    src={item.url}
-                    alt={`Flyer ${idx + 1}`}
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      if (e.currentTarget.src !== item.remoteUrl) {
-                        e.currentTarget.src = item.remoteUrl;
-                      } else {
-                        e.currentTarget.src = HERO_BANNER_FALLBACK;
-                      }
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      width: '100%',
-                      height: '100%',
-                      objectFit: 'cover',
-                      opacity: isActive ? 1 : 0,
-                      transform: isActive ? 'scale(1)' : 'scale(1.03)',
-                      transition: 'opacity 0.8s ease-in-out, transform 0.8s ease-in-out',
-                      pointerEvents: isActive ? 'auto' : 'none'
-                    }}
-                  />
-                );
-              })}
-
-              {/* Navigation Arrows */}
-              <button
-                onClick={() => setHeroImageIndex(prev => (prev - 1 + HERO_COVER_IMAGES.length) % HERO_COVER_IMAGES.length)}
-                style={{
-                  position: 'absolute',
-                  left: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.65)',
-                  backdropFilter: 'blur(4px)',
-                  color: '#FFF',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 5,
-                  transition: 'transform 0.2s, background 0.2s'
-                }}
-                title="Flyer Anterior"
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <button
-                onClick={() => setHeroImageIndex(prev => (prev + 1) % HERO_COVER_IMAGES.length)}
-                style={{
-                  position: 'absolute',
-                  right: '10px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'rgba(15, 23, 42, 0.65)',
-                  backdropFilter: 'blur(4px)',
-                  color: '#FFF',
-                  border: '1px solid rgba(255, 255, 255, 0.25)',
-                  borderRadius: '50%',
-                  width: '36px',
-                  height: '36px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  zIndex: 5,
-                  transition: 'transform 0.2s, background 0.2s'
-                }}
-                title="Próximo Flyer"
-              >
-                <ChevronRight size={20} />
-              </button>
-            </div>
-
-            {/* Pagination Indicators */}
-            <div style={{ display: 'flex', gap: '5px', marginTop: '12px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '380px' }}>
+          <div className="hero-img-container">
+            <img
+              key={HERO_COVER_IMAGES[heroImageIndex]?.id || heroImageIndex}
+              src={HERO_COVER_IMAGES[heroImageIndex]?.url || HERO_COVER_IMAGES[heroImageIndex]?.remoteUrl || HERO_BANNER_FALLBACK}
+              alt="Promoções Aqui Tem Angola"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                if (HERO_COVER_IMAGES[heroImageIndex]?.remoteUrl && e.currentTarget.src !== HERO_COVER_IMAGES[heroImageIndex]?.remoteUrl) {
+                  e.currentTarget.src = HERO_COVER_IMAGES[heroImageIndex].remoteUrl;
+                } else {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = HERO_BANNER_FALLBACK;
+                }
+              }}
+            />
+            {/* Carousel Dots */}
+            <div style={{
+              position: 'absolute',
+              bottom: '12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              gap: '6px',
+              background: 'rgba(0,0,0,0.5)',
+              padding: '4px 10px',
+              borderRadius: '20px',
+              backdropFilter: 'blur(4px)'
+            }}>
               {HERO_COVER_IMAGES.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setHeroImageIndex(idx)}
-                  title={`Flyer ${idx + 1}`}
                   style={{
-                    width: heroImageIndex === idx ? '22px' : '6px',
-                    height: '6px',
-                    borderRadius: '3px',
-                    background: heroImageIndex === idx ? 'var(--primary-orange)' : 'rgba(255, 255, 255, 0.35)',
+                    width: heroImageIndex === idx ? '20px' : '8px',
+                    height: '8px',
+                    borderRadius: '4px',
+                    background: heroImageIndex === idx ? 'var(--primary-orange)' : 'rgba(255,255,255,0.6)',
                     border: 'none',
                     cursor: 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                    transition: 'all 0.3s ease'
                   }}
                 />
               ))}
@@ -641,131 +604,165 @@ export default function App() {
         </div>
       </section>
 
-      {/* Advantage Features */}
+      {/* Highlights Advantages Bar */}
       <section className="advantages-section">
         <div className="advantages-grid">
-          {ADVANTAGES.map((adv, idx) => (
-            <div key={idx} className="advantage-card">
-              <div className="advantage-icon-box">
-                {adv.icon === 'Truck' && <Truck size={24} />}
-                {adv.icon === 'ShieldCheck' && <ShieldCheck size={24} />}
-                {adv.icon === 'CreditCard' && <CreditCard size={24} />}
-                {adv.icon === 'MessageCircle' && <MessageCircle size={24} />}
+          {ADVANTAGES.map((adv, index) => {
+            const IconComp = [Truck, ShieldCheck, CreditCard, MessageCircle][index] || Zap;
+            return (
+              <div key={adv.id || index} className="advantage-card">
+                <div className="advantage-icon-box">
+                  <IconComp size={24} />
+                </div>
+                <div>
+                  <div className="advantage-title">{translatedAdvantageTitles[index] || adv.title}</div>
+                  <div className="advantage-subtitle">{translatedAdvantageSubs[index] || adv.sub || adv.subtitle}</div>
+                </div>
               </div>
-              <div>
-                <h4 className="advantage-title">{adv.title}</h4>
-                <p className="advantage-subtitle">{adv.subtitle}</p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
-      {/* Homepage Video Showcase Section - 3 Videos Carousel */}
-      <section style={{ padding: '32px 24px', background: 'var(--bg-card)', borderRadius: '24px', margin: '32px 0', border: '1px solid var(--border-light)', boxShadow: '0 4px 20px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+      {/* 📹 Vídeos dos Produtos Rodando em Ação (Seção com Vídeos Ativos e Controles) */}
+      <section
+        style={{
+          padding: '36px 24px',
+          background: 'var(--bg-card)',
+          borderRadius: '24px',
+          margin: '28px 0',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              <Video size={18} /> Vídeos & Unboxings dos Produtos
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <Video size={16} /> {t('videoShowcaseBadge')}
             </div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 900, marginTop: '4px', color: 'var(--text-main)' }}>
-              Vídeos dos Produtos Rodando em Ação
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '2px' }}>
+              {t('videoShowcaseTitle')}
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '2px' }}>
-              Acompanhe 3 vídeos por vez em reprodução contínua. Navegue pelas setas para ver toda a linha.
+              {t('videoShowcaseSub')}
             </p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            {/* Carousel Navigation Buttons */}
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button
-              onClick={() => setActiveVideoStart(prev => (prev - 1 + PRODUCT_VIDEOS.length) % PRODUCT_VIDEOS.length)}
-              style={{
-                background: 'var(--bg-body)',
-                border: '1px solid var(--border-light)',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justify: 'center',
-                cursor: 'pointer',
-                color: 'var(--text-main)'
-              }}
-              title="Vídeo Anterior"
+              className="nav-btn"
+              onClick={() => setActiveVideoStart(prev => Math.max(0, prev - 1))}
+              disabled={activeVideoStart === 0}
+              style={{ opacity: activeVideoStart === 0 ? 0.5 : 1 }}
+              title={t('prevVideo')}
             >
               <ChevronLeft size={20} />
             </button>
             <button
-              onClick={() => setActiveVideoStart(prev => (prev + 1) % PRODUCT_VIDEOS.length)}
-              style={{
-                background: 'var(--bg-body)',
-                border: '1px solid var(--border-light)',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justify: 'center',
-                cursor: 'pointer',
-                color: 'var(--text-main)'
-              }}
-              title="Próximo Vídeo"
+              className="nav-btn"
+              onClick={() => setActiveVideoStart(prev => Math.min(PRODUCT_VIDEOS.length - 3, prev + 1))}
+              disabled={activeVideoStart >= PRODUCT_VIDEOS.length - 3}
+              style={{ opacity: activeVideoStart >= PRODUCT_VIDEOS.length - 3 ? 0.5 : 1 }}
+              title={t('nextVideo')}
             >
               <ChevronRight size={20} />
             </button>
             <button
               className="nav-btn nav-btn-orange"
-              style={{ padding: '10px 20px', fontSize: '0.88rem', fontWeight: 700 }}
               onClick={() => setIsVideosOpen(true)}
+              style={{ padding: '8px 16px', fontSize: '0.88rem' }}
             >
-              <Video size={16} /> Ver Todos ({PRODUCT_VIDEOS.length})
+              {t('viewAll')} ({PRODUCT_VIDEOS.length})
             </button>
           </div>
         </div>
 
-        {/* 3 Videos Grid Layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))', gap: '20px' }}>
-          {[0, 1, 2].map(offset => {
-            const index = (activeVideoStart + offset) % PRODUCT_VIDEOS.length;
-            const item = PRODUCT_VIDEOS[index];
+        {/* Video Grid (3 videos showcased at a time) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+          {PRODUCT_VIDEOS.slice(activeVideoStart, activeVideoStart + 3).map(item => {
+            const translatedVid = getTranslatedVideo(item, lang);
             return (
-              <div key={`${item.id}-${index}`} style={{ background: 'var(--bg-body)', border: '1px solid var(--border-light)', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>
-                <div style={{ position: 'relative', background: '#0F172A' }}>
-                  <video
-                    key={`${item.id}-${item.videoUrl}`}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    controls
-                    preload="metadata"
-                    style={{ width: '100%', height: '220px', objectFit: 'cover', display: 'block' }}
-                  >
-                    <source src={item.videoUrl} type="video/mp4" />
-                    {item.fallbackUrl && <source src={item.fallbackUrl} type="video/mp4" />}
-                    Seu navegador não suporta a reprodução deste vídeo.
-                  </video>
-                  <span style={{ position: 'absolute', top: '10px', left: '10px', background: 'rgba(0,0,0,0.85)', color: '#FFB800', fontSize: '0.72rem', fontWeight: 800, padding: '4px 10px', borderRadius: '12px', pointerEvents: 'none' }}>
-                    {item.tag}
-                  </span>
-                </div>
-                <div style={{ padding: '14px' }}>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--primary-orange)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>
-                    {item.category}
+              <div
+                key={item.id}
+                style={{
+                  background: 'var(--bg-body)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '16px',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justify: 'space-between',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+                }}
+              >
+                <div>
+                  <div style={{ position: 'relative', background: '#0F172A' }}>
+                    <video
+                      key={`${item.id}-${item.videoUrl}`}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      controls
+                      preload="metadata"
+                      style={{
+                        width: '100%',
+                        height: '210px',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                    >
+                      <source src={item.videoUrl} type="video/mp4" />
+                      {item.fallbackUrl && <source src={item.fallbackUrl} type="video/mp4" />}
+                      {lang === 'en' ? 'Your browser does not support video playback.' : 'Seu navegador não suporta a reprodução deste vídeo.'}
+                    </video>
+                    <span style={{
+                      position: 'absolute',
+                      top: '10px',
+                      left: '10px',
+                      background: 'rgba(0,0,0,0.8)',
+                      color: '#FFB800',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      padding: '4px 10px',
+                      borderRadius: '12px',
+                      pointerEvents: 'none',
+                      letterSpacing: '0.5px'
+                    }}>
+                      {translatedVid.tag}
+                    </span>
                   </div>
-                  <h4 style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: '1.3' }}>
-                    {item.title}
-                  </h4>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '6px', lineHeight: '1.4' }}>
-                    {item.description}
-                  </p>
+
+                  <div style={{ padding: '16px' }}>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--primary-orange)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>
+                      {translatedVid.category}
+                    </div>
+                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: '1.3', marginBottom: '6px' }}>
+                      {translatedVid.title}
+                    </h4>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.45', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {translatedVid.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-light)' }}>
+                  <button
+                    onClick={() => {
+                      const msg = encodeURIComponent(`Olá AQUI TEM! Vi o vídeo do produto "${translatedVid.title}" e quero pedir.`);
+                      window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
+                    }}
+                    className="nav-btn nav-btn-orange"
+                    style={{ width: '100%', padding: '8px 12px', fontSize: '0.85rem', justifyContent: 'center' }}
+                  >
+                    <MessageCircle size={16} /> {t('buyWhatsapp')}
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* Dots Indicators */}
         <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', marginTop: '18px' }}>
           {PRODUCT_VIDEOS.map((_, idx) => (
             <button
@@ -791,17 +788,25 @@ export default function App() {
           <button
             className="category-chip"
             style={{ background: 'linear-gradient(135deg, #FF6500, #E55800)', color: '#FFF', fontWeight: 800, border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setIsSocialProofOpen(true)}
+            onClick={() => document.getElementById('prova-social')?.scrollIntoView({ behavior: 'smooth' })}
           >
-            <Award size={16} /> Prova Social (Avaliações)
+            <Award size={16} /> {t('socialProof')}
           </button>
 
           <button
             className="category-chip"
-            style={{ background: '#1E5C9E', color: '#FFF', fontWeight: 800, border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+            style={{ background: 'linear-gradient(135deg, #1E5C9E, #144376)', color: '#FFF', fontWeight: 800, border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
+            onClick={() => document.getElementById('sobre')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <Store size={16} /> {t('aboutUs')}
+          </button>
+
+          <button
+            className="category-chip"
+            style={{ background: '#0F172A', color: '#FFF', fontWeight: 800, border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
             onClick={() => setIsVideosOpen(true)}
           >
-            <Video size={16} /> Vídeos & Unboxings
+            <Video size={16} /> {t('videos')}
           </button>
 
           {CATEGORIES.map(cat => (
@@ -810,7 +815,7 @@ export default function App() {
               className={`category-chip ${selectedCategory === cat ? 'active' : ''}`}
               onClick={() => setSelectedCategory(cat)}
             >
-              {cat}
+              {getTranslatedCategory(cat, lang)}
             </button>
           ))}
         </div>
@@ -820,7 +825,7 @@ export default function App() {
       <section className="products-section">
         <div className="section-header">
           <h2 className="section-title">
-            Produtos em <span>Destaque</span> ({filteredProducts.length})
+            {t('featuredProducts')} ({filteredProducts.length})
           </h2>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -838,10 +843,10 @@ export default function App() {
                 fontSize: '0.9rem'
               }}
             >
-              <option value="recommended">Mais Recomendados</option>
-              <option value="price-low">Menor Preço</option>
-              <option value="price-high">Maior Preço</option>
-              <option value="rating">Melhor Avaliados</option>
+              <option value="recommended">{t('recommended')}</option>
+              <option value="price-low">{t('priceLow')}</option>
+              <option value="price-high">{t('priceHigh')}</option>
+              <option value="rating">{t('bestRating')}</option>
             </select>
           </div>
         </div>
@@ -855,9 +860,9 @@ export default function App() {
             border: '1px solid var(--border-light)'
           }}>
             <Search size={48} color="var(--text-light)" style={{ marginBottom: '16px' }} />
-            <h3>Nenhum produto encontrado</h3>
+            <h3>{lang === 'en' ? 'No products found' : 'Nenhum produto encontrado'}</h3>
             <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>
-              Tente buscar por outro termo ou selecione uma categoria diferente.
+              {lang === 'en' ? 'Try searching for another term or select a different category.' : 'Tente buscar por outro termo ou selecione uma categoria diferente.'}
             </p>
           </div>
         ) : (
@@ -889,16 +894,16 @@ export default function App() {
                       <Star size={14} fill="#FFB800" color="#FFB800" />
                       <strong style={{ marginLeft: '4px' }}>{product.rating}</strong>
                     </div>
-                    <span>({product.reviewsCount} avaliações)</span>
+                    <span>({product.reviewsCount} {t('reviews')})</span>
                   </div>
 
                   <div className="product-price-box">
                     {product.oldPrice && (
-                      <span className="old-price">Antes: {formatKz(product.oldPrice)}</span>
+                      <span className="old-price">{t('before')}: {formatKz(product.oldPrice)}</span>
                     )}
-                    <div className="current-price">Agora: {formatKz(product.price)}</div>
+                    <div className="current-price">{t('now')}: {formatKz(product.price)}</div>
                     <div className="pix-price">
-                      ⚡ {formatKz(product.price * 0.9)} à vista (10% OFF)
+                      ⚡ {formatKz(product.price * 0.9)} {t('cashDiscount')}
                     </div>
                   </div>
 
@@ -907,11 +912,11 @@ export default function App() {
                       className="btn-add-cart"
                       onClick={() => addToCart(product)}
                     >
-                      <Plus size={18} /> Adicionar
+                      <Plus size={18} /> {t('addToCart')}
                     </button>
                     <button
                       className="btn-view-details"
-                      title="Ver Detalhes"
+                      title={t('viewDetails')}
                       onClick={() => setSelectedProduct(product)}
                     >
                       <Eye size={18} />
@@ -924,6 +929,267 @@ export default function App() {
         )}
       </section>
 
+      {/* 🌟 Prova Social Section (Página Inicial) */}
+      <section
+        id="prova-social"
+        style={{
+          padding: '24px 20px',
+          background: 'var(--bg-card)',
+          borderRadius: '20px',
+          margin: '20px 0',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+        }}
+      >
+        <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 18px auto' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(255, 101, 0, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '6px' }}>
+            <Award size={16} /> {t('spBadge')}
+          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '2px' }}>
+            {t('spTitle')}
+          </h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '4px', lineHeight: '1.4' }}>
+            {t('spSubtitle')}
+          </p>
+        </div>
+
+        {/* Trust Stats Bar */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: '12px',
+          marginBottom: '20px',
+          background: 'linear-gradient(135deg, rgba(255,101,0,0.06), rgba(30,92,158,0.06))',
+          padding: '12px 16px',
+          borderRadius: '14px',
+          border: '1px solid var(--border-light)'
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary-orange)' }}>4.9 ★★★★★</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statSatisfaction')}</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E5C9E' }}>+3.800</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statClients')}</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981' }}>100%</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statOriginal')}</div>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>24 {lang === 'en' ? 'Hours' : 'Horas'}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statShipping')}</div>
+          </div>
+        </div>
+
+        {/* Testimonials Grid (Displaying 4 featured African customer reviews) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '14px' }}>
+          {TESTIMONIALS.slice(0, 4).map(item => {
+            const translatedTestimonial = getTranslatedTestimonial(item, lang);
+            return (
+              <div
+                key={item.id}
+                style={{
+                  background: 'var(--bg-body)',
+                  border: '1px solid var(--border-light)',
+                  borderRadius: '14px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                  transition: 'transform 0.2s, boxShadow 0.2s'
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                    <img
+                      src={item.avatar}
+                      alt={item.name}
+                      style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-orange)' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        {item.name}
+                        {item.verified && (
+                          <span style={{ color: '#10B981', display: 'inline-flex', alignItems: 'center', fontSize: '0.7rem', background: 'rgba(16,185,129,0.12)', padding: '2px 6px', borderRadius: '8px', fontWeight: 800 }}>
+                            <CheckCircle size={11} style={{ marginRight: '2px' }} /> {t('verified')}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px' }}>
+                        <MapPin size={12} color="var(--primary-orange)" /> {item.location} • <span style={{ opacity: 0.8 }}>{translatedTestimonial.date}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '2px', marginBottom: '6px' }}>
+                    {[...Array(item.rating)].map((_, i) => (
+                      <Star key={i} size={14} fill="#FFB800" color="#FFB800" />
+                    ))}
+                  </div>
+
+                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1E5C9E', marginBottom: '8px', background: 'rgba(30,92,158,0.08)', padding: '3px 8px', borderRadius: '6px', display: 'inline-block' }}>
+                    📦 {item.product}
+                  </div>
+
+                  <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', lineHeight: '1.45', fontStyle: 'italic', marginBottom: '10px' }}>
+                    "{translatedTestimonial.comment}"
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '8px', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <ThumbsUp size={13} color="var(--primary-orange)" /> {item.likes} {t('helpfulCount')}
+                  </span>
+                  <span style={{ color: '#25D366', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <ShieldCheck size={13} /> {t('securePurchase')}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Section Actions */}
+        <div style={{ marginTop: '18px', textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => setIsSocialProofOpen(true)}
+            className="nav-btn nav-btn-orange"
+            style={{ padding: '10px 20px', fontSize: '0.88rem' }}
+          >
+            <Award size={16} /> {t('seeMoreReviews')}
+          </button>
+          <a
+            href="https://wa.me/244950752933?text=Olá%20Aqui%20Tem!%20Vi%20as%20avaliações%20na%20página%20e%20quero%20fazer%20um%20pedido."
+            target="_blank"
+            rel="noreferrer"
+            className="nav-btn"
+            style={{ padding: '10px 20px', fontSize: '0.88rem', borderColor: '#25D366', color: '#25D366', background: 'rgba(37, 211, 102, 0.08)' }}
+          >
+            <MessageCircle size={16} /> {t('orderOnWhatsApp')} (950752933)
+          </a>
+        </div>
+      </section>
+
+      {/* 🏬 Sobre a AQUI TEM Section (Página Inicial) */}
+      <section
+        id="sobre"
+        style={{
+          padding: '24px 20px',
+          background: 'var(--bg-card)',
+          borderRadius: '20px',
+          margin: '20px 0',
+          border: '1px solid var(--border-light)',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
+        }}
+      >
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'center' }}>
+          <div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(255, 101, 0, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '8px' }}>
+              <Store size={16} /> {t('aboutBadge')}
+            </div>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: '10px', lineHeight: '1.2' }}>
+              {t('aboutTitle')} <span style={{ color: 'var(--primary-orange)' }}>AQUI TEM</span> Angola
+            </h2>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '10px' }}>
+              {t('aboutDesc1')}
+            </p>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '14px' }}>
+              {t('aboutDesc2')}
+            </p>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+              <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <MapPin size={14} /> {t('aboutLocTitle')}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('aboutLocDesc')}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ color: '#10B981', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <ShieldCheck size={14} /> {t('aboutOrigTitle')}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('aboutOrigDesc')}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ color: '#1E5C9E', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Truck size={14} /> {t('aboutProvTitle')}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('aboutProvDesc')}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                <div style={{ color: '#25D366', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <MessageCircle size={14} /> {t('aboutSupTitle')}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  {t('aboutSupDesc')}
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setActiveInfoModal('stores')}
+                className="nav-btn nav-btn-orange"
+                style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+              >
+                <Store size={16} /> {t('storesAndSupport')}
+              </button>
+              <button
+                onClick={() => setActiveInfoModal('warranty')}
+                className="nav-btn"
+                style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+              >
+                <ShieldCheck size={16} /> {t('warrantyAndExchanges')}
+              </button>
+            </div>
+          </div>
+
+          {/* Showroom & Operations Gallery Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '180px' }}>
+              <img
+                src="https://images.unsplash.com/photo-1556742049-0a670f4a4591?auto=format&fit=crop&w=800&q=80"
+                alt="Showroom Central Luanda"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = getAssetUrl('/hero_banner_attendant.jpg');
+                }}
+              />
+              <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: 'rgba(0,0,0,0.8)', color: '#FFF', fontSize: '0.72rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
+                {t('galShowroom')}
+              </span>
+            </div>
+
+            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '180px' }}>
+              <img
+                src={getAssetUrl('/flyer_appliances.jpg')}
+                alt="Estoque e Atendimento AQUI TEM"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
+                }}
+              />
+              <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: 'rgba(0,0,0,0.8)', color: '#FFF', fontSize: '0.72rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
+                {t('galStock')}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Product Detail Modal */}
       {selectedProduct && (
         <div className="modal-overlay" onClick={() => setSelectedProduct(null)}>
@@ -932,81 +1198,91 @@ export default function App() {
               <X size={20} />
             </button>
 
-            <div className="modal-product-grid">
-              <img
-                src={selectedProduct.image}
-                alt={selectedProduct.name}
-                className="modal-product-img"
-                referrerPolicy="no-referrer"
-                onError={(e) => {
-                  e.currentTarget.onerror = null;
-                  e.currentTarget.src = selectedProduct.fallbackImage;
-                }}
-              />
-
-              <div>
-                <span className="product-category">{selectedProduct.category}</span>
-                <h2 style={{ fontSize: '1.5rem', marginTop: '4px', marginBottom: '12px' }}>
-                  {selectedProduct.name}
-                </h2>
-
-                <div className="rating-row">
-                  <div className="stars">
-                    <Star size={16} fill="#FFB800" color="#FFB800" />
-                    <strong style={{ marginLeft: '4px' }}>{selectedProduct.rating}</strong>
+            {(() => {
+              const translatedSelected = getTranslatedProduct(selectedProduct, lang);
+              return (
+                <div className="modal-grid">
+                  <div className="modal-img-col">
+                    <img
+                      src={translatedSelected.image}
+                      alt={translatedSelected.name}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = translatedSelected.fallbackImage;
+                      }}
+                    />
                   </div>
-                  <span>({selectedProduct.reviewsCount} avaliações de clientes)</span>
-                </div>
 
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', margin: '16px 0' }}>
-                  {selectedProduct.description}
-                </p>
+                  <div className="modal-details-col">
+                    <span className="product-category">{translatedSelected.category}</span>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginTop: '4px', color: 'var(--text-main)' }}>
+                      {translatedSelected.name}
+                    </h2>
 
-                <h4 style={{ fontSize: '0.95rem', fontWeight: '800' }}>Especificações e Destaques:</h4>
-                <ul className="modal-specs-list">
-                  {selectedProduct.specs.map((spec, idx) => (
-                    <li key={idx}>
-                      <CheckCircle size={15} color="var(--primary-orange)" /> {spec}
-                    </li>
-                  ))}
-                </ul>
+                    <div className="rating-row" style={{ marginTop: '8px' }}>
+                      <div className="stars">
+                        <Star size={16} fill="#FFB800" color="#FFB800" />
+                        <strong style={{ marginLeft: '4px' }}>{translatedSelected.rating}</strong>
+                      </div>
+                      <span>({translatedSelected.reviewsCount} {t('reviews')})</span>
+                    </div>
 
-                <div className="product-price-box" style={{ margin: '20px 0' }}>
-                  {selectedProduct.oldPrice && (
-                    <span className="old-price">De: {formatKz(selectedProduct.oldPrice)}</span>
-                  )}
-                  <div className="current-price" style={{ fontSize: '2rem' }}>
-                    Por: {formatKz(selectedProduct.price)}
+                    <p style={{ marginTop: '12px', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
+                      {translatedSelected.description}
+                    </p>
+
+                    <div style={{ marginTop: '16px' }}>
+                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{t('technicalSpecs')}:</strong>
+                      <ul style={{ paddingLeft: '20px', marginTop: '6px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                        {translatedSelected.specs?.map((spec, i) => (
+                          <li key={i}>{spec}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div className="product-price-box" style={{ marginTop: '20px', padding: '16px', background: 'var(--bg-body)', borderRadius: '12px' }}>
+                      {translatedSelected.oldPrice && (
+                        <span className="old-price" style={{ fontSize: '0.9rem' }}>
+                          {t('before')}: {formatKz(translatedSelected.oldPrice)}
+                        </span>
+                      )}
+                      <div className="current-price" style={{ fontSize: '1.6rem' }}>
+                        {t('now')}: {formatKz(translatedSelected.price)}
+                      </div>
+                      <div className="pix-price" style={{ fontSize: '0.95rem' }}>
+                        ⚡ {formatKz(translatedSelected.price * 0.9)} {t('cashDiscount')}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
+                      <button
+                        className="btn-primary"
+                        style={{ flex: 1, justifyContent: 'center' }}
+                        onClick={() => {
+                          addToCart(selectedProduct);
+                          setSelectedProduct(null);
+                          setIsCartOpen(true);
+                        }}
+                      >
+                        <ShoppingBag size={18} /> {t('buyNow')}
+                      </button>
+
+                      <button
+                        className="btn-whatsapp"
+                        style={{ flex: 1, justifyContent: 'center' }}
+                        onClick={() => {
+                          const msg = encodeURIComponent(`Olá AQUI TEM! Tenho interesse no produto "${translatedSelected.name}" (${formatKz(translatedSelected.price)}). Poderia me passar mais informações?`);
+                          window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
+                        }}
+                      >
+                        <MessageCircle size={18} /> {t('quoteWhatsApp')}
+                      </button>
+                    </div>
                   </div>
-                  <div className="pix-price" style={{ fontSize: '0.95rem' }}>
-                    ⚡ {formatKz(selectedProduct.price * 0.9)} no Pagamento à vista com 10% OFF!
-                  </div>
                 </div>
-
-                <div style={{ display: 'flex', gap: '12px' }}>
-                  <button
-                    className="btn-add-cart"
-                    style={{ flex: 1, padding: '14px' }}
-                    onClick={() => {
-                      addToCart(selectedProduct);
-                      setSelectedProduct(null);
-                    }}
-                  >
-                    <ShoppingBag size={20} /> Comprar Agora
-                  </button>
-                  <button
-                    className="nav-btn"
-                    style={{ padding: '14px 20px', borderColor: '#25D366', color: '#25D366' }}
-                    onClick={() => {
-                      const msg = encodeURIComponent(`Olá AQUI TEM! Tenho interesse no produto: ${selectedProduct.name} (${formatKz(selectedProduct.price)})`);
-                      window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
-                    }}
-                  >
-                    <MessageCircle size={20} /> Orçamento
-                  </button>
-                </div>
-              </div>
-            </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -1018,7 +1294,7 @@ export default function App() {
             <div className="cart-header">
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <ShoppingBag size={22} color="var(--primary-orange)" />
-                <h3 style={{ fontSize: '1.2rem' }}>Meu Carrinho</h3>
+                <h3 style={{ fontSize: '1.2rem' }}>{t('cart')}</h3>
               </div>
               <button onClick={() => setIsCartOpen(false)}>
                 <X size={22} />
@@ -1029,58 +1305,61 @@ export default function App() {
               {cart.length === 0 ? (
                 <div style={{ textAlign: 'center', margin: 'auto' }}>
                   <ShoppingBag size={56} color="var(--text-light)" style={{ marginBottom: '12px' }} />
-                  <h4>Seu carrinho está vazio</h4>
+                  <h4>{t('cartEmpty')}</h4>
                   <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '6px' }}>
-                    Adicione os melhores eletrônicos e eletrodomésticos para finalizar suas compras.
+                    {t('cartEmptySub')}
                   </p>
                 </div>
               ) : (
                 <>
-                  {cart.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <img
-                        src={item.image}
-                        alt={item.name}
-                        className="cart-item-img"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = item.fallbackImage;
-                        }}
-                      />
-                      <div className="cart-item-details">
-                        <div className="cart-item-title">{item.name}</div>
-                        <div className="cart-item-price">
-                          {formatKz(item.price * item.quantity)}
+                  {cart.map(rawItem => {
+                    const item = getTranslatedProduct(rawItem, lang);
+                    return (
+                      <div key={item.id} className="cart-item">
+                        <img
+                          src={item.image}
+                          alt={item.name}
+                          className="cart-item-img"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = item.fallbackImage;
+                          }}
+                        />
+                        <div className="cart-item-details">
+                          <div className="cart-item-title">{item.name}</div>
+                          <div className="cart-item-price">
+                            {formatKz(item.price * item.quantity)}
+                          </div>
+                          <div className="qty-controls">
+                            <button className="qty-btn" onClick={() => updateQuantity(item.id, -1)}>
+                              <Minus size={14} />
+                            </button>
+                            <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{item.quantity}</span>
+                            <button className="qty-btn" onClick={() => updateQuantity(item.id, 1)}>
+                              <Plus size={14} />
+                            </button>
+                          </div>
                         </div>
-                        <div className="qty-controls">
-                          <button className="qty-btn" onClick={() => updateQuantity(item.id, -1)}>
-                            <Minus size={14} />
-                          </button>
-                          <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{item.quantity}</span>
-                          <button className="qty-btn" onClick={() => updateQuantity(item.id, 1)}>
-                            <Plus size={14} />
-                          </button>
-                        </div>
+                        <button onClick={() => removeFromCart(item.id)} style={{ color: 'var(--text-light)' }}>
+                          <Trash2 size={18} />
+                        </button>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} style={{ color: 'var(--text-light)' }}>
-                        <Trash2 size={18} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Cupom de Desconto */}
                   <form onSubmit={handleApplyCoupon} style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
                     <input
                       type="text"
-                      placeholder="Cupom (ex: AQUITEM10)"
+                      placeholder={t('couponPlaceholder')}
                       className="form-input"
                       value={coupon}
                       onChange={e => setCoupon(e.target.value)}
                       style={{ flex: 1 }}
                     />
                     <button type="submit" className="nav-btn" style={{ padding: '8px 16px' }}>
-                      Aplicar
+                      {t('apply')}
                     </button>
                   </form>
                 </>
@@ -1090,18 +1369,18 @@ export default function App() {
             {cart.length > 0 && (
               <div className="cart-footer">
                 <div className="cart-summary-row">
-                  <span>Subtotal:</span>
+                  <span>{t('subtotal')}:</span>
                   <span>{formatKz(subtotal)}</span>
                 </div>
                 {appliedDiscount > 0 && (
                   <div className="cart-summary-row" style={{ color: 'var(--accent-green)' }}>
-                    <span>Desconto Cupom:</span>
+                    <span>{t('couponDiscount')}:</span>
                     <span>-{formatKz(discountAmount)}</span>
                   </div>
                 )}
                 <div className="cart-summary-row">
-                  <span>Entrega:</span>
-                  <span>{shippingFee === 0 ? <strong style={{ color: 'var(--accent-green)' }}>GRÁTIS</strong> : formatKz(shippingFee)}</span>
+                  <span>{t('delivery')}:</span>
+                  <span>{shippingFee === 0 ? <strong style={{ color: 'var(--accent-green)' }}>{t('free')}</strong> : formatKz(shippingFee)}</span>
                 </div>
                 <div className="cart-summary-total">
                   <span>Total:</span>
@@ -1112,7 +1391,7 @@ export default function App() {
                   className="btn-whatsapp-checkout"
                   onClick={() => setIsCheckoutOpen(true)}
                 >
-                  <Send size={20} /> Finalizar Pedido no WhatsApp
+                  <Send size={20} /> {t('checkoutWhatsApp')}
                 </button>
               </div>
             )}
@@ -1133,16 +1412,16 @@ export default function App() {
                 <MessageCircle size={24} />
               </div>
               <div>
-                <h3 style={{ fontSize: '1.3rem' }}>Finalizar via WhatsApp</h3>
+                <h3 style={{ fontSize: '1.3rem' }}>{t('checkoutTitle')}</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  AQUI TEM - Tudo em um só lugar (Angola)
+                  AQUI TEM - {t('siteSlogan')} (Angola)
                 </p>
               </div>
             </div>
 
             <form onSubmit={handleWhatsAppCheckoutSubmit}>
               <div className="form-group">
-                <label className="form-label">Seu Nome Completo *</label>
+                <label className="form-label">{t('fullName')} *</label>
                 <input
                   type="text"
                   required
@@ -1154,7 +1433,7 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Telefone / WhatsApp *</label>
+                <label className="form-label">{t('phoneWhatsApp')} *</label>
                 <input
                   type="tel"
                   required
@@ -1166,11 +1445,11 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Endereço de Entrega *</label>
+                <label className="form-label">{t('deliveryAddress')} *</label>
                 <input
                   type="text"
                   required
-                  placeholder="Bairro, Rua ou Ponto de Referência"
+                  placeholder={lang === 'en' ? 'Neighborhood, Street, Reference Point' : 'Bairro, Rua ou Ponto de Referência'}
                   className="form-input"
                   value={checkoutForm.address}
                   onChange={e => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
@@ -1178,7 +1457,7 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Província / Cidade *</label>
+                <label className="form-label">{t('provinceCity')} *</label>
                 <input
                   type="text"
                   required
@@ -1190,20 +1469,20 @@ export default function App() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Forma de Pagamento Preferida</label>
+                <label className="form-label">{t('paymentMethod')}</label>
                 <select
                   className="form-input"
                   value={checkoutForm.paymentMethod}
                   onChange={e => setCheckoutForm({ ...checkoutForm, paymentMethod: e.target.value })}
                 >
-                  <option value="Pagamento na Entrega (Multicaixa / Cash)">Pagamento na Entrega (Multicaixa / Cash)</option>
-                  <option value="Transferência Bancária / Express Kz">Transferência Bancária / Express Kz</option>
-                  <option value="A Prazo / Cotação WhatsApp">Cotação & Confirmação via WhatsApp</option>
+                  <option value="Pagamento na Entrega (Multicaixa / Cash)">{t('payOnDelivery')}</option>
+                  <option value="Transferência Bancária / Express Kz">{t('bankTransfer')}</option>
+                  <option value="A Prazo / Cotação WhatsApp">{t('quoteWhatsApp')}</option>
                 </select>
               </div>
 
               <button type="submit" className="btn-whatsapp-checkout" style={{ marginTop: '24px' }}>
-                <Send size={20} /> Enviar Pedido para WhatsApp (950752933)
+                <Send size={20} /> {t('sendOrderWhatsApp')} (950752933)
               </button>
             </form>
           </div>
@@ -1218,30 +1497,30 @@ export default function App() {
               <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={70} />
             </a>
             <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
-              A sua loja de confiança para eletrónicos, fones Oraimo, smartwatches, garrafas térmicas, air fryers e eletrodomésticos com as melhores condições e entregas em Angola.
+              {t('footerDesc')}
             </p>
           </div>
 
           <div>
-            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>Categorias</h4>
+            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>{t('categories')}</h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem' }}>
               {CATEGORIES.filter(c => c !== 'Todos').map(cat => (
                 <li key={cat}>
-                  <a href="#catalogo" onClick={() => setSelectedCategory(cat)}>{cat}</a>
+                  <a href="#catalogo" onClick={() => setSelectedCategory(cat)}>{getTranslatedCategory(cat, lang)}</a>
                 </li>
               ))}
             </ul>
           </div>
 
           <div>
-            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>Atendimento & Links</h4>
+            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>{t('customerService')}</h4>
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem' }}>
               <li>
                 <button
                   onClick={() => setIsSocialProofOpen(true)}
                   style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', textAlign: 'left' }}
                 >
-                  ⭐ Prova Social (Avaliações)
+                  ⭐ {t('socialProof')} ({t('reviews')})
                 </button>
               </li>
               <li>
@@ -1249,29 +1528,29 @@ export default function App() {
                   onClick={() => setIsVideosOpen(true)}
                   style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', textAlign: 'left' }}
                 >
-                  📹 Vídeos & Unboxings (Demonstrações)
+                  📹 {t('videos')} & Unboxings
                 </button>
               </li>
               <li>WhatsApp: 950752933</li>
-              <li>Atendimento Diário</li>
-              <li>Luanda & Províncias de Angola</li>
+              <li>{t('dailySupport')}</li>
+              <li>Luanda & {lang === 'en' ? 'Angola Provinces' : 'Províncias de Angola'}</li>
             </ul>
           </div>
 
           <div>
-            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>Pagamento Seguro</h4>
+            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>{t('paymentMethods')}</h4>
             <p style={{ fontSize: '0.85rem', marginBottom: '12px' }}>
-              Multicaixa Express, Transferência Bancária Kz e Pagamento na Entrega.
+              {t('paymentMethodsText')}
             </p>
           </div>
         </div>
 
         <div className="footer-bottom">
           <div>
-            © {new Date().getFullYear()} AQUI TEM - Tudo em um só lugar. Todos os direitos reservados.
+            © {new Date().getFullYear()} AQUI TEM - {t('siteSlogan')}. {t('allRightsReserved')}
           </div>
           <div>
-            Luanda, Angola
+            {t('luandaAngola')}
           </div>
         </div>
       </footer>
