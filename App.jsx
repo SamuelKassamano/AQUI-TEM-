@@ -41,9 +41,31 @@ import VideosModal from './src/components/VideosModal';
 import { useLanguage } from './src/context/LanguageContext';
 import LanguageSelector from './src/components/LanguageSelector';
 import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial } from './src/utils/productTranslations';
+import { createStructuredData } from './src/seo/structuredData';
 
 export default function App() {
   const { lang, t } = useLanguage();
+const structuredData = createStructuredData(PRODUCTS);
+useEffect(() => {
+  const scriptId = 'aqui-tem-structured-data';
+  let script = document.getElementById(scriptId);
+
+  if (!script) {
+    script = document.createElement('script');
+    script.id = scriptId;
+    script.type = 'application/ld+json';
+    document.head.appendChild(script);
+  }
+
+  script.textContent = JSON.stringify(structuredData);
+
+  return () => {
+    const existingScript = document.getElementById(scriptId);
+    if (existingScript) {
+      existingScript.remove();
+    }
+  };
+}, [structuredData]);
 
   // State management
   const [selectedCategory, setSelectedCategory] = useState('Todos');
