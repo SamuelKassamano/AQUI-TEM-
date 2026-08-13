@@ -1,0 +1,6 @@
+{
+  "name": "Aqui Tem - Loja Online",
+  "description": "E-commerce de eletrônicos e eletrodomésticos em Angola com atendimento e cotações via WhatsApp",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
