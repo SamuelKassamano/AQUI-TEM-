@@ -37,8 +37,8 @@ export const translations = {
     // Hero Section
     heroBadge: "OFICIAL AQUI TEM ANGOLA",
     heroTag: "OFICIAL AQUI TEM ANGOLA",
-    heroTitle: "Grande Promoção Na Aqui Tem",
-    heroSubtitle: "Visite nossas lojas ou compre online! Encontre fones Oraimo, smartwatches, air fryers, placas de indução e eletrónicos com entrega rápida em Luanda e todo Angola.",
+    heroTitle: "Loja Online de Eletrónicos e Eletrodomésticos em Angola",
+    heroSubtitle: "Encontre eletrónicos, acessórios, smartphones, fones Oraimo, smartwatches, air fryers e muito mais, com entrega em Luanda e outras regiões de Angola.",
     buyNow: "Comprar Agora",
     viewProducts: "Ver Produtos",
     chatWhatsapp: "Falar no WhatsApp",
@@ -238,8 +238,8 @@ export const translations = {
     // Hero Section
     heroBadge: "OFFICIAL AQUI TEM ANGOLA",
     heroTag: "OFFICIAL AQUI TEM ANGOLA",
-    heroTitle: "Big Promotion At Aqui Tem",
-    heroSubtitle: "Visit our stores or shop online! Find Oraimo earphones, smartwatches, air fryers, induction cookers and electronics with fast delivery in Luanda and all Angola.",
+    heroTitle: "Online Electronics & Home Appliances Store in Angola",
+    heroSubtitle: "Find electronics, accessories, smartphones, Oraimo earphones, smartwatches, air fryers and much more, with delivery in Luanda and other regions of Angola.",
     buyNow: "Shop Now",
     viewProducts: "View Products",
     chatWhatsapp: "Chat on WhatsApp",
