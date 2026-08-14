@@ -1,16 +1,58 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
   <url>
     <loc>https://aqui-tem29.vercel.app/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-
   <url>
     <loc>https://aqui-tem29.vercel.app/produto/boom-pop-pro-headphone-sem-fio-oraimo-premium</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/watch-nova-2-smartwatch-inteligente-oraimo</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/nutrifry-s1-ultra-6l-fritadeira-air-fryer-oraimo</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/flexicooker-placa-fogao-de-inducao-eletrico-oraimo</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/thermogo-vacuum-copo-termico-oraimo-premium</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/magpower-15-powerbank-magnetico-15w-oraimo</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/oraimo-opensnap-fones-de-ouvido-sem-fio-tws</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/smart-tv-55</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/geladeira-frost-free-inverse-450l-inox</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://aqui-tem29.vercel.app/produto/carregador-rapido-22-5w-oraimo-com-cabo-usb-c</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>
