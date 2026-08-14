@@ -1,4 +1,5 @@
 import { getAssetUrl } from '../src/utils/assets';
+import { createSlug } from '../src/utils/slug';
 
 // Helper function to create clean SVG data URIs for embedded HTML image fallback
 const createSvgDataUri = (svgString) => {
