@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://aqui-tem29.vercel.app/sitemap.xml
