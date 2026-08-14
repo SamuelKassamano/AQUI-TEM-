@@ -41,31 +41,14 @@ import VideosModal from './src/components/VideosModal';
 import { useLanguage } from './src/context/LanguageContext';
 import LanguageSelector from './src/components/LanguageSelector';
 import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial } from './src/utils/productTranslations';
-import { createStructuredData } from './src/seo/structuredData';
+import {
+  createProductStructuredData,
+  createBreadcrumbStructuredData
+} from './src/seo/structuredData';
 
 export default function App() {
   const { lang, t } = useLanguage();
-const structuredData = createStructuredData(PRODUCTS);
-useEffect(() => {
-  const scriptId = 'aqui-tem-structured-data';
-  let script = document.getElementById(scriptId);
 
-  if (!script) {
-    script = document.createElement('script');
-    script.id = scriptId;
-    script.type = 'application/ld+json';
-    document.head.appendChild(script);
-  }
-
-  script.textContent = JSON.stringify(structuredData);
-
-  return () => {
-    const existingScript = document.getElementById(scriptId);
-    if (existingScript) {
-      existingScript.remove();
-    }
-  };
-}, [structuredData]);
 
   // State management
   const [selectedCategory, setSelectedCategory] = useState('Todos');
@@ -1216,6 +1199,29 @@ useEffect(() => {
       {selectedProduct && (
         <div className="modal-overlay" onClick={() => setSelectedProduct(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      ...createProductStructuredData(selectedProduct),
+      '@id': `https://aqui-tem29.vercel.app/produto/${selectedProduct.name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')}#product`
+    })
+  }}
+/>
+
+<script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify(
+      createBreadcrumbStructuredData(selectedProduct)
+    )
+  }}
+/>
             <button className="btn-close-modal" onClick={() => setSelectedProduct(null)}>
               <X size={20} />
             </button>

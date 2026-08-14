@@ -1,46 +1,87 @@
-export function createStructuredData(products = []) {
-  const siteUrl = 'https://aqui-tem29.vercel.app/';
+export function createProductStructuredData(product) {
+  const siteUrl = 'https://aqui-tem29.vercel.app';
+
+  const slug = product.name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  const productUrl = `${siteUrl}/produto/${slug}`;
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [
-      {
+    '@type': 'Product',
+    '@id': `${productUrl}#product`,
+    name: product.name,
+    description: product.description,
+    image: [
+      product.image
+    ],
+    sku: String(product.id),
+    brand: {
+      '@type': 'Brand',
+      name: 'Oraimo'
+    },
+    offers: {
+      '@type': 'Offer',
+      url: productUrl,
+      priceCurrency: 'AOA',
+      price: String(product.price),
+      availability: 'https://schema.org/InStock',
+      seller: {
         '@type': 'Organization',
-        '@id': `${siteUrl}#organization`,
         name: 'AQUI TEM',
-        url: siteUrl,
-        logo: `${siteUrl}logo.jpg`,
-        description:
-          'Loja online de eletrônicos, tecnologia, gadgets, acessórios e eletrodomésticos em Angola.',
-        telephone: '+244950752933',
-        areaServed: {
-          '@type': 'Country',
-          name: 'Angola'
+        url: siteUrl
+      }
+    },
+    aggregateRating: product.rating
+      ? {
+          '@type': 'AggregateRating',
+          ratingValue: String(product.rating),
+          reviewCount: String(product.reviewsCount || 0)
         }
-      },
+      : undefined
+  };
+}
+
+export function createBreadcrumbStructuredData(product) {
+  const siteUrl = 'https://aqui-tem29.vercel.app';
+
+  const slug = product.name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
       {
-        '@type': 'WebSite',
-        '@id': `${siteUrl}#website`,
-        url: siteUrl,
+        '@type': 'ListItem',
+        position: 1,
         name: 'AQUI TEM',
-        description:
-          'Eletrônicos, tecnologia, gadgets, acessórios e eletrodomésticos em Angola.',
-        publisher: {
-          '@id': `${siteUrl}#organization`
-        },
-        inLanguage: 'pt-AO'
+        item: siteUrl
       },
       {
-        '@type': 'ItemList',
-        '@id': `${siteUrl}#product-list`,
-        name: 'Produtos AQUI TEM',
-        numberOfItems: products.length,
-        itemListElement: products.slice(0, 50).map((product, index) => ({
-          '@type': 'ListItem',
-          position: index + 1,
-          name: product.name,
-          url: siteUrl
-        }))
+        '@type': 'ListItem',
+        position: 2,
+        name: product.category,
+        item: `${siteUrl}/categoria/${product.category
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '')}`
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: product.name,
+        item: `${siteUrl}/produto/${slug}`
       }
     ]
   };
