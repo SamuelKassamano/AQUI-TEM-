@@ -16,29 +16,41 @@ export default function ProductPage() {
 
     const title = `${product.name} | AQUI TEM Angola`;
     const description = `${product.description} Compre na AQUI TEM com entrega em Luanda e províncias de Angola. WhatsApp: +244 950 752 933.`;
+    const productUrl = `https://aqui-tem29.vercel.app/produto/${slug}`;
 
     document.title = title;
 
-    let metaDescription = document.querySelector(
-      'meta[name="description"]'
-    );
-
+    let metaDescription = document.querySelector('meta[name="description"]');
     if (!metaDescription) {
       metaDescription = document.createElement('meta');
       metaDescription.setAttribute('name', 'description');
       document.head.appendChild(metaDescription);
     }
-
     metaDescription.setAttribute('content', description);
 
-    const canonical = document.createElement('link');
-    canonical.rel = 'canonical';
-    canonical.href = `https://aqui-tem29.vercel.app/produto/${slug}`;
-    document.head.appendChild(canonical);
+    let ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', title);
+
+    let ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute('content', description);
+
+    let ogUrl = document.querySelector('meta[property="og:url"]');
+    if (ogUrl) ogUrl.setAttribute('content', productUrl);
+
+    let ogImage = document.querySelector('meta[property="og:image"]');
+    if (ogImage && product.image) ogImage.setAttribute('content', product.image);
+
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.rel = 'canonical';
+      document.head.appendChild(canonical);
+    }
+    canonical.setAttribute('href', productUrl);
 
     return () => {
-      if (canonical.parentNode) {
-        canonical.parentNode.removeChild(canonical);
+      if (canonical) {
+        canonical.setAttribute('href', 'https://aqui-tem29.vercel.app/');
       }
     };
   }, [product, slug]);

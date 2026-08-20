@@ -7,6 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const siteUrl = 'https://aqui-tem29.vercel.app';
+const currentDate = new Date().toISOString().split('T')[0];
 
 const productsPath = path.join(__dirname, '..', 'data', 'products.js');
 const productsFile = fs.readFileSync(productsPath, 'utf8');
@@ -20,11 +21,13 @@ const uniqueProductNames = [...new Set(productNames)];
 const urls = [
   {
     loc: `${siteUrl}/`,
-    changefreq: 'weekly',
+    lastmod: currentDate,
+    changefreq: 'daily',
     priority: '1.0'
   },
   ...uniqueProductNames.map(name => ({
     loc: `${siteUrl}/produto/${createSlug(name)}`,
+    lastmod: currentDate,
     changefreq: 'weekly',
     priority: '0.8'
   }))
@@ -34,6 +37,7 @@ const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${urls.map(url => `  <url>
     <loc>${url.loc}</loc>
+    <lastmod>${url.lastmod}</lastmod>
     <changefreq>${url.changefreq}</changefreq>
     <priority>${url.priority}</priority>
   </url>`).join('\n')}
@@ -44,5 +48,5 @@ const outputPath = path.join(__dirname, '..', 'public', 'sitemap.xml');
 
 fs.writeFileSync(outputPath, xml, 'utf8');
 
-console.log(`Sitemap gerado com ${urls.length} URLs.`);
+console.log(`Sitemap gerado com ${urls.length} URLs em ${outputPath}.`);
 console.log(`Produtos encontrados: ${uniqueProductNames.length}`);

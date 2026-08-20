@@ -1,6 +1,9 @@
+import { createSlug } from '../utils/slug.js';
+
 export function createProductSEO(product) {
   const siteName = "AQUI TEM";
   const siteUrl = "https://aqui-tem29.vercel.app";
+  const slug = createSlug(product.name);
 
   return {
     title: `${product.name} | ${siteName} Angola`,
@@ -15,12 +18,13 @@ export function createProductSEO(product) {
       "Loja de Eletrônicos Angola",
       "Tecnologia Angola",
       "AQUI TEM",
+      "AQUI-TEM",
       "Gadgets Angola",
       "Acessórios para Telemóvel",
       "Eletrônicos"
     ].join(", "),
 
-    canonical: siteUrl,
+    canonical: `${siteUrl}/produto/${slug}`,
 
     image: product.image
   };

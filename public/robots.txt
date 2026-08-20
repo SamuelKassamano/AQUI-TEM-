@@ -1,4 +1,13 @@
 User-agent: *
 Allow: /
+Allow: /assets/
+Allow: /logo.jpg
+Allow: /sitemap.xml
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
 
 Sitemap: https://aqui-tem29.vercel.app/sitemap.xml
