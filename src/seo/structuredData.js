@@ -86,3 +86,27 @@ export function createBreadcrumbStructuredData(product) {
     ]
   };
 }
+
+export function createVideoStructuredData(video) {
+  const siteUrl = 'https://aqui-tem29.vercel.app';
+  const videoUrl = video.fallbackUrl || `${siteUrl}/${video.videoUrl}`;
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'VideoObject',
+    name: video.title,
+    description: video.description,
+    thumbnailUrl: `${siteUrl}/logo.jpg`,
+    uploadDate: '2026-01-01T08:00:00+01:00',
+    contentUrl: videoUrl,
+    embedUrl: siteUrl,
+    publisher: {
+      '@type': 'Organization',
+      name: 'AQUI TEM',
+      logo: {
+        '@type': 'ImageObject',
+        url: `${siteUrl}/logo.jpg`
+      }
+    }
+  };
+}
