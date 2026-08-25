@@ -41,6 +41,7 @@ import SocialProofModal from './src/components/SocialProofModal';
 import VideosModal from './src/components/VideosModal';
 import CRMDashboardModal from './src/components/CRMDashboardModal';
 import { useLanguage } from './src/context/LanguageContext';
+import { initAllPixels, trackProductView, trackWhatsAppLead } from './src/utils/pixelRetargeting';
 import { useCRM } from './src/context/CRMContext';
 import LanguageSelector from './src/components/LanguageSelector';
 import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial } from './src/utils/productTranslations';
@@ -52,6 +53,11 @@ import {
 export default function App() {
   const { lang, t } = useLanguage();
   const { openCRM, captureLead } = useCRM();
+
+  // Inicializa os pixels de remarketing
+  useEffect(() => {
+    initAllPixels();
+  }, []);
 
 
   // State management
@@ -787,6 +793,10 @@ export default function App() {
                   <button
                     onClick={() => {
                       const msg = encodeURIComponent(`Olá AQUI TEM! Vi o vídeo do produto "${translatedVid.title}" e quero pedir.`);
+                      trackWhatsAppLead(
+  translatedSelected.name,
+  translatedSelected.price
+);
                       window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
                     }}
                     className="nav-btn nav-btn-orange"
@@ -954,7 +964,10 @@ export default function App() {
                     <button
                       className="btn-view-details"
                       title={t('viewDetails')}
-                      onClick={() => setSelectedProduct(product)}
+                      onClick={() => {
+  trackProductView(product.name, product.price);
+  setSelectedProduct(product);
+}}
                     >
                       <Eye size={18} />
                     </button>
