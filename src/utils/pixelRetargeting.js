@@ -5,14 +5,27 @@
 
 // ---- PIXEL IDs (configurar via CRM Dashboard) ----
 const STORAGE_PIXELS = 'aqui_tem_pixels';
+const DEFAULT_PIXELS = {
+  fb: '1985385255640998',
+  tt: '',
+  tw: '',
+  snap: ''
+};
+
 
 export function getPixelConfig() {
   try {
     const raw = localStorage.getItem(STORAGE_PIXELS);
-    if (!raw) return { fb: '', tt: '', tw: '', snap: '' };
-    return JSON.parse(raw);
+    if (!raw) return DEFAULT_PIXELS;
+
+    const saved = JSON.parse(raw);
+
+    return {
+      ...DEFAULT_PIXELS,
+      ...saved
+    };
   } catch (e) {
-    return { fb: '', tt: '', tw: '', snap: '' };
+    return DEFAULT_PIXELS;
   }
 }
 
