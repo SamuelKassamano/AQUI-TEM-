@@ -29,7 +29,8 @@ import {
   Video,
   ThumbsUp,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from 'lucide-react';
 import { PRODUCTS, CATEGORIES, ADVANTAGES, HERO_BANNER_FALLBACK, HERO_COVER_IMAGES } from './data/products';
 import { PRODUCT_VIDEOS } from './src/data/videos';
@@ -38,7 +39,9 @@ import { getAssetUrl } from './src/utils/assets';
 import OriginalLogoImage from './src/components/OriginalLogoImage';
 import SocialProofModal from './src/components/SocialProofModal';
 import VideosModal from './src/components/VideosModal';
+import CRMDashboardModal from './src/components/CRMDashboardModal';
 import { useLanguage } from './src/context/LanguageContext';
+import { useCRM } from './src/context/CRMContext';
 import LanguageSelector from './src/components/LanguageSelector';
 import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial } from './src/utils/productTranslations';
 import {
@@ -48,6 +51,7 @@ import {
 
 export default function App() {
   const { lang, t } = useLanguage();
+  const { openCRM, captureLead } = useCRM();
 
 
   // State management
@@ -228,6 +232,17 @@ export default function App() {
     const phoneNumber = '244950752933';
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
+    // Auto capture Lead in CRM
+    captureLead({
+      name: checkoutForm.name,
+      phone: checkoutForm.phone || '950752933',
+      city: checkoutForm.city || 'Luanda',
+      address: checkoutForm.address || 'Angola',
+      productName: cart.map(i => i.name).join(', ') || 'Pedido de Carrinho',
+      totalValue: finalTotal,
+      notes: `Forma de Pagamento: ${checkoutForm.paymentMethod}`
+    });
+
     window.open(whatsappUrl, '_blank');
     setIsCheckoutOpen(false);
     setIsCartOpen(false);
@@ -322,6 +337,23 @@ export default function App() {
           {/* Navigation Actions */}
           <div className="nav-actions">
             <LanguageSelector />
+
+            <button
+              className="nav-btn"
+              onClick={openCRM}
+              title="Painel CRM & Gestão de Leads"
+              style={{
+                background: 'rgba(255, 101, 0, 0.12)',
+                color: 'var(--primary-orange)',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <BarChart3 size={18} />
+              <span>CRM</span>
+            </button>
 
             <button className="nav-btn" onClick={toggleTheme} title="Alternar Tema">
               {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
@@ -1594,6 +1626,9 @@ export default function App() {
         isOpen={isVideosOpen}
         onClose={() => setIsVideosOpen(false)}
       />
+
+      {/* CRM Dashboard & Lead Automation Modal */}
+      <CRMDashboardModal />
     </div>
   );
 }
