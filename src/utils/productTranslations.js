@@ -192,83 +192,83 @@ export function getTranslatedTestimonial(testimonial, lang) {
   const enMap = {
     1: {
       date: '2 days ago',
-      comment: 'I bought my Oraimo Watch Nova 2 smartwatch from Aqui Tem and was impressed! Delivered to Kilamba on the same day and paid via POS upon delivery. 100% genuine watch!'
+      comment: 'Incredible sound! The noise cancellation and comfort of the Boom Pop Pro ear cushions are next level. I use them at the office and while traveling every day.'
     },
     2: {
-      date: '4 days ago',
-      comment: 'The Oraimo Air Fryer changed my kitchen! Very easy to use and saves oil. Excellent customer service on WhatsApp 950752933, answered all my questions.'
+      date: '5 days ago',
+      comment: 'Super punchy bass and battery that lasts the whole week without charging. 100% genuine Oraimo product delivered in hand!'
     },
     3: {
-      date: '1 week ago',
-      comment: 'I live in Benguela and the shipment arrived in 24h via Macon carrier. The headphones have high audio quality and the battery lasts a long time. Highly recommend Aqui Tem!'
+      date: '2 days ago',
+      comment: 'Bought my Oraimo Watch Nova 2 at Aqui Tem and was impressed! Delivered to Kilamba on the same day and paid by POS upon delivery.'
     },
     4: {
-      date: '1 week ago',
-      comment: 'Wonderful induction cooker, fast to cook and low power consumption. The Aqui Tem team was super attentive and sent a video test before shipping to Huambo.'
+      date: '5 days ago',
+      comment: 'Super bright round screen and receives all WhatsApp notifications and calls clearly. Battery lasts over a week!'
     },
     5: {
-      date: '2 weeks ago',
-      comment: 'Super powerful powerbank, holds my iPhone wireless charging at work. Arrived well packaged here in Lubango. Serious and reliable store!'
+      date: '4 days ago',
+      comment: 'The Oraimo Air Fryer changed my kitchen! Very easy to use, great viewing window, and saves oil. 10/10 service!'
     },
     6: {
-      date: '2 weeks ago',
-      comment: 'Top line thermal bottle and tumbler! Keeps water ice cold all day long in Luanda heat. Fast delivery in Zango.'
+      date: '1 week ago',
+      comment: 'Fits a whole chicken easily in the 6 liters! Roasts super fast and the window lets you check without opening the basket.'
     },
     7: {
-      date: '3 weeks ago',
-      comment: 'Very comfortable earbuds for walks and workouts. Crystal clear audio. Arrived perfectly in Cabinda. 10/10 service!'
+      date: '1 week ago',
+      comment: 'Wonderful induction cooker, fast to cook and low power consumption. The Aqui Tem team sent a test video before shipping to Huambo.'
     },
     8: {
-      date: '3 days ago',
-      comment: 'Amazing sound quality! I use it every day at my office in Maianga for calls and music. Isolates noise really well and came sealed in the original Oraimo box.'
+      date: '6 days ago',
+      comment: 'No more worrying about running out of gas at home! Boils water in seconds and the touch panel is very easy to clean.'
     },
     9: {
-      date: '5 days ago',
-      comment: 'Super bright screen and receives all WhatsApp and call notifications clearly. The battery lasts over a week for me!'
+      date: '3 days ago',
+      comment: 'Keeps water ice cold all day even in Luanda heat! Super sleek matte finish and never sweats on the outside.'
     },
     10: {
       date: '1 week ago',
-      comment: 'Fits a whole chicken easily in the 6 liters! Roasts super fast and the viewing window lets you check without opening the basket. Best home purchase.'
+      comment: 'I take hot coffee to work in the morning and by afternoon it is still hot. Excellent Oraimo quality!'
     },
     11: {
-      date: '6 days ago',
-      comment: 'No more worrying about running out of gas at home! Boils water in seconds and the touch panel is super easy to clean.'
+      date: '1 week ago',
+      comment: 'Super powerful powerbank, holds my smartphone charging wirelessly with a strong magnet. Arrived well packaged in Lubango!'
     },
     12: {
-      date: '4 days ago',
-      comment: 'Beautiful matte finish, no exterior condensation, and keeps coffee hot all morning. Super fast delivery in Patriota!'
+      date: '5 days ago',
+      comment: 'Very slim and sleek, fits in the pocket with the phone. 15W magnetic charging is super fast and safe.'
     },
     13: {
       date: '1 week ago',
-      comment: 'Very slim and sleek, fits in my pocket with my phone. The 15W magnetic charging is super fast and stays cool.'
+      comment: 'Very comfortable earbuds for walks and workouts. Crystal clear audio and never fall off the ear. Arrived perfectly in Cabinda!'
     },
     14: {
-      date: '5 days ago',
-      comment: 'Modern design and super compact case. Bluetooth connection is instant as soon as I open the case. 100% recommend!'
+      date: '4 days ago',
+      comment: 'Modern design and super compact case. Bluetooth connection is instant as soon as I open the box. 100% recommend!'
     },
     15: {
-      date: '1 week ago',
-      comment: 'Impressive 4K picture for watching football and Netflix with the family. Delivered in Talatona with great care and tested on the spot!'
+      date: '3 days ago',
+      comment: 'Stunning 4K picture for watching football and Netflix with the family! Delivered and tested right in my living room in Talatona.'
     },
     16: {
-      date: '2 weeks ago',
-      comment: 'Voice control works great and the sound fills the entire living room. Excellent service from the Aqui Tem team.'
+      date: '1 week ago',
+      comment: 'Super vivid colors, clean sound, and voice control makes everything so easy. Great service from the Aqui Tem team!'
     },
     17: {
-      date: '2 weeks ago',
-      comment: 'Very spacious, ultra-quiet, and the stainless steel finish transformed our kitchen. Impeccable and fast delivery in Luanda.'
+      date: '5 days ago',
+      comment: 'Super spacious, quiet, and energy-saving refrigerator. The stainless steel finish looks perfect in the kitchen.'
     },
     18: {
-      date: '3 weeks ago',
-      comment: 'Freezes super fast and keeps food fresh much longer. 10/10 for the delivery professionalism!'
+      date: '1 week ago',
+      comment: 'Cools very fast and the touch panel on the door is super practical. Careful delivery right to our apartment in Nova Vida!'
     },
     19: {
-      date: '3 days ago',
-      comment: 'Charges my phone from 0 to 80% in no time! The included cable is thick and very durable. Genuine Oraimo.'
+      date: '2 days ago',
+      comment: 'Charges my phone from 0 to 80% in no time without heating up! The included cable is thick and durable.'
     },
     20: {
-      date: '1 week ago',
-      comment: 'Protects the battery and does not heat up at all during fast charging. Best charger I have ever bought!'
+      date: '6 days ago',
+      comment: 'Genuine Oraimo charger with power surge protection. Totally worth it!'
     }
   };
 

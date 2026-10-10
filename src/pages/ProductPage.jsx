@@ -108,7 +108,7 @@ export default function ProductPage() {
           }}
         >
           <div className="modal-grid">
-            <div className="modal-img-col">
+            <div className={`modal-img-col${product.whiteBg ? ' white-bg' : ''}${product.orangeBg ? ' orange-bg' : ''}`}>
               <img
                 src={product.image}
                 alt={product.name}

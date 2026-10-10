@@ -48,9 +48,9 @@ export default function Logo({ size = 'medium', className = '' }) {
 
       <div style={{ display: 'flex', flexDirection: 'column' }}>
         <span style={{
-          fontFamily: "'Outfit', sans-serif",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
           fontSize: fontSize,
-          fontWeight: 900,
+          fontWeight: 800,
           lineHeight: 1,
           letterSpacing: '-0.5px',
           color: '#1E5C9E'
@@ -58,7 +58,7 @@ export default function Logo({ size = 'medium', className = '' }) {
           AQUI<span style={{ color: '#F37021' }}>TEM</span>
         </span>
         <span style={{
-          fontFamily: "'Plus Jakarta Sans', sans-serif",
+          fontFamily: "'Manrope', sans-serif",
           fontSize: sloganSize,
           fontWeight: 800,
           letterSpacing: '1px',

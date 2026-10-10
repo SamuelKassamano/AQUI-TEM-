@@ -872,7 +872,7 @@ export default function App() {
                 )}
                 
                 <div
-                  className="product-img-wrapper"
+                  className={`product-img-wrapper${product.whiteBg ? ' white-bg' : ''}${product.orangeBg ? ' orange-bg' : ''}`}
                   onClick={() => {
                     trackProductView(product.name, product.price);
                     setSelectedProduct(product);
@@ -1090,7 +1090,7 @@ export default function App() {
               return (
                 <div>
                   <div className="modal-grid">
-                    <div className="modal-img-col">
+                    <div className={`modal-img-col${translatedSelected.whiteBg ? ' white-bg' : ''}${translatedSelected.orangeBg ? ' orange-bg' : ''}`}>
                       <img
                         src={translatedSelected.image}
                         alt={translatedSelected.name}
@@ -1278,7 +1278,7 @@ export default function App() {
                         <img
                           src={item.image}
                           alt={item.name}
-                          className="cart-item-img"
+                          className={`cart-item-img${item.whiteBg ? ' white-bg' : ''}${item.orangeBg ? ' orange-bg' : ''}`}
                           referrerPolicy="no-referrer"
                           onError={(e) => {
                             e.currentTarget.onerror = null;

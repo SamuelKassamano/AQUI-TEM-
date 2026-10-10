@@ -100,9 +100,9 @@ for (const product of products) {
   const staticRootContent = `
     <div id="root">
       <header style="padding: 20px; text-align: center; border-bottom: 1px solid #eee; background-color: #ffffff;">
-        <a href="/" style="font-size: 26px; font-weight: 800; color: #FF6500; text-decoration: none; font-family: 'Space Grotesk', sans-serif;">AQUI TEM</a>
+        <a href="/" style="font-size: 26px; font-weight: 800; color: #FF6500; text-decoration: none; font-family: 'Plus Jakarta Sans', sans-serif;">AQUI TEM</a>
       </header>
-      <main style="max-width: 1100px; margin: 40px auto; padding: 0 20px; font-family: 'Inter', sans-serif;">
+      <main style="max-width: 1100px; margin: 40px auto; padding: 0 20px; font-family: 'Manrope', sans-serif;">
         <nav style="margin-bottom: 24px; color: #64748B; font-size: 14px;">
           <a href="/" style="color: #FF6500; text-decoration: none; font-weight: 600;">AQUI TEM</a> &gt; <span>${product.category}</span> &gt; <strong>${product.name}</strong>
         </nav>
@@ -112,7 +112,7 @@ for (const product of products) {
           </div>
           <div style="flex: 1; min-width: 300px;">
             <span style="color: #FF6500; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">${product.category}</span>
-            <h1 style="font-size: 32px; font-weight: 700; margin: 12px 0; color: #0F172A; font-family: 'Space Grotesk', sans-serif; line-height: 1.2;">${product.name}</h1>
+            <h1 style="font-size: 32px; font-weight: 700; margin: 12px 0; color: #0F172A; font-family: 'Plus Jakarta Sans', sans-serif; line-height: 1.2;">${product.name}</h1>
             <p style="font-size: 14px; color: #64748B; margin-bottom: 16px;">⭐ ${product.rating} (${product.reviewsCount} avaliações)</p>
             <p style="font-size: 28px; font-weight: 800; color: #FF6500; margin: 16px 0;">${Number(product.price).toLocaleString('pt-AO')} Kz</p>
             <p style="color: #334155; line-height: 1.7; margin-bottom: 30px; font-size: 16px;">${product.description}</p>
