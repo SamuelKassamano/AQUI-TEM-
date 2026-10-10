@@ -794,9 +794,9 @@ export default function App() {
                     onClick={() => {
                       const msg = encodeURIComponent(`Olá AQUI TEM! Vi o vídeo do produto "${translatedVid.title}" e quero pedir.`);
                       trackWhatsAppLead(
-  translatedSelected.name,
-  translatedSelected.price
-);
+                        translatedVid.title,
+                        0
+                      );
                       window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
                     }}
                     className="nav-btn nav-btn-orange"
