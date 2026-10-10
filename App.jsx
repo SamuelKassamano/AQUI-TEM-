@@ -316,7 +316,7 @@ export default function App() {
             </button>
 
             <a href="#" className="logo-brand">
-              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={32} className="header-logo-img" />
+              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={40} className="header-logo-img" />
             </a>
           </div>
 
@@ -952,52 +952,49 @@ export default function App() {
       >
         <div className="about-main-grid">
           <div style={{ minWidth: 0 }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(255, 101, 0, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '8px' }}>
-              <Store size={16} /> {t('aboutBadge')}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(255, 101, 0, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '6px' }}>
+              <Store size={15} /> {t('aboutBadge')}
             </div>
-            <h2 className="section-card-title" style={{ marginBottom: '10px', lineHeight: '1.2' }}>
+            <h2 className="section-card-title" style={{ marginBottom: '8px', lineHeight: '1.2' }}>
               {t('aboutTitle')} <span style={{ color: 'var(--primary-orange)' }}>AQUI TEM</span> Angola
             </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '10px' }}>
-              {t('aboutDesc1')}
-            </p>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '14px' }}>
-              {t('aboutDesc2')}
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', lineHeight: '1.5', marginBottom: '12px' }}>
+              {t('aboutDesc1')} {t('aboutDesc2')}
             </p>
 
             <div className="about-features-grid">
               <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                <div style={{ color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <MapPin size={14} /> {t('aboutLocTitle')}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                   {t('aboutLocDesc')}
                 </div>
               </div>
 
               <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                <div style={{ color: '#10B981', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ color: '#10B981', fontWeight: 800, fontSize: '0.8rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <ShieldCheck size={14} /> {t('aboutOrigTitle')}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                   {t('aboutOrigDesc')}
                 </div>
               </div>
 
               <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                <div style={{ color: '#1E5C9E', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ color: '#1E5C9E', fontWeight: 800, fontSize: '0.8rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <Truck size={14} /> {t('aboutProvTitle')}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                   {t('aboutProvDesc')}
                 </div>
               </div>
 
               <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-                <div style={{ color: '#25D366', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <div style={{ color: '#25D366', fontWeight: 800, fontSize: '0.8rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <MessageCircle size={14} /> {t('aboutSupTitle')}
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
                   {t('aboutSupDesc')}
                 </div>
               </div>
@@ -1007,23 +1004,23 @@ export default function App() {
               <button
                 onClick={() => setActiveInfoModal('stores')}
                 className="nav-btn nav-btn-orange"
-                style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+                style={{ padding: '8px 16px', fontSize: '0.82rem' }}
               >
-                <Store size={16} /> {t('storesAndSupport')}
+                <Store size={15} /> {t('storesAndSupport')}
               </button>
               <button
                 onClick={() => setActiveInfoModal('warranty')}
                 className="nav-btn"
-                style={{ padding: '10px 18px', fontSize: '0.85rem' }}
+                style={{ padding: '8px 16px', fontSize: '0.82rem' }}
               >
-                <ShieldCheck size={16} /> {t('warrantyAndExchanges')}
+                <ShieldCheck size={15} /> {t('warrantyAndExchanges')}
               </button>
             </div>
           </div>
 
           {/* Showroom & Operations Gallery Grid */}
           <div className="about-gallery-grid">
-            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '180px' }}>
+            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '160px' }}>
               <img
                 src="https://images.unsplash.com/photo-1556742049-0a670f4a4591?auto=format&fit=crop&w=800&q=80"
                 alt="Showroom Central Luanda"
@@ -1033,12 +1030,12 @@ export default function App() {
                   e.currentTarget.src = getAssetUrl('/hero_banner_attendant.jpg');
                 }}
               />
-              <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: 'rgba(0,0,0,0.8)', color: '#FFF', fontSize: '0.72rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
+              <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: 'rgba(0,0,0,0.8)', color: '#FFF', fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
                 {t('galShowroom')}
               </span>
             </div>
 
-            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '180px' }}>
+            <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '160px' }}>
               <img
                 src={getAssetUrl('/flyer_appliances.jpg')}
                 alt="Estoque e Atendimento AQUI TEM"
@@ -1048,7 +1045,7 @@ export default function App() {
                   e.currentTarget.src = "https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=800&q=80";
                 }}
               />
-              <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: 'rgba(0,0,0,0.8)', color: '#FFF', fontSize: '0.72rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
+              <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: 'rgba(0,0,0,0.8)', color: '#FFF', fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
                 {t('galStock')}
               </span>
             </div>
@@ -1454,10 +1451,10 @@ export default function App() {
       {/* Ultra-Slim 2-3 Line Footer */}
       <footer className="footer">
         <div className="footer-container">
-          {/* Line 1: Small Transparent PNG Logo + Slogan + WhatsApp */}
+          {/* Line 1: Small White Transparent PNG Logo + Slogan + WhatsApp */}
           <div className="footer-line-main">
             <a href="#" className="footer-logo-link">
-              <OriginalLogoImage src="/logo.jpg" alt="Logo" height={22} className="footer-logo-png" />
+              <OriginalLogoImage src="/logo.jpg" alt="Logo" height={24} white={true} className="footer-logo-png" />
             </a>
             <span className="footer-slogan-text">{t('siteSlogan')}</span>
             <span className="footer-dot">•</span>
@@ -1467,7 +1464,7 @@ export default function App() {
               rel="noreferrer"
               className="footer-wa-inline"
             >
-              <MessageCircle size={12} /> WhatsApp: 950 752 933
+              <MessageCircle size={13} /> WhatsApp: 950 752 933
             </a>
           </div>
 

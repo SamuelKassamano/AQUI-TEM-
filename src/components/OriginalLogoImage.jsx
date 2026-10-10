@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { getAssetUrl } from '../utils/assets';
 
-export default function OriginalLogoImage({ src = 'logo.jpg', alt = 'Aqui Tem', height = 48, style = {}, className = '' }) {
+export default function OriginalLogoImage({ src = 'logo.jpg', alt = 'Aqui Tem', height = 48, white = false, style = {}, className = '' }) {
   const targetSrc = getAssetUrl(src);
-  const [processedSrc, setProcessedSrc] = useState(targetSrc);
+  const [processedSrc, setProcessedSrc] = useState(white ? '' : targetSrc);
 
   useEffect(() => {
     const img = new Image();
@@ -31,7 +31,18 @@ export default function OriginalLogoImage({ src = 'logo.jpg', alt = 'Aqui Tem', 
             data[i + 3] = 0;
           } else if (isNeutral && r > 185 && g > 185 && b > 185) {
             const avg = (r + g + b) / 3;
-            data[i + 3] = Math.round(((215 - avg) / 30) * 255);
+            const alpha = Math.round(((215 - avg) / 30) * 255);
+            data[i + 3] = alpha;
+            if (white) {
+              data[i] = 255;
+              data[i + 1] = 255;
+              data[i + 2] = 255;
+            }
+          } else if (white) {
+            // Foreground pixel: make it pure white (#FFFFFF)
+            data[i] = 255;
+            data[i + 1] = 255;
+            data[i + 2] = 255;
           }
         }
 
@@ -39,9 +50,12 @@ export default function OriginalLogoImage({ src = 'logo.jpg', alt = 'Aqui Tem', 
         setProcessedSrc(canvas.toDataURL('image/png'));
       } catch (e) {
         console.warn('Could not process transparent logo image background:', e);
+        setProcessedSrc(targetSrc);
       }
     };
-  }, [src]);
+  }, [src, targetSrc, white]);
+
+  if (!processedSrc) return null;
 
   return (
     <img
