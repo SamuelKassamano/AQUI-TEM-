@@ -44,7 +44,7 @@ import { useLanguage } from './src/context/LanguageContext';
 import { initAllPixels, trackProductView, trackWhatsAppLead } from './src/utils/pixelRetargeting';
 import { useCRM } from './src/context/CRMContext';
 import LanguageSelector from './src/components/LanguageSelector';
-import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial } from './src/utils/productTranslations';
+import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial, getProductTestimonials } from './src/utils/productTranslations';
 import {
   createProductStructuredData,
   createBreadcrumbStructuredData
@@ -295,36 +295,35 @@ export default function App() {
 
       {/* Top Announcement Bar */}
       <div className="top-bar">
-        <span><Zap size={15} /> <strong>aquitem</strong> - {t('topBarMsg')}</span>
-        <span style={{ opacity: 0.6 }}>|</span>
-        <span>📱 {t('whatsappSupport')}</span>
-        <span style={{ opacity: 0.6 }}>|</span>
-        <span>🇦🇴 {t('fastDelivery')}</span>
-        <span style={{ opacity: 0.6 }}>|</span>
-        <LanguageSelector variant="compact" />
+        <span className="top-bar-main">{t('topBarMsg')}</span>
+        <span className="top-bar-sep" style={{ opacity: 0.6 }}>|</span>
+        <span className="top-bar-sub">📱 {t('whatsappSupport')}</span>
+        <span className="top-bar-sep" style={{ opacity: 0.6 }}>|</span>
+        <span className="top-bar-sub">🇦🇴 {t('fastDelivery')}</span>
       </div>
 
-      {/* Header */}
+      {/* Slim & Organized Header Taskbar */}
       <header className="header-nav">
         <div className="header-container">
-          <button
-            className="nav-btn"
-            style={{ padding: '8px 12px' }}
-            onClick={() => setIsSideMenuOpen(true)}
-            title="Abrir Menu Lateral"
-          >
-            <Menu size={20} />
-          </button>
+          <div className="header-left">
+            <button
+              className="nav-btn nav-btn-icon"
+              onClick={() => setIsSideMenuOpen(true)}
+              title="Abrir Menu"
+              aria-label="Abrir Menu"
+            >
+              <Menu size={17} />
+            </button>
 
-          {/* Logo AQUI TEM - Original Logo with Transparent Background */}
-          <a href="#" className="logo-brand">
-            <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={78} />
-          </a>
+            <a href="#" className="logo-brand">
+              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={32} className="header-logo-img" />
+            </a>
+          </div>
 
-          {/* Search Bar */}
+          {/* Slim Search Bar */}
           <div className="search-form">
             <div className="search-input-wrapper">
-              <Search size={18} color="var(--text-muted)" />
+              <Search size={15} color="var(--text-muted)" style={{ flexShrink: 0 }} />
               <input
                 type="text"
                 placeholder={t('searchPlaceholder')}
@@ -333,46 +332,42 @@ export default function App() {
                 onChange={e => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
-                <button onClick={() => setSearchQuery('')}>
-                  <X size={16} color="var(--text-muted)" />
+                <button onClick={() => setSearchQuery('')} style={{ display: 'flex', alignItems: 'center' }}>
+                  <X size={14} color="var(--text-muted)" />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Navigation Actions */}
+          {/* Organized Navigation Actions */}
           <div className="nav-actions">
-            <LanguageSelector />
+            <LanguageSelector className="desktop-only-lang" />
 
             <button
-              className="nav-btn"
+              className="nav-btn nav-btn-crm desktop-only-action"
               onClick={openCRM}
               title="Painel CRM & Gestão de Leads"
-              style={{
-                background: 'rgba(255, 101, 0, 0.12)',
-                color: 'var(--primary-orange)',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
             >
-              <BarChart3 size={18} />
-              <span>CRM</span>
+              <BarChart3 size={15} />
+              <span className="nav-btn-label">CRM</span>
             </button>
 
-            <button className="nav-btn" onClick={toggleTheme} title="Alternar Tema">
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            <button className="nav-btn nav-btn-icon" onClick={toggleTheme} title="Alternar Tema">
+              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
 
-            <button className="nav-btn" onClick={() => showToast(`${t('wishlist')} (${wishlist.length} ${t('items')})`)}>
-              <Heart size={20} color={wishlist.length > 0 ? '#F37021' : 'currentColor'} />
+            <button
+              className="nav-btn nav-btn-icon desktop-only-action"
+              onClick={() => showToast(`${t('wishlist')} (${wishlist.length} ${t('items')})`)}
+              title={t('wishlist')}
+            >
+              <Heart size={16} color={wishlist.length > 0 ? '#F37021' : 'currentColor'} />
               {wishlist.length > 0 && <span className="badge-count">{wishlist.length}</span>}
             </button>
 
-            <button className="nav-btn nav-btn-orange" onClick={() => setIsCartOpen(true)}>
-              <ShoppingBag size={20} />
-              <span>{t('cart')}</span>
+            <button className="nav-btn nav-btn-orange nav-btn-cart" onClick={() => setIsCartOpen(true)}>
+              <ShoppingBag size={16} />
+              <span className="nav-btn-label">{t('cart')}</span>
               {cart.length > 0 && (
                 <span className="badge-count" style={{ background: '#FFF', color: '#F37021' }}>
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
@@ -388,19 +383,19 @@ export default function App() {
         <div className="modal-overlay" onClick={() => setIsSideMenuOpen(false)}>
           <div
             className="modal-content"
-            style={{ maxWidth: '320px', height: '100vh', margin: '0 0 0 auto', borderRadius: 0, padding: '20px' }}
+            style={{ maxWidth: '300px', height: '100vh', margin: '0 0 0 auto', borderRadius: 0, padding: '18px' }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '12px', borderBottom: '1px solid var(--border-light)' }}>
-              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={52} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '10px', borderBottom: '1px solid var(--border-light)' }}>
+              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={40} />
               <button onClick={() => setIsSideMenuOpen(false)}>
                 <X size={20} />
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ marginBottom: '8px' }}>
-                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>{t('selectLanguage')}:</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ marginBottom: '6px' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '6px', display: 'block' }}>{t('selectLanguage')}:</span>
                 <LanguageSelector />
               </div>
 
@@ -409,18 +404,7 @@ export default function App() {
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
                 onClick={() => { setSelectedCategory('Todos'); setIsSideMenuOpen(false); }}
               >
-                <Grid size={16} /> {t('catAll')}
-              </button>
-
-              <button
-                className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255, 101, 0, 0.08)', color: 'var(--primary-orange)', borderColor: 'var(--primary-orange)' }}
-                onClick={() => {
-                  setIsSideMenuOpen(false);
-                  document.getElementById('prova-social')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-              >
-                <Award size={16} /> {t('socialProof')}
+                <Grid size={15} /> {t('catAll')}
               </button>
 
               <button
@@ -431,7 +415,7 @@ export default function App() {
                   document.getElementById('sobre')?.scrollIntoView({ behavior: 'smooth' });
                 }}
               >
-                <Store size={16} /> {t('aboutUs')}
+                <Store size={15} /> {t('aboutUs')}
               </button>
 
               <button
@@ -439,7 +423,7 @@ export default function App() {
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(30, 92, 158, 0.08)', color: '#1E5C9E', borderColor: '#1E5C9E' }}
                 onClick={() => { setIsVideosOpen(true); setIsSideMenuOpen(false); }}
               >
-                <Video size={16} /> {t('videos')}
+                <Video size={15} /> {t('videos')}
               </button>
 
               <button
@@ -447,7 +431,7 @@ export default function App() {
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
                 onClick={() => { setActiveInfoModal('stores'); setIsSideMenuOpen(false); }}
               >
-                <MapPin size={16} /> {t('storesAndSupport')}
+                <MapPin size={15} /> {t('storesAndSupport')}
               </button>
 
               <button
@@ -455,11 +439,19 @@ export default function App() {
                 style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
                 onClick={() => { setActiveInfoModal('warranty'); setIsSideMenuOpen(false); }}
               >
-                <ShieldCheck size={16} /> {t('warrantyAndExchanges')}
+                <ShieldCheck size={15} /> {t('warrantyAndExchanges')}
               </button>
 
-              <div style={{ borderTop: '1px solid var(--border-light)', margin: '10px 0' }}></div>
-              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase' }}>{t('categories')}</span>
+              <button
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255, 101, 0, 0.08)', color: 'var(--primary-orange)', borderColor: 'var(--primary-orange)' }}
+                onClick={() => { openCRM(); setIsSideMenuOpen(false); }}
+              >
+                <BarChart3 size={15} /> Painel CRM
+              </button>
+
+              <div style={{ borderTop: '1px solid var(--border-light)', margin: '6px 0' }}></div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase' }}>{t('categories')}</span>
 
               {CATEGORIES.map(c => (
                 <button
@@ -472,15 +464,15 @@ export default function App() {
                 </button>
               ))}
 
-              <div style={{ borderTop: '1px solid var(--border-light)', margin: '10px 0' }}></div>
+              <div style={{ borderTop: '1px solid var(--border-light)', margin: '6px 0' }}></div>
 
               <a
                 href="https://wa.me/244950752933?text=Olá%20Aqui%20Tem!"
                 target="_blank"
                 rel="noreferrer"
-                style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#25D366', fontWeight: 700, fontSize: '0.95rem' }}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#25D366', fontWeight: 700, fontSize: '0.9rem' }}
               >
-                <MessageCircle size={20} /> WhatsApp: 950752933
+                <MessageCircle size={18} /> WhatsApp: 950752933
               </a>
             </div>
           </div>
@@ -576,7 +568,7 @@ export default function App() {
       {/* Hero Banner Section */}
       <section className="hero-section">
         <div className="hero-banner">
-          <div>
+          <div className="hero-text-col">
             <span className="hero-tag">
               <Zap size={14} /> {t('heroTag')}
             </span>
@@ -584,15 +576,14 @@ export default function App() {
             <p className="hero-subtitle">{t('heroSubtitle')}</p>
 
             <div className="hero-cta-group">
-              <a href="#catalogo" className="nav-btn nav-btn-orange" style={{ padding: '12px 24px', fontSize: '1rem' }}>
+              <a href="#catalogo" className="nav-btn nav-btn-orange hero-cta-btn">
                 {t('buyNow')} <ArrowRight size={18} />
               </a>
               <a
                 href="https://wa.me/244950752933?text=Olá%20Aqui%20Tem!%20Quero%20saber%20mais%20sobre%20as%20promoções."
                 target="_blank"
                 rel="noreferrer"
-                className="nav-btn"
-                style={{ padding: '12px 20px', fontSize: '1rem', background: '#25D366', color: '#FFF', borderColor: '#25D366' }}
+                className="nav-btn hero-cta-btn hero-cta-whatsapp"
               >
                 <MessageCircle size={18} /> {t('chatWhatsapp')}
               </a>
@@ -625,15 +616,18 @@ export default function App() {
               background: 'rgba(0,0,0,0.5)',
               padding: '4px 10px',
               borderRadius: '20px',
-              backdropFilter: 'blur(4px)'
+              backdropFilter: 'blur(4px)',
+              maxWidth: '92%',
+              flexWrap: 'wrap',
+              justifyContent: 'center'
             }}>
               {HERO_COVER_IMAGES.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setHeroImageIndex(idx)}
                   style={{
-                    width: heroImageIndex === idx ? '20px' : '8px',
-                    height: '8px',
+                    width: heroImageIndex === idx ? '18px' : '7px',
+                    height: '7px',
                     borderRadius: '4px',
                     background: heroImageIndex === idx ? 'var(--primary-orange)' : 'rgba(255,255,255,0.6)',
                     border: 'none',
@@ -657,7 +651,7 @@ export default function App() {
                 <div className="advantage-icon-box">
                   <IconComp size={24} />
                 </div>
-                <div>
+                <div style={{ minWidth: 0 }}>
                   <div className="advantage-title">{translatedAdvantageTitles[index] || adv.title}</div>
                   <div className="advantage-subtitle">{translatedAdvantageSubs[index] || adv.sub || adv.subtitle}</div>
                 </div>
@@ -668,22 +662,13 @@ export default function App() {
       </section>
 
       {/* 📹 Vídeos dos Produtos Rodando em Ação (Seção com Vídeos Ativos e Controles) */}
-      <section
-        style={{
-          padding: '36px 24px',
-          background: 'var(--bg-card)',
-          borderRadius: '24px',
-          margin: '28px 0',
-          border: '1px solid var(--border-light)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.03)'
-        }}
-      >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>
-          <div>
+      <section className="content-section-card">
+        <div className="section-card-header">
+          <div style={{ minWidth: 0 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <Video size={16} /> {t('videoShowcaseBadge')}
             </div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '2px' }}>
+            <h2 className="section-card-title">
               {t('videoShowcaseTitle')}
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '2px' }}>
@@ -691,52 +676,43 @@ export default function App() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
             <button
-              className="nav-btn"
+              className="nav-btn nav-btn-icon"
               onClick={() => setActiveVideoStart(prev => Math.max(0, prev - 1))}
               disabled={activeVideoStart === 0}
               style={{ opacity: activeVideoStart === 0 ? 0.5 : 1 }}
               title={t('prevVideo')}
             >
-              <ChevronLeft size={20} />
+              <ChevronLeft size={18} />
             </button>
             <button
-              className="nav-btn"
-              onClick={() => setActiveVideoStart(prev => Math.min(PRODUCT_VIDEOS.length - 3, prev + 1))}
-              disabled={activeVideoStart >= PRODUCT_VIDEOS.length - 3}
-              style={{ opacity: activeVideoStart >= PRODUCT_VIDEOS.length - 3 ? 0.5 : 1 }}
+              className="nav-btn nav-btn-icon"
+              onClick={() => setActiveVideoStart(prev => Math.min(PRODUCT_VIDEOS.length - 2, prev + 1))}
+              disabled={activeVideoStart >= PRODUCT_VIDEOS.length - 2}
+              style={{ opacity: activeVideoStart >= PRODUCT_VIDEOS.length - 2 ? 0.5 : 1 }}
               title={t('nextVideo')}
             >
-              <ChevronRight size={20} />
+              <ChevronRight size={18} />
             </button>
             <button
               className="nav-btn nav-btn-orange"
               onClick={() => setIsVideosOpen(true)}
-              style={{ padding: '8px 16px', fontSize: '0.88rem' }}
+              style={{ padding: '7px 14px', fontSize: '0.82rem' }}
             >
               {t('viewAll')} ({PRODUCT_VIDEOS.length})
             </button>
           </div>
         </div>
 
-        {/* Video Grid (3 videos showcased at a time) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-          {PRODUCT_VIDEOS.slice(activeVideoStart, activeVideoStart + 3).map(item => {
+        {/* Video Grid (2 videos showcased side-by-side) */}
+        <div className="video-showcase-grid">
+          {PRODUCT_VIDEOS.slice(activeVideoStart, activeVideoStart + 2).map(item => {
             const translatedVid = getTranslatedVideo(item, lang);
             return (
               <div
                 key={item.id}
-                style={{
-                  background: 'var(--bg-body)',
-                  border: '1px solid var(--border-light)',
-                  borderRadius: '16px',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justify: 'space-between',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
-                }}
+                className="video-showcase-card"
               >
                 <div>
                   <div style={{ position: 'relative', background: '#0F172A' }}>
@@ -748,48 +724,31 @@ export default function App() {
                       playsInline
                       controls
                       preload="metadata"
-                      style={{
-                        width: '100%',
-                        height: '210px',
-                        objectFit: 'cover',
-                        display: 'block'
-                      }}
+                      className="video-showcase-player"
                     >
                       <source src={item.videoUrl} type="video/mp4" />
                       {item.fallbackUrl && <source src={item.fallbackUrl} type="video/mp4" />}
                       {lang === 'en' ? 'Your browser does not support video playback.' : 'Seu navegador não suporta a reprodução deste vídeo.'}
                     </video>
-                    <span style={{
-                      position: 'absolute',
-                      top: '10px',
-                      left: '10px',
-                      background: 'rgba(0,0,0,0.8)',
-                      color: '#FFB800',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      padding: '4px 10px',
-                      borderRadius: '12px',
-                      pointerEvents: 'none',
-                      letterSpacing: '0.5px'
-                    }}>
+                    <span className="video-showcase-tag">
                       {translatedVid.tag}
                     </span>
                   </div>
 
-                  <div style={{ padding: '16px' }}>
-                    <div style={{ fontSize: '0.78rem', color: 'var(--primary-orange)', fontWeight: 800, textTransform: 'uppercase', marginBottom: '4px' }}>
+                  <div className="video-showcase-body">
+                    <div className="video-showcase-cat">
                       {translatedVid.category}
                     </div>
-                    <h4 style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--text-main)', lineHeight: '1.3', marginBottom: '6px' }}>
+                    <h4 className="video-showcase-title">
                       {translatedVid.title}
                     </h4>
-                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.45', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <p className="video-showcase-desc">
                       {translatedVid.description}
                     </p>
                   </div>
                 </div>
 
-                <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-light)' }}>
+                <div className="video-showcase-footer">
                   <button
                     onClick={() => {
                       const msg = encodeURIComponent(`Olá AQUI TEM! Vi o vídeo do produto "${translatedVid.title}" e quero pedir.`);
@@ -800,9 +759,9 @@ export default function App() {
                       window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
                     }}
                     className="nav-btn nav-btn-orange"
-                    style={{ width: '100%', padding: '8px 12px', fontSize: '0.85rem', justifyContent: 'center' }}
+                    style={{ width: '100%', padding: '7px 10px', fontSize: '0.78rem', justifyContent: 'center' }}
                   >
-                    <MessageCircle size={16} /> {t('buyWhatsapp')}
+                    <MessageCircle size={14} /> {t('buyWhatsapp')}
                   </button>
                 </div>
               </div>
@@ -829,33 +788,9 @@ export default function App() {
         </div>
       </section>
 
-      {/* Category Chips */}
+      {/* Category Chips Bar (Organized & Slim) */}
       <section className="categories-section" id="catalogo">
         <div className="category-list">
-          <button
-            className="category-chip"
-            style={{ background: 'linear-gradient(135deg, #FF6500, #E55800)', color: '#FFF', fontWeight: 800, border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => document.getElementById('prova-social')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            <Award size={16} /> {t('socialProof')}
-          </button>
-
-          <button
-            className="category-chip"
-            style={{ background: 'linear-gradient(135deg, #1E5C9E, #144376)', color: '#FFF', fontWeight: 800, border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => document.getElementById('sobre')?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            <Store size={16} /> {t('aboutUs')}
-          </button>
-
-          <button
-            className="category-chip"
-            style={{ background: '#0F172A', color: '#FFF', fontWeight: 800, border: 'none', display: 'flex', alignItems: 'center', gap: '6px' }}
-            onClick={() => setIsVideosOpen(true)}
-          >
-            <Video size={16} /> {t('videos')}
-          </button>
-
           {CATEGORIES.map(cat => (
             <button
               key={cat}
@@ -865,6 +800,22 @@ export default function App() {
               {getTranslatedCategory(cat, lang)}
             </button>
           ))}
+
+          <button
+            className="category-chip"
+            style={{ background: '#0F172A', color: '#FFF', fontWeight: 700, border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            onClick={() => setIsVideosOpen(true)}
+          >
+            <Video size={14} /> {t('videos')}
+          </button>
+
+          <button
+            className="category-chip"
+            style={{ background: 'linear-gradient(135deg, #1E5C9E, #144376)', color: '#FFF', fontWeight: 700, border: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+            onClick={() => document.getElementById('sobre')?.scrollIntoView({ behavior: 'smooth' })}
+          >
+            <Store size={14} /> {t('aboutUs')}
+          </button>
         </div>
       </section>
 
@@ -875,19 +826,19 @@ export default function App() {
             {t('featuredProducts')} ({filteredProducts.length})
           </h2>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Filter size={18} color="var(--text-muted)" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Filter size={16} color="var(--text-muted)" />
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
               style={{
-                padding: '8px 16px',
+                padding: '6px 14px',
                 borderRadius: '999px',
                 border: '1px solid var(--border-light)',
                 background: 'var(--bg-card)',
                 color: 'var(--text-main)',
                 fontWeight: '600',
-                fontSize: '0.9rem'
+                fontSize: '0.84rem'
               }}
             >
               <option value="recommended">{t('recommended')}</option>
@@ -920,7 +871,13 @@ export default function App() {
                   <span className="product-badge">{product.badge}</span>
                 )}
                 
-                <div className="product-img-wrapper">
+                <div
+                  className="product-img-wrapper"
+                  onClick={() => {
+                    trackProductView(product.name, product.price);
+                    setSelectedProduct(product);
+                  }}
+                >
                   <img
                     src={product.image}
                     alt={product.name}
@@ -934,7 +891,16 @@ export default function App() {
 
                 <div className="product-body">
                   <span className="product-category">{product.category}</span>
-                  <h3 className="product-name">{product.name}</h3>
+                  <h3
+                    className="product-name"
+                    style={{ cursor: 'pointer' }}
+                    onClick={() => {
+                      trackProductView(product.name, product.price);
+                      setSelectedProduct(product);
+                    }}
+                  >
+                    {product.name}
+                  </h3>
 
                   <div className="rating-row">
                     <div className="stars">
@@ -965,9 +931,9 @@ export default function App() {
                       className="btn-view-details"
                       title={t('viewDetails')}
                       onClick={() => {
-  trackProductView(product.name, product.price);
-  setSelectedProduct(product);
-}}
+                        trackProductView(product.name, product.price);
+                        setSelectedProduct(product);
+                      }}
                     >
                       <Eye size={18} />
                     </button>
@@ -979,167 +945,17 @@ export default function App() {
         )}
       </section>
 
-      {/* 🌟 Prova Social Section (Página Inicial) */}
-      <section
-        id="prova-social"
-        style={{
-          padding: '24px 20px',
-          background: 'var(--bg-card)',
-          borderRadius: '20px',
-          margin: '20px 0',
-          border: '1px solid var(--border-light)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-        }}
-      >
-        <div style={{ textAlign: 'center', maxWidth: '780px', margin: '0 auto 18px auto' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(255, 101, 0, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '6px' }}>
-            <Award size={16} /> {t('spBadge')}
-          </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '2px' }}>
-            {t('spTitle')}
-          </h2>
-          <p style={{ color: 'var(--text-muted)', fontSize: '0.88rem', marginTop: '4px', lineHeight: '1.4' }}>
-            {t('spSubtitle')}
-          </p>
-        </div>
-
-        {/* Trust Stats Bar */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '12px',
-          marginBottom: '20px',
-          background: 'linear-gradient(135deg, rgba(255,101,0,0.06), rgba(30,92,158,0.06))',
-          padding: '12px 16px',
-          borderRadius: '14px',
-          border: '1px solid var(--border-light)'
-        }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary-orange)' }}>4.9 ★★★★★</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statSatisfaction')}</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#1E5C9E' }}>+3.800</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statClients')}</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: '#10B981' }}>100%</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statOriginal')}</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--text-main)' }}>24 {lang === 'en' ? 'Hours' : 'Horas'}</div>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('statShipping')}</div>
-          </div>
-        </div>
-
-        {/* Testimonials Grid (Displaying 4 featured African customer reviews) */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '14px' }}>
-          {TESTIMONIALS.slice(0, 4).map(item => {
-            const translatedTestimonial = getTranslatedTestimonial(item, lang);
-            return (
-              <div
-                key={item.id}
-                style={{
-                  background: 'var(--bg-body)',
-                  border: '1px solid var(--border-light)',
-                  borderRadius: '14px',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                  transition: 'transform 0.2s, boxShadow 0.2s'
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <img
-                      src={item.avatar}
-                      alt={item.name}
-                      style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-orange)' }}
-                    />
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        {item.name}
-                        {item.verified && (
-                          <span style={{ color: '#10B981', display: 'inline-flex', alignItems: 'center', fontSize: '0.7rem', background: 'rgba(16,185,129,0.12)', padding: '2px 6px', borderRadius: '8px', fontWeight: 800 }}>
-                            <CheckCircle size={11} style={{ marginRight: '2px' }} /> {t('verified')}
-                          </span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '1px' }}>
-                        <MapPin size={12} color="var(--primary-orange)" /> {item.location} • <span style={{ opacity: 0.8 }}>{translatedTestimonial.date}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ display: 'flex', gap: '2px', marginBottom: '6px' }}>
-                    {[...Array(item.rating)].map((_, i) => (
-                      <Star key={i} size={14} fill="#FFB800" color="#FFB800" />
-                    ))}
-                  </div>
-
-                  <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1E5C9E', marginBottom: '8px', background: 'rgba(30,92,158,0.08)', padding: '3px 8px', borderRadius: '6px', display: 'inline-block' }}>
-                    📦 {item.product}
-                  </div>
-
-                  <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', lineHeight: '1.45', fontStyle: 'italic', marginBottom: '10px' }}>
-                    "{translatedTestimonial.comment}"
-                  </p>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '8px', fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <ThumbsUp size={13} color="var(--primary-orange)" /> {item.likes} {t('helpfulCount')}
-                  </span>
-                  <span style={{ color: '#25D366', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <ShieldCheck size={13} /> {t('securePurchase')}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Section Actions */}
-        <div style={{ marginTop: '18px', textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => setIsSocialProofOpen(true)}
-            className="nav-btn nav-btn-orange"
-            style={{ padding: '10px 20px', fontSize: '0.88rem' }}
-          >
-            <Award size={16} /> {t('seeMoreReviews')}
-          </button>
-          <a
-            href="https://wa.me/244950752933?text=Olá%20Aqui%20Tem!%20Vi%20as%20avaliações%20na%20página%20e%20quero%20fazer%20um%20pedido."
-            target="_blank"
-            rel="noreferrer"
-            className="nav-btn"
-            style={{ padding: '10px 20px', fontSize: '0.88rem', borderColor: '#25D366', color: '#25D366', background: 'rgba(37, 211, 102, 0.08)' }}
-          >
-            <MessageCircle size={16} /> {t('orderOnWhatsApp')} (950752933)
-          </a>
-        </div>
-      </section>
-
       {/* 🏬 Sobre a AQUI TEM Section (Página Inicial) */}
       <section
         id="sobre"
-        style={{
-          padding: '24px 20px',
-          background: 'var(--bg-card)',
-          borderRadius: '20px',
-          margin: '20px 0',
-          border: '1px solid var(--border-light)',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.03)'
-        }}
+        className="content-section-card"
       >
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', alignItems: 'center' }}>
-          <div>
+        <div className="about-main-grid">
+          <div style={{ minWidth: 0 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.5px', background: 'rgba(255, 101, 0, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '8px' }}>
               <Store size={16} /> {t('aboutBadge')}
             </div>
-            <h2 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--text-main)', marginBottom: '10px', lineHeight: '1.2' }}>
+            <h2 className="section-card-title" style={{ marginBottom: '10px', lineHeight: '1.2' }}>
               {t('aboutTitle')} <span style={{ color: 'var(--primary-orange)' }}>AQUI TEM</span> Angola
             </h2>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '10px' }}>
@@ -1149,7 +965,7 @@ export default function App() {
               {t('aboutDesc2')}
             </p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}>
+            <div className="about-features-grid">
               <div style={{ background: 'var(--bg-body)', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
                 <div style={{ color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.82rem', marginBottom: '2px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <MapPin size={14} /> {t('aboutLocTitle')}
@@ -1206,7 +1022,7 @@ export default function App() {
           </div>
 
           {/* Showroom & Operations Gallery Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+          <div className="about-gallery-grid">
             <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '180px' }}>
               <img
                 src="https://images.unsplash.com/photo-1556742049-0a670f4a4591?auto=format&fit=crop&w=800&q=80"
@@ -1240,117 +1056,190 @@ export default function App() {
         </div>
       </section>
 
-      {/* Product Detail Modal */}
+      {/* Product Detail Modal (Shows Product Description & Product Social Proofs ONLY when opened) */}
       {selectedProduct && (
         <div className="modal-overlay" onClick={() => setSelectedProduct(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-content modal-product-detail" onClick={e => e.stopPropagation()}>
             <script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify({
-      ...createProductStructuredData(selectedProduct),
-      '@id': `https://aqui-tem29.vercel.app/produto/${selectedProduct.name
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')}#product`
-    })
-  }}
-/>
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify({
+                  ...createProductStructuredData(selectedProduct),
+                  '@id': `https://aqui-tem29.vercel.app/produto/${selectedProduct.name
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^a-z0-9]+/g, '-')
+                    .replace(/^-+|-+$/g, '')}#product`
+                })
+              }}
+            />
 
-<script
-  type="application/ld+json"
-  dangerouslySetInnerHTML={{
-    __html: JSON.stringify(
-      createBreadcrumbStructuredData(selectedProduct)
-    )
-  }}
-/>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{
+                __html: JSON.stringify(
+                  createBreadcrumbStructuredData(selectedProduct)
+                )
+              }}
+            />
             <button className="btn-close-modal" onClick={() => setSelectedProduct(null)}>
               <X size={20} />
             </button>
 
             {(() => {
               const translatedSelected = getTranslatedProduct(selectedProduct, lang);
+              const productReviews = getProductTestimonials(selectedProduct, lang);
               return (
-                <div className="modal-grid">
-                  <div className="modal-img-col">
-                    <img
-                      src={translatedSelected.image}
-                      alt={translatedSelected.name}
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = translatedSelected.fallbackImage;
-                      }}
-                    />
+                <div>
+                  <div className="modal-grid">
+                    <div className="modal-img-col">
+                      <img
+                        src={translatedSelected.image}
+                        alt={translatedSelected.name}
+                        referrerPolicy="no-referrer"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = translatedSelected.fallbackImage;
+                        }}
+                      />
+                    </div>
+
+                    <div className="modal-details-col">
+                      <span className="product-category">{translatedSelected.category}</span>
+                      <h2 style={{ fontSize: '1.35rem', fontWeight: '800', marginTop: '4px', color: 'var(--text-main)', lineHeight: 1.25 }}>
+                        {translatedSelected.name}
+                      </h2>
+
+                      <div className="rating-row" style={{ marginTop: '6px', marginBottom: '12px' }}>
+                        <div className="stars">
+                          <Star size={15} fill="#FFB800" color="#FFB800" />
+                          <strong style={{ marginLeft: '4px' }}>{translatedSelected.rating}</strong>
+                        </div>
+                        <span>({translatedSelected.reviewsCount} {t('reviews')})</span>
+                      </div>
+
+                      <div className="product-price-box" style={{ marginTop: '4px', marginBottom: '14px', padding: '14px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                        {translatedSelected.oldPrice && (
+                          <span className="old-price" style={{ fontSize: '0.85rem' }}>
+                            {t('before')}: {formatKz(translatedSelected.oldPrice)}
+                          </span>
+                        )}
+                        <div className="current-price" style={{ fontSize: '1.5rem' }}>
+                          {t('now')}: {formatKz(translatedSelected.price)}
+                        </div>
+                        <div className="pix-price" style={{ fontSize: '0.88rem' }}>
+                          ⚡ {formatKz(translatedSelected.price * 0.9)} {t('cashDiscount')}
+                        </div>
+                      </div>
+
+                      <div className="modal-actions-row">
+                        <button
+                          className="btn-primary"
+                          style={{ flex: 1, justifyContent: 'center' }}
+                          onClick={() => {
+                            addToCart(selectedProduct);
+                            setSelectedProduct(null);
+                            setIsCartOpen(true);
+                          }}
+                        >
+                          <ShoppingBag size={17} /> {t('buyNow')}
+                        </button>
+
+                        <button
+                          className="btn-whatsapp"
+                          style={{ flex: 1, justifyContent: 'center' }}
+                          onClick={() => {
+                            const msg = encodeURIComponent(`Olá AQUI TEM! Tenho interesse no produto "${translatedSelected.name}" (${formatKz(translatedSelected.price)}). Poderia me passar mais informações?`);
+                            window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
+                          }}
+                        >
+                          <MessageCircle size={17} /> {t('quoteWhatsApp')}
+                        </button>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="modal-details-col">
-                    <span className="product-category">{translatedSelected.category}</span>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: '800', marginTop: '4px', color: 'var(--text-main)' }}>
-                      {translatedSelected.name}
-                    </h2>
-
-                    <div className="rating-row" style={{ marginTop: '8px' }}>
-                      <div className="stars">
-                        <Star size={16} fill="#FFB800" color="#FFB800" />
-                        <strong style={{ marginLeft: '4px' }}>{translatedSelected.rating}</strong>
+                  {/* Product Description & Technical Specs Section (Inside Product Modal) */}
+                  <div className="modal-product-extra">
+                    <div className="modal-desc-card">
+                      <div className="modal-section-subtitle">
+                        <Info size={16} color="var(--primary-orange)" />
+                        <span>{t('description')} & {t('technicalSpecs')}</span>
                       </div>
-                      <span>({translatedSelected.reviewsCount} {t('reviews')})</span>
-                    </div>
-
-                    <p style={{ marginTop: '12px', color: 'var(--text-muted)', fontSize: '0.95rem', lineHeight: '1.5' }}>
-                      {translatedSelected.description}
-                    </p>
-
-                    <div style={{ marginTop: '16px' }}>
-                      <strong style={{ fontSize: '0.9rem', color: 'var(--text-main)' }}>{t('technicalSpecs')}:</strong>
-                      <ul style={{ paddingLeft: '20px', marginTop: '6px', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                        {translatedSelected.specs?.map((spec, i) => (
-                          <li key={i}>{spec}</li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="product-price-box" style={{ marginTop: '20px', padding: '16px', background: 'var(--bg-body)', borderRadius: '12px' }}>
-                      {translatedSelected.oldPrice && (
-                        <span className="old-price" style={{ fontSize: '0.9rem' }}>
-                          {t('before')}: {formatKz(translatedSelected.oldPrice)}
-                        </span>
+                      <p className="modal-desc-text">
+                        {translatedSelected.description}
+                      </p>
+                      {translatedSelected.specs?.length > 0 && (
+                        <div className="modal-specs-pills">
+                          {translatedSelected.specs.map((spec, i) => (
+                            <span key={i} className="modal-spec-pill">
+                              <CheckCircle size={13} color="#10B981" /> {spec}
+                            </span>
+                          ))}
+                        </div>
                       )}
-                      <div className="current-price" style={{ fontSize: '1.6rem' }}>
-                        {t('now')}: {formatKz(translatedSelected.price)}
-                      </div>
-                      <div className="pix-price" style={{ fontSize: '0.95rem' }}>
-                        ⚡ {formatKz(translatedSelected.price * 0.9)} {t('cashDiscount')}
-                      </div>
                     </div>
 
-                    <div style={{ marginTop: '20px', display: 'flex', gap: '12px' }}>
-                      <button
-                        className="btn-primary"
-                        style={{ flex: 1, justifyContent: 'center' }}
-                        onClick={() => {
-                          addToCart(selectedProduct);
-                          setSelectedProduct(null);
-                          setIsCartOpen(true);
-                        }}
-                      >
-                        <ShoppingBag size={18} /> {t('buyNow')}
-                      </button>
+                    {/* Product-Specific Social Proof Section (Inside Product Modal) */}
+                    <div className="modal-social-proof-box">
+                      <div className="modal-sp-header">
+                        <div className="modal-section-subtitle" style={{ marginBottom: 0 }}>
+                          <Award size={16} color="var(--primary-orange)" />
+                          <span>{lang === 'en' ? 'Customer Reviews for this Product' : 'Provas Sociais deste Produto'}</span>
+                        </div>
+                        <span className="modal-sp-rating-pill">
+                          ★ {translatedSelected.rating} ({translatedSelected.reviewsCount} {t('reviews')})
+                        </span>
+                      </div>
 
-                      <button
-                        className="btn-whatsapp"
-                        style={{ flex: 1, justifyContent: 'center' }}
-                        onClick={() => {
-                          const msg = encodeURIComponent(`Olá AQUI TEM! Tenho interesse no produto "${translatedSelected.name}" (${formatKz(translatedSelected.price)}). Poderia me passar mais informações?`);
-                          window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
-                        }}
-                      >
-                        <MessageCircle size={18} /> {t('quoteWhatsApp')}
-                      </button>
+                      <div className="product-reviews-grid">
+                        {productReviews.map(review => (
+                          <div key={review.id} className="testimonial-card">
+                            <div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                                <img
+                                  src={review.avatar}
+                                  alt={review.name}
+                                  className="testimonial-avatar"
+                                />
+                                <div style={{ minWidth: 0 }}>
+                                  <div className="testimonial-author-name">
+                                    <span>{review.name}</span>
+                                    {review.verified && (
+                                      <span className="testimonial-verified-badge">
+                                        <CheckCircle size={10} style={{ marginRight: '2px' }} /> {t('verified')}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="testimonial-meta">
+                                    <MapPin size={11} color="var(--primary-orange)" /> {review.location} • <span>{review.date}</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div style={{ display: 'flex', gap: '2px', marginBottom: '6px' }}>
+                                {[...Array(review.rating)].map((_, idx) => (
+                                  <Star key={idx} size={12} fill="#FFB800" color="#FFB800" />
+                                ))}
+                              </div>
+
+                              <p className="testimonial-comment-text">
+                                "{review.comment}"
+                              </p>
+                            </div>
+
+                            <div className="testimonial-footer-row">
+                              <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <ThumbsUp size={11} color="var(--primary-orange)" /> {review.likes} {t('helpfulCount')}
+                              </span>
+                              <span style={{ color: '#25D366', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                <ShieldCheck size={11} /> {t('securePurchase')}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1562,68 +1451,48 @@ export default function App() {
         </div>
       )}
 
-      {/* Footer */}
+      {/* Ultra-Slim 2-3 Line Footer */}
       <footer className="footer">
         <div className="footer-container">
-          <div className="footer-brand">
-            <a href="#" className="logo-brand" style={{ marginBottom: '16px', display: 'inline-block' }}>
-              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={70} />
+          {/* Line 1: Small Transparent PNG Logo + Slogan + WhatsApp */}
+          <div className="footer-line-main">
+            <a href="#" className="footer-logo-link">
+              <OriginalLogoImage src="/logo.jpg" alt="Logo" height={22} className="footer-logo-png" />
             </a>
-            <p style={{ fontSize: '0.9rem', lineHeight: '1.6' }}>
-              {t('footerDesc')}
-            </p>
+            <span className="footer-slogan-text">{t('siteSlogan')}</span>
+            <span className="footer-dot">•</span>
+            <a
+              href="https://wa.me/244950752933?text=Olá!"
+              target="_blank"
+              rel="noreferrer"
+              className="footer-wa-inline"
+            >
+              <MessageCircle size={12} /> WhatsApp: 950 752 933
+            </a>
           </div>
 
-          <div>
-            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>{t('categories')}</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem' }}>
-              {CATEGORIES.filter(c => c !== 'Todos').map(cat => (
-                <li key={cat}>
-                  <a href="#catalogo" onClick={() => setSelectedCategory(cat)}>{getTranslatedCategory(cat, lang)}</a>
-                </li>
-              ))}
-            </ul>
+          {/* Line 2: Essential Navigation Links */}
+          <div className="footer-line-links">
+            <a href="#catalogo" className="footer-link-item" onClick={() => setSelectedCategory('Todos')}>
+              {t('catAll')}
+            </a>
+            <span className="footer-dot">•</span>
+            <button type="button" className="footer-link-item" onClick={() => setIsVideosOpen(true)}>
+              {t('videos')}
+            </button>
+            <span className="footer-dot">•</span>
+            <button type="button" className="footer-link-item" onClick={() => setActiveInfoModal('stores')}>
+              {t('storesSupport')}
+            </button>
+            <span className="footer-dot">•</span>
+            <button type="button" className="footer-link-item" onClick={() => setActiveInfoModal('warranty')}>
+              {t('warrantyAndExchanges')}
+            </button>
           </div>
 
-          <div>
-            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>{t('customerService')}</h4>
-            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '0.9rem' }}>
-              <li>
-                <button
-                  onClick={() => setIsSocialProofOpen(true)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', textAlign: 'left' }}
-                >
-                  ⭐ {t('socialProof')} ({t('reviews')})
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setIsVideosOpen(true)}
-                  style={{ background: 'none', border: 'none', color: 'var(--text-light)', cursor: 'pointer', padding: 0, fontSize: '0.9rem', textAlign: 'left' }}
-                >
-                  📹 {t('videos')} & Unboxings
-                </button>
-              </li>
-              <li>WhatsApp: 950752933</li>
-              <li>{t('dailySupport')}</li>
-              <li>Luanda & {lang === 'en' ? 'Angola Provinces' : 'Províncias de Angola'}</li>
-            </ul>
-          </div>
-
-          <div>
-            <h4 style={{ color: '#FFF', marginBottom: '16px' }}>{t('paymentMethods')}</h4>
-            <p style={{ fontSize: '0.85rem', marginBottom: '12px' }}>
-              {t('paymentMethodsText')}
-            </p>
-          </div>
-        </div>
-
-        <div className="footer-bottom">
-          <div>
-            © {new Date().getFullYear()} AQUI TEM - {t('siteSlogan')}. {t('allRightsReserved')}
-          </div>
-          <div>
-            {t('luandaAngola')}
+          {/* Line 3: Copyright, Payment & Location */}
+          <div className="footer-line-bottom">
+            <span>© {new Date().getFullYear()} {t('allRightsReserved')} • TPA / Cash na Entrega • {t('luandaAngola')}</span>
           </div>
         </div>
       </footer>

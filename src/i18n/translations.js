@@ -95,8 +95,8 @@ export const translations = {
 
     // Videos Section (Homepage)
     videoShowcaseBadge: "Vídeos & Unboxings dos Produtos",
-    videoShowcaseTitle: "Vídeos dos Produtos Rodando em Ação",
-    videoShowcaseSub: "Acompanhe 3 vídeos por vez em reprodução contínua. Navegue pelas setas para ver toda a linha.",
+    videoShowcaseTitle: "Vídeos dos Produtos em Ação",
+    videoShowcaseSub: "Acompanhe 2 vídeos por vez em reprodução contínua. Navegue pelas setas para ver toda a linha.",
     viewAll: "Ver Todos",
     prevVideo: "Vídeo Anterior",
     nextVideo: "Próximo Vídeo",
@@ -296,8 +296,8 @@ export const translations = {
 
     // Videos Section (Homepage)
     videoShowcaseBadge: "Product Videos & Unboxings",
-    videoShowcaseTitle: "Product Videos Running in Action",
-    videoShowcaseSub: "Watch 3 videos at a time in continuous loop. Use the arrows to browse the lineup.",
+    videoShowcaseTitle: "Product Videos in Action",
+    videoShowcaseSub: "Watch 2 videos at a time in continuous loop. Use the arrows to browse the lineup.",
     viewAll: "View All",
     prevVideo: "Previous Video",
     nextVideo: "Next Video",

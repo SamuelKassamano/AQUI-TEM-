@@ -107,8 +107,8 @@ for (const product of products) {
           <a href="/" style="color: #FF6500; text-decoration: none; font-weight: 600;">AQUI TEM</a> &gt; <span>${product.category}</span> &gt; <strong>${product.name}</strong>
         </nav>
         <div style="display: flex; gap: 48px; flex-wrap: wrap; align-items: flex-start;">
-          <div style="flex: 1; min-width: 300px; text-align: center; background: #F8FAFC; padding: 24px; border-radius: 20px;">
-            <img src="${imageUrl}" alt="${product.name}" style="max-width: 100%; height: auto; border-radius: 12px; object-fit: contain;" />
+          <div style="flex: 1; min-width: 300px; text-align: center; background: #FFFFFF; border: 1px solid #E2E8F0; padding: 16px; border-radius: 16px;">
+            <img src="${imageUrl}" alt="${product.name}" style="width: 100%; max-width: 400px; max-height: 400px; height: auto; border-radius: 8px; object-fit: contain; display: block; margin: 0 auto;" />
           </div>
           <div style="flex: 1; min-width: 300px;">
             <span style="color: #FF6500; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">${product.category}</span>

@@ -37,10 +37,11 @@ export default function LanguageSelector({ variant = 'default', className = '' }
       style={{
         display: 'inline-flex',
         alignItems: 'center',
+        height: '30px',
         background: 'var(--bg-body, #F8FAFC)',
         border: '1px solid var(--border-light, #E2E8F0)',
-        borderRadius: '24px',
-        padding: '3px',
+        borderRadius: '20px',
+        padding: '2px',
         gap: '2px'
       }}
       className={className}
@@ -50,20 +51,20 @@ export default function LanguageSelector({ variant = 'default', className = '' }
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '5px',
-          padding: '5px 12px',
-          borderRadius: '20px',
+          gap: '4px',
+          padding: '3px 8px',
+          borderRadius: '16px',
           border: 'none',
           background: lang === 'pt' ? 'var(--primary-orange, #FF6500)' : 'transparent',
           color: lang === 'pt' ? '#FFF' : 'var(--text-muted, #64748B)',
           fontWeight: lang === 'pt' ? 800 : 600,
-          fontSize: '0.82rem',
+          fontSize: '0.74rem',
           cursor: 'pointer',
           transition: 'all 0.2s',
           boxShadow: lang === 'pt' ? '0 2px 6px rgba(255, 101, 0, 0.3)' : 'none'
         }}
       >
-        <span style={{ fontSize: '1rem' }}>🇦🇴</span> PT
+        <span style={{ fontSize: '0.85rem' }}>🇦🇴</span> PT
       </button>
 
       <button
@@ -71,20 +72,20 @@ export default function LanguageSelector({ variant = 'default', className = '' }
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '5px',
-          padding: '5px 12px',
-          borderRadius: '20px',
+          gap: '4px',
+          padding: '3px 8px',
+          borderRadius: '16px',
           border: 'none',
           background: lang === 'en' ? 'var(--primary-orange, #FF6500)' : 'transparent',
           color: lang === 'en' ? '#FFF' : 'var(--text-muted, #64748B)',
           fontWeight: lang === 'en' ? 800 : 600,
-          fontSize: '0.82rem',
+          fontSize: '0.74rem',
           cursor: 'pointer',
           transition: 'all 0.2s',
           boxShadow: lang === 'en' ? '0 2px 6px rgba(255, 101, 0, 0.3)' : 'none'
         }}
       >
-        <span style={{ fontSize: '1rem' }}>🇬🇧</span> EN
+        <span style={{ fontSize: '0.85rem' }}>🇬🇧</span> EN
       </button>
     </div>
   );

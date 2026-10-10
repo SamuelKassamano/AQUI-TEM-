@@ -219,8 +219,56 @@ export function getTranslatedTestimonial(testimonial, lang) {
       comment: 'Very comfortable earbuds for walks and workouts. Crystal clear audio. Arrived perfectly in Cabinda. 10/10 service!'
     },
     8: {
-      date: '1 month ago',
-      comment: 'The Oraimo desk fan is super powerful and quiet! Saves my work routine in Maianga. Top service!'
+      date: '3 days ago',
+      comment: 'Amazing sound quality! I use it every day at my office in Maianga for calls and music. Isolates noise really well and came sealed in the original Oraimo box.'
+    },
+    9: {
+      date: '5 days ago',
+      comment: 'Super bright screen and receives all WhatsApp and call notifications clearly. The battery lasts over a week for me!'
+    },
+    10: {
+      date: '1 week ago',
+      comment: 'Fits a whole chicken easily in the 6 liters! Roasts super fast and the viewing window lets you check without opening the basket. Best home purchase.'
+    },
+    11: {
+      date: '6 days ago',
+      comment: 'No more worrying about running out of gas at home! Boils water in seconds and the touch panel is super easy to clean.'
+    },
+    12: {
+      date: '4 days ago',
+      comment: 'Beautiful matte finish, no exterior condensation, and keeps coffee hot all morning. Super fast delivery in Patriota!'
+    },
+    13: {
+      date: '1 week ago',
+      comment: 'Very slim and sleek, fits in my pocket with my phone. The 15W magnetic charging is super fast and stays cool.'
+    },
+    14: {
+      date: '5 days ago',
+      comment: 'Modern design and super compact case. Bluetooth connection is instant as soon as I open the case. 100% recommend!'
+    },
+    15: {
+      date: '1 week ago',
+      comment: 'Impressive 4K picture for watching football and Netflix with the family. Delivered in Talatona with great care and tested on the spot!'
+    },
+    16: {
+      date: '2 weeks ago',
+      comment: 'Voice control works great and the sound fills the entire living room. Excellent service from the Aqui Tem team.'
+    },
+    17: {
+      date: '2 weeks ago',
+      comment: 'Very spacious, ultra-quiet, and the stainless steel finish transformed our kitchen. Impeccable and fast delivery in Luanda.'
+    },
+    18: {
+      date: '3 weeks ago',
+      comment: 'Freezes super fast and keeps food fresh much longer. 10/10 for the delivery professionalism!'
+    },
+    19: {
+      date: '3 days ago',
+      comment: 'Charges my phone from 0 to 80% in no time! The included cable is thick and very durable. Genuine Oraimo.'
+    },
+    20: {
+      date: '1 week ago',
+      comment: 'Protects the battery and does not heat up at all during fast charging. Best charger I have ever bought!'
     }
   };
 
@@ -231,4 +279,11 @@ export function getTranslatedTestimonial(testimonial, lang) {
     ...base,
     ...translated
   };
+}
+
+export function getProductTestimonials(product, lang = 'pt') {
+  if (!product) return [];
+  const matched = TESTIMONIALS.filter(t => t.productId === product.id);
+  const list = matched.length > 0 ? matched : TESTIMONIALS.slice(0, 2);
+  return list.map(item => getTranslatedTestimonial(item, lang));
 }

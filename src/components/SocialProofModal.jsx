@@ -27,19 +27,19 @@ export default function SocialProofModal({ isOpen, onClose }) {
     <div className="modal-overlay" onClick={onClose} style={{ zIndex: 1100 }}>
       <div
         className="modal-content"
-        style={{ maxWidth: '850px', width: '92%', maxHeight: '90vh', overflowY: 'auto', padding: '28px' }}
+        style={{ maxWidth: '850px', width: '96%', maxHeight: '90vh', overflowY: 'auto', padding: 'clamp(16px, 4vw, 28px)' }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', borderBottom: '2px solid var(--border-light)', paddingBottom: '16px' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+          <div style={{ paddingRight: '32px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.82rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
               <Award size={18} /> {t('spBadge')}
             </div>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--text-main)', marginTop: '4px' }}>
+            <h2 style={{ fontSize: 'clamp(1.3rem, 4vw, 1.8rem)', fontWeight: 900, color: 'var(--text-main)', marginTop: '4px' }}>
               {t('spTitle')}
             </h2>
-            <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '4px' }}>
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '4px' }}>
               {t('spSubtitle')}
             </p>
           </div>
@@ -51,25 +51,25 @@ export default function SocialProofModal({ isOpen, onClose }) {
         {/* Stats Banner */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+          gap: '14px',
+          marginBottom: '20px',
           background: 'linear-gradient(135deg, rgba(255,101,0,0.08), rgba(30,92,158,0.08))',
-          padding: '18px',
+          padding: '14px',
           borderRadius: '16px',
           border: '1px solid var(--border-light)'
         }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--primary-orange)' }}>4.9 ★★★★★</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('spStatRating')}</div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--primary-orange)' }}>4.9 ★★★★★</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('spStatRating')}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#1E5C9E' }}>+3.800</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('spStatClients')}</div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#1E5C9E' }}>+3.800</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('spStatClients')}</div>
           </div>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10B981' }}>100%</div>
-            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('spStatOriginal')}</div>
+            <div style={{ fontSize: '1.45rem', fontWeight: 900, color: '#10B981' }}>100%</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>{t('spStatOriginal')}</div>
           </div>
         </div>
 
@@ -100,64 +100,55 @@ export default function SocialProofModal({ isOpen, onClose }) {
         </div>
 
         {/* Testimonials Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '20px' }}>
+        <div className="testimonials-modal-grid">
           {filteredTestimonials.map(item => (
             <div
               key={item.id}
-              style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-light)',
-                borderRadius: '16px',
-                padding: '20px',
-                display: 'flex',
-                flexDirection: 'column',
-                justify: 'space-between',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
-              }}
+              className="testimonial-card"
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                   <img
                     src={item.avatar}
                     alt={item.name}
-                    style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary-orange)' }}
+                    className="testimonial-avatar"
                   />
-                  <div>
-                    <div style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      {item.name}
+                  <div style={{ minWidth: 0 }}>
+                    <div className="testimonial-author-name">
+                      <span>{item.name}</span>
                       {item.verified && (
-                        <span style={{ color: '#10B981', display: 'inline-flex', alignItems: 'center', fontSize: '0.75rem', background: 'rgba(16,185,129,0.1)', padding: '2px 8px', borderRadius: '10px' }}>
-                          <CheckCircle size={12} style={{ marginRight: '3px' }} /> {t('verifiedCustomer')}
+                        <span className="testimonial-verified-badge">
+                          <CheckCircle size={10} style={{ marginRight: '2px' }} /> {t('verifiedCustomer')}
                         </span>
                       )}
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-                      <MapPin size={12} color="var(--primary-orange)" /> {item.location} • <span style={{ opacity: 0.8 }}>{item.date}</span>
+                    <div className="testimonial-meta">
+                      <MapPin size={11} color="var(--primary-orange)" /> {item.location} • <span style={{ opacity: 0.8 }}>{item.date}</span>
                     </div>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '2px', marginBottom: '8px' }}>
+                <div style={{ display: 'flex', gap: '2px', marginBottom: '5px' }}>
                   {[...Array(item.rating)].map((_, i) => (
-                    <Star key={i} size={15} fill="#FFB800" color="#FFB800" />
+                    <Star key={i} size={12} fill="#FFB800" color="#FFB800" />
                   ))}
                 </div>
 
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E5C9E', marginBottom: '8px', background: 'rgba(30,92,158,0.08)', padding: '4px 10px', borderRadius: '6px', display: 'inline-block' }}>
+                <div className="testimonial-product-tag">
                   📦 {item.product}
                 </div>
 
-                <p style={{ fontSize: '0.92rem', color: 'var(--text-main)', lineHeight: '1.5', fontStyle: 'italic', marginBottom: '14px' }}>
+                <p className="testimonial-comment-text">
                   "{item.comment}"
                 </p>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid var(--border-light)', paddingTop: '10px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              <div className="testimonial-footer-row">
                 <span style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer' }}>
-                  <ThumbsUp size={14} color="var(--primary-orange)" /> {item.likes} {t('helpfulReview')}
+                  <ThumbsUp size={12} color="var(--primary-orange)" /> {item.likes} {t('helpfulReview')}
                 </span>
-                <span style={{ color: '#25D366', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <ShieldCheck size={14} /> {t('securePurchase')}
+                <span style={{ color: '#25D366', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                  <ShieldCheck size={12} /> {t('securePurchase')}
                 </span>
               </div>
             </div>

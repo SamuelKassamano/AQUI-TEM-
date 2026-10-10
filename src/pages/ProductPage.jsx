@@ -1,8 +1,10 @@
 import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { Star, CheckCircle, MapPin, ThumbsUp, ShieldCheck, Award, Info, MessageCircle } from 'lucide-react';
 import { PRODUCTS } from '../../data/products';
 import { createProductStructuredData, createBreadcrumbStructuredData } from '../seo/structuredData';
 import { createSlug } from '../utils/slug';
+import { getProductTestimonials } from '../utils/productTranslations';
 
 export default function ProductPage() {
   const { slug } = useParams();
@@ -69,6 +71,7 @@ export default function ProductPage() {
 
   const productSchema = createProductStructuredData(product);
   const breadcrumbSchema = createBreadcrumbStructuredData(product);
+  const productReviews = getProductTestimonials(product, 'pt');
 
   return (
     <>
@@ -86,85 +89,166 @@ export default function ProductPage() {
         }}
       />
 
-      <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
-        <nav style={{ marginBottom: '30px' }}>
-          <Link to="/">AQUI TEM</Link>
-          {' / '}
+      <main style={{ maxWidth: '1040px', margin: '0 auto', padding: '24px 16px' }}>
+        <nav style={{ marginBottom: '18px', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <Link to="/" style={{ color: 'var(--primary-orange)', fontWeight: 700 }}>AQUI TEM</Link>
+          <span>/</span>
           <span>{product.category}</span>
-          {' / '}
-          <span>{product.name}</span>
+          <span>/</span>
+          <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{product.name}</span>
         </nav>
 
         <section
           style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
-            gap: '40px',
-            alignItems: 'start'
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-light)',
+            borderRadius: '18px',
+            boxShadow: 'var(--shadow-sm)',
+            overflow: 'hidden'
           }}
         >
-          <div>
-            <img
-              src={product.image}
-              alt={product.name}
-              style={{
-                width: '100%',
-                maxWidth: '600px',
-                display: 'block',
-                margin: '0 auto'
-              }}
-            />
+          <div className="modal-grid">
+            <div className="modal-img-col">
+              <img
+                src={product.image}
+                alt={product.name}
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  if (product.fallbackImage) {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = product.fallbackImage;
+                  }
+                }}
+              />
+            </div>
+
+            <div className="modal-details-col">
+              <span className="product-category" style={{ marginBottom: 0 }}>{product.category}</span>
+
+              <h1 style={{ fontSize: '1.5rem', fontWeight: 800, lineHeight: 1.25, marginTop: '4px' }}>{product.name}</h1>
+
+              <div className="rating-row" style={{ marginTop: '6px', marginBottom: '12px' }}>
+                <div className="stars">
+                  <Star size={15} fill="#FFB800" color="#FFB800" />
+                  <strong style={{ marginLeft: '4px' }}>{product.rating}</strong>
+                </div>
+                <span>({product.reviewsCount} avaliações)</span>
+              </div>
+
+              <div style={{ padding: '14px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-light)', marginBottom: '14px' }}>
+                {product.oldPrice && (
+                  <div className="old-price">
+                    Antes: {Number(product.oldPrice).toLocaleString('pt-AO')} Kz
+                  </div>
+                )}
+                <div className="current-price" style={{ fontSize: '1.6rem' }}>
+                  Agora: {Number(product.price).toLocaleString('pt-AO')} Kz
+                </div>
+                <div className="pix-price">
+                  ⚡ {Number(product.price * 0.9).toLocaleString('pt-AO')} Kz à vista (10% OFF)
+                </div>
+              </div>
+
+              <div className="modal-actions-row">
+                <a
+                  href={`https://wa.me/244950752933?text=${encodeURIComponent(
+                    `Olá AQUI TEM! Tenho interesse no produto: ${product.name}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-whatsapp"
+                  style={{ flex: 1, textDecoration: 'none', justifyContent: 'center' }}
+                >
+                  <MessageCircle size={17} /> Comprar pelo WhatsApp
+                </a>
+                <Link
+                  to="/"
+                  className="nav-btn"
+                  style={{ justifyContent: 'center', padding: '10px 18px' }}
+                >
+                  Voltar à Loja
+                </Link>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <p>{product.category}</p>
-
-            <h1>{product.name}</h1>
-
-            <p>
-              ⭐ {product.rating} ({product.reviewsCount} avaliações)
-            </p>
-
-            <h2>
-              {Number(product.price).toLocaleString('pt-AO')} Kz
-            </h2>
-
-            {product.oldPrice && (
-              <p>
-                <del>
-                  {Number(product.oldPrice).toLocaleString('pt-AO')} Kz
-                </del>
-              </p>
-            )}
-
-            <p>{product.description}</p>
-
-            {product.specs?.length > 0 && (
-              <>
-                <h2>Características</h2>
-                <ul>
+          <div className="modal-product-extra">
+            <div className="modal-desc-card">
+              <div className="modal-section-subtitle">
+                <Info size={16} color="var(--primary-orange)" />
+                <span>Descrição Completa & Especificações Técnicas</span>
+              </div>
+              <p className="modal-desc-text">{product.description}</p>
+              {product.specs?.length > 0 && (
+                <div className="modal-specs-pills">
                   {product.specs.map((spec, index) => (
-                    <li key={index}>{spec}</li>
+                    <span key={index} className="modal-spec-pill">
+                      <CheckCircle size={13} color="#10B981" /> {spec}
+                    </span>
                   ))}
-                </ul>
-              </>
-            )}
+                </div>
+              )}
+            </div>
 
-            <a
-              href={`https://wa.me/244950752933?text=${encodeURIComponent(
-                `Olá AQUI TEM! Tenho interesse no produto: ${product.name}`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'inline-block',
-                marginTop: '20px',
-                padding: '14px 24px',
-                textDecoration: 'none'
-              }}
-            >
-              Comprar pelo WhatsApp
-            </a>
+            <div className="modal-social-proof-box">
+              <div className="modal-sp-header">
+                <div className="modal-section-subtitle" style={{ marginBottom: 0 }}>
+                  <Award size={16} color="var(--primary-orange)" />
+                  <span>Provas Sociais deste Produto</span>
+                </div>
+                <span className="modal-sp-rating-pill">
+                  ★ {product.rating} ({product.reviewsCount} avaliações)
+                </span>
+              </div>
+
+              <div className="product-reviews-grid">
+                {productReviews.map(review => (
+                  <div key={review.id} className="testimonial-card">
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                        <img
+                          src={review.avatar}
+                          alt={review.name}
+                          className="testimonial-avatar"
+                        />
+                        <div style={{ minWidth: 0 }}>
+                          <div className="testimonial-author-name">
+                            <span>{review.name}</span>
+                            {review.verified && (
+                              <span className="testimonial-verified-badge">
+                                <CheckCircle size={10} style={{ marginRight: '2px' }} /> Verificado
+                              </span>
+                            )}
+                          </div>
+                          <div className="testimonial-meta">
+                            <MapPin size={11} color="var(--primary-orange)" /> {review.location} • <span>{review.date}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: '2px', marginBottom: '6px' }}>
+                        {[...Array(review.rating)].map((_, idx) => (
+                          <Star key={idx} size={12} fill="#FFB800" color="#FFB800" />
+                        ))}
+                      </div>
+
+                      <p className="testimonial-comment-text">
+                        "{review.comment}"
+                      </p>
+                    </div>
+
+                    <div className="testimonial-footer-row">
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <ThumbsUp size={11} color="var(--primary-orange)" /> {review.likes} clientes acharam útil
+                      </span>
+                      <span style={{ color: '#25D366', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
+                        <ShieldCheck size={11} /> Compra Segura
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       </main>

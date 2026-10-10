@@ -21,14 +21,17 @@ export default function OriginalLogoImage({ src = 'logo.jpg', alt = 'Aqui Tem', 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = imageData.data;
 
-        // Turn white and near-white pixels into 100% transparent alpha
+        // Turn white and near-white background pixels into 100% transparent PNG alpha
         for (let i = 0; i < data.length; i += 4) {
           const r = data[i];
           const g = data[i + 1];
           const b = data[i + 2];
-          // Check for pure white or near-white background pixels
-          if (r > 225 && g > 225 && b > 225) {
-            data[i + 3] = 0; // Transparent
+          const isNeutral = Math.abs(r - g) < 18 && Math.abs(g - b) < 18 && Math.abs(r - b) < 18;
+          if (r > 215 && g > 215 && b > 215) {
+            data[i + 3] = 0;
+          } else if (isNeutral && r > 185 && g > 185 && b > 185) {
+            const avg = (r + g + b) / 3;
+            data[i + 3] = Math.round(((215 - avg) / 30) * 255);
           }
         }
 
