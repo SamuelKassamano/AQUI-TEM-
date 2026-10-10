@@ -126,6 +126,13 @@ for (const product of products) {
 
   fs.writeFileSync(path.join(productDir, 'index.html'), html, 'utf8');
   count++;
+
+  // Also pre-render legacy short slug alias for Smart TV 55"
+  if (slug.startsWith('smart-tv-55-')) {
+    const aliasDir = path.join(distPath, 'produto', 'smart-tv-55');
+    fs.mkdirSync(aliasDir, { recursive: true });
+    fs.writeFileSync(path.join(aliasDir, 'index.html'), html, 'utf8');
+  }
 }
 
 console.log(`Sucesso! ${count} páginas estáticas HTML individuais pré-renderizadas em dist/produto/*/index.html!`);

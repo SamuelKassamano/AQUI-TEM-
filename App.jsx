@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ShoppingBag,
   Search,
@@ -30,21 +31,25 @@ import {
   ThumbsUp,
   ChevronLeft,
   ChevronRight,
-  BarChart3
+  BarChart3,
+  Lock,
+  ExternalLink
 } from 'lucide-react';
-import { PRODUCTS, CATEGORIES, ADVANTAGES, HERO_BANNER_FALLBACK, HERO_COVER_IMAGES } from './data/products';
+import { CATEGORIES, ADVANTAGES, HERO_BANNER_FALLBACK, HERO_COVER_IMAGES } from './data/products';
 import { PRODUCT_VIDEOS } from './src/data/videos';
-import { TESTIMONIALS } from './src/data/testimonials';
 import { getAssetUrl } from './src/utils/assets';
 import OriginalLogoImage from './src/components/OriginalLogoImage';
 import SocialProofModal from './src/components/SocialProofModal';
 import VideosModal from './src/components/VideosModal';
 import CRMDashboardModal from './src/components/CRMDashboardModal';
+import StoreDrawers from './src/components/StoreDrawers';
 import { useLanguage } from './src/context/LanguageContext';
 import { initAllPixels, trackProductView, trackWhatsAppLead } from './src/utils/pixelRetargeting';
 import { useCRM } from './src/context/CRMContext';
+import { useStore } from './src/context/StoreContext';
 import LanguageSelector from './src/components/LanguageSelector';
-import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getTranslatedTestimonial, getProductTestimonials } from './src/utils/productTranslations';
+import { getTranslatedProduct, getTranslatedCategory, getTranslatedVideo, getProductTestimonials } from './src/utils/productTranslations';
+import { createSlug } from './src/utils/slug';
 import {
   createProductStructuredData,
   createBreadcrumbStructuredData
@@ -52,32 +57,40 @@ import {
 
 export default function App() {
   const { lang, t } = useLanguage();
-  const { openCRM, captureLead } = useCRM();
+  const { openCRM } = useCRM();
+  const {
+    activeProducts,
+    cart,
+    addToCart,
+    setIsCartOpen,
+    wishlist,
+    toggleWishlist,
+    isInWishlist,
+    setIsWishlistOpen,
+    setIsCheckoutOpen,
+    setDirectCheckoutItem,
+    theme,
+    toggleTheme,
+    getEffectivePrice,
+    getPreviousPrice,
+    formatPriceKz
+  } = useStore();
 
   // Inicializa os pixels de remarketing
   useEffect(() => {
     initAllPixels();
   }, []);
 
-
   // State management
   const [selectedCategory, setSelectedCategory] = useState('Todos');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('recommended');
-  const [cart, setCart] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
   const [isSideMenuOpen, setIsSideMenuOpen] = useState(false);
   const [isSocialProofOpen, setIsSocialProofOpen] = useState(false);
   const [isVideosOpen, setIsVideosOpen] = useState(false);
   const [activeVideoStart, setActiveVideoStart] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [activeInfoModal, setActiveInfoModal] = useState(null);
-  const [theme, setTheme] = useState('light');
-  const [toastMessage, setToastMessage] = useState(null);
-  const [coupon, setCoupon] = useState('');
-  const [appliedDiscount, setAppliedDiscount] = useState(0);
 
   // Auto-switch cover flyers every 15 seconds
   const [heroImageIndex, setHeroImageIndex] = useState(0);
@@ -89,170 +102,59 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Form state for WhatsApp checkout
-  const [checkoutForm, setCheckoutForm] = useState({
-    name: '',
-    phone: '950752933',
-    address: '',
-    city: 'Luanda',
-    paymentMethod: 'Pagamento na Entrega (Multicaixa / Cash)'
-  });
-
-  // Currency Formatter (Kwanzas - Kz)
-  const formatKz = (val) => {
-    return new Intl.NumberFormat('pt-AO', { minimumFractionDigits: 0 }).format(val) + ' Kz';
-  };
-
-  // Toggle Theme
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  };
-
-  // Toast Notification trigger
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
-  // Add item to cart
-  const addToCart = (product, quantity = 1) => {
-    const translatedProd = getTranslatedProduct(product, lang);
-    setCart(prevCart => {
-      const existing = prevCart.find(item => item.id === product.id);
-      if (existing) {
-        return prevCart.map(item =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      }
-      return [...prevCart, { ...translatedProd, quantity }];
-    });
-    showToast(`"${translatedProd.name.slice(0, 25)}..." ${lang === 'en' ? 'added to cart!' : 'adicionado ao carrinho!'}`);
-  };
-
-  // Update item quantity
-  const updateQuantity = (id, delta) => {
-    setCart(prevCart =>
-      prevCart
-        .map(item => {
-          if (item.id === id) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean)
-    );
-  };
-
-  // Remove from cart
-  const removeFromCart = (id) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== id));
-  };
-
-  // Toggle Wishlist
-  const toggleWishlist = (id) => {
-    setWishlist(prev =>
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
-    );
-  };
-
-  // Apply Coupon
-  const handleApplyCoupon = (e) => {
-    e.preventDefault();
-    if (coupon.trim().toUpperCase() === 'AQUITEM10') {
-      setAppliedDiscount(0.10);
-      showToast(lang === 'en' ? 'Coupon AQUITEM10 applied! 10% discount.' : 'Cupom AQUITEM10 aplicado! 10% de desconto.');
-    } else {
-      showToast(lang === 'en' ? 'Invalid coupon. Try AQUITEM10' : 'Cupom inválido. Tente AQUITEM10');
-    }
-  };
-
-  // Filtered and Sorted Products
+  // Filtered and Sorted Products (Active products only, searches name, brand, category, description, SKU)
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.map(p => getTranslatedProduct(p, lang)).filter(p => {
-      const canonicalSelected = getTranslatedCategory(selectedCategory, 'pt');
-      const matchesCategory =
-        selectedCategory === 'Todos' ||
-        selectedCategory === 'All' ||
-        p.category === canonicalSelected ||
-        p.originalCategory === canonicalSelected ||
-        getTranslatedCategory(p.category, lang) === selectedCategory;
-      const matchesSearch =
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    }).sort((a, b) => {
-      if (sortBy === 'price-low') return a.price - b.price;
-      if (sortBy === 'price-high') return b.price - a.price;
-      if (sortBy === 'rating') return b.rating - a.rating;
-      return 0; // Default recommended
-    });
-  }, [selectedCategory, searchQuery, sortBy, lang]);
+    const q = searchQuery.toLowerCase().trim();
 
-  // Cart Calculations
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const discountAmount = subtotal * appliedDiscount;
-  const shippingFee = subtotal > 150000 || subtotal === 0 ? 0 : 3000;
-  const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
+    return activeProducts
+      .map(p => getTranslatedProduct(p, lang))
+      .filter(p => {
+        const canonicalSelected = getTranslatedCategory(selectedCategory, 'pt');
+        const prodCat = (p.originalCategory || p.category || '').toLowerCase();
+        const prodName = (p.name || '').toLowerCase();
+        const prodDesc = (p.description || '').toLowerCase();
 
-  // Generate WhatsApp Message & Open Link
-  const handleWhatsAppCheckoutSubmit = (e) => {
-    e.preventDefault();
+        let matchesCategory =
+          selectedCategory === 'Todos' ||
+          selectedCategory === 'All' ||
+          p.category === canonicalSelected ||
+          p.originalCategory === canonicalSelected ||
+          getTranslatedCategory(p.category, lang) === selectedCategory;
 
-    if (!checkoutForm.name || !checkoutForm.address) {
-      alert(lang === 'en' ? 'Please fill in your full name and delivery address in Angola.' : 'Por favor, preencha o seu nome e endereço de entrega em Angola.');
-      return;
-    }
+        if (!matchesCategory) {
+          if (canonicalSelected === 'Smartwatches') {
+            matchesCategory = prodName.includes('watch') || prodName.includes('smartwatch') || prodCat.includes('watch');
+          } else if (canonicalSelected === 'Energia') {
+            matchesCategory = prodName.includes('powerbank') || prodName.includes('magpower') || prodName.includes('carregador') || prodCat.includes('energia');
+          } else if (canonicalSelected === 'Celular') {
+            matchesCategory = prodName.includes('celular') || prodName.includes('telemóvel') || prodName.includes('smartphone') || prodName.includes('cabo') || prodName.includes('carregador') || prodName.includes('magpower');
+          } else if (canonicalSelected === 'Áudio & Som') {
+            matchesCategory = prodCat.includes('áudio') || prodCat.includes('audio') || prodName.includes('headphone') || prodName.includes('fones');
+          } else if (canonicalSelected === 'Acessórios & Casa') {
+            matchesCategory = prodCat.includes('casa') || prodName.includes('copo') || prodName.includes('garrafa');
+          }
+        }
 
-    let message = `🛒 *NOVO PEDIDO - AQUI TEM (Tudo em um só lugar)*\n`;
-    message += `------------------------------------\n`;
-    message += `👤 *Cliente:* ${checkoutForm.name}\n`;
-    message += `📞 *Telefone/WhatsApp:* ${checkoutForm.phone || '950752933'}\n`;
-    message += `📍 *Endereço de Entrega:* ${checkoutForm.address} (${checkoutForm.city})\n`;
-    message += `💳 *Forma de Pagamento:* ${checkoutForm.paymentMethod}\n`;
-    message += `------------------------------------\n`;
-    message += `📦 *PRODUTOS SELECIONADOS:*\n\n`;
+        const matchesSearch =
+          !q ||
+          prodName.includes(q) ||
+          prodDesc.includes(q) ||
+          (p.brand || '').toLowerCase().includes(q) ||
+          (p.category || '').toLowerCase().includes(q) ||
+          (p.originalCategory || '').toLowerCase().includes(q) ||
+          (p.sku || '').toLowerCase().includes(q);
 
-    cart.forEach(item => {
-      const translatedItem = getTranslatedProduct(item, lang);
-      message += `• ${item.quantity}x ${translatedItem.name}\n  Valor: ${formatKz(item.price * item.quantity)}\n`;
-    });
-
-    message += `\n------------------------------------\n`;
-    message += `Subtotal: ${formatKz(subtotal)}\n`;
-    if (appliedDiscount > 0) {
-      message += `Desconto (Cupom): -${formatKz(discountAmount)}\n`;
-    }
-    message += `Entrega: ${shippingFee === 0 ? 'GRÁTIS' : formatKz(shippingFee)}\n`;
-    message += `💰 *TOTAL FINAL: ${formatKz(finalTotal)}*\n`;
-    message += `------------------------------------\n`;
-    message += `Aguardando confirmação para envio em Luanda / Províncias! 🚀`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const phoneNumber = '244950752933';
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-
-    // Auto capture Lead in CRM
-    captureLead({
-      name: checkoutForm.name,
-      phone: checkoutForm.phone || '950752933',
-      city: checkoutForm.city || 'Luanda',
-      address: checkoutForm.address || 'Angola',
-      productName: cart.map(i => i.name).join(', ') || 'Pedido de Carrinho',
-      totalValue: finalTotal,
-      notes: `Forma de Pagamento: ${checkoutForm.paymentMethod}`
-    });
-
-    window.open(whatsappUrl, '_blank');
-    setIsCheckoutOpen(false);
-    setIsCartOpen(false);
-  };
+        return matchesCategory && matchesSearch;
+      })
+      .sort((a, b) => {
+        const priceA = getEffectivePrice(a);
+        const priceB = getEffectivePrice(b);
+        if (sortBy === 'price-low') return priceA - priceB;
+        if (sortBy === 'price-high') return priceB - priceA;
+        if (sortBy === 'rating') return (b.rating || 0) - (a.rating || 0);
+        return 0;
+      });
+  }, [activeProducts, selectedCategory, searchQuery, sortBy, lang, getEffectivePrice]);
 
   const translatedAdvantageTitles = [
     t('advFastDeliveryTitle'),
@@ -270,28 +172,6 @@ export default function App() {
 
   return (
     <div className="app-container">
-      {/* Toast Alert */}
-      {toastMessage && (
-        <div style={{
-          position: 'fixed',
-          bottom: '24px',
-          right: '24px',
-          background: 'linear-gradient(135deg, #F37021, #D95D12)',
-          color: '#FFF',
-          padding: '12px 20px',
-          borderRadius: '12px',
-          boxShadow: '0 10px 25px rgba(243, 112, 33, 0.4)',
-          zIndex: 2000,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          fontWeight: '700',
-          fontSize: '0.95rem'
-        }}>
-          <CheckCircle size={20} />
-          {toastMessage}
-        </div>
-      )}
 
       {/* Top Announcement Bar */}
       <div className="top-bar">
@@ -357,11 +237,11 @@ export default function App() {
             </button>
 
             <button
-              className="nav-btn nav-btn-icon desktop-only-action"
-              onClick={() => showToast(`${t('wishlist')} (${wishlist.length} ${t('items')})`)}
+              className="nav-btn nav-btn-icon"
+              onClick={() => setIsWishlistOpen(true)}
               title={t('wishlist')}
             >
-              <Heart size={16} color={wishlist.length > 0 ? '#F37021' : 'currentColor'} />
+              <Heart size={16} color={wishlist.length > 0 ? '#F37021' : 'currentColor'} fill={wishlist.length > 0 ? '#F37021' : 'none'} />
               {wishlist.length > 0 && <span className="badge-count">{wishlist.length}</span>}
             </button>
 
@@ -450,6 +330,15 @@ export default function App() {
                 <BarChart3 size={15} /> Painel CRM
               </button>
 
+              <Link
+                to="/admin"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <Lock size={15} /> {t('adminPanel')}
+              </Link>
+
               <div style={{ borderTop: '1px solid var(--border-light)', margin: '6px 0' }}></div>
               <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase' }}>{t('categories')}</span>
 
@@ -510,24 +399,28 @@ export default function App() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase' }}>
                   <MapPin size={18} /> {t('storesAndSupport')}
                 </div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>{lang === 'en' ? 'Our Stores & Showrooms in Luanda' : 'Nossas Lojas & Atendimento Presencial em Luanda'}</h3>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 900 }}>
+                  {lang === 'en' ? '100% Online Store & Delivery in Angola' : 'Atendimento Online, Importação & Entregas em Angola'}
+                </h3>
                 <p style={{ color: 'var(--text-muted)', lineHeight: '1.6' }}>
                   {lang === 'en'
-                    ? 'Visit our showrooms or place your order directly via WhatsApp for same-day delivery.'
-                    : 'Visite as nossas lojas físicas ou faça a sua encomenda pelo WhatsApp com entrega no mesmo dia.'
+                    ? 'AQUI TEM operates exclusively online, specializing in importing electronics, gadgets, Oraimo products, and home appliances directly from China with affordable prices and scheduled delivery.'
+                    : 'A AQUI TEM trabalha exclusivamente online, sendo especializada na importação direta da China de eletrônicos, gadgets, produtos Oraimo e eletrodomésticos com preços mais acessíveis e entrega mediante agendamento.'
                   }
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                   <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
-                    <strong>🏪 Showroom Central Luanda (Kilamba):</strong> Bloco X, Luanda
+                    <strong>📍 {lang === 'en' ? 'Operational Location (Luanda):' : 'Localização Operacional (Luanda):'}</strong> Avenida Fidel de Castro, Benfica - Zona Verde, Município Cabolombo, Província de Luanda, Angola
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      {lang === 'en' ? 'Hours: Mon to Sat from 8:00 AM to 6:00 PM' : 'Horário: Segunda a Sábado das 08h00 às 18h00'}
+                      {lang === 'en' ? 'WhatsApp Customer Support: +244 950 752 933' : 'Atendimento e encomendas pelo WhatsApp: +244 950 752 933'}
                     </div>
                   </div>
                   <div style={{ background: 'var(--bg-card)', padding: '14px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
-                    <strong>🚚 {lang === 'en' ? 'Luanda Fast Dispatch Center' : 'Centro de Logística e Entregas (Talatona & Viana)'}:</strong>
+                    <strong>🚚 {lang === 'en' ? 'Scheduled Delivery & Payment' : 'Entregas & Formas de Pagamento'}:</strong>
                     <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                      {lang === 'en' ? 'Same-day delivery service with mobile POS terminal.' : 'Atendimento express com TPA no local de entrega.'}
+                      {lang === 'en'
+                        ? 'Deliveries in Luanda and other provinces of Angola by appointment. Payment accepted via Multicaixa, Cash, and Payment on Delivery.'
+                        : 'Entregas em Luanda e outras províncias de Angola mediante agendamento. Aceitamos Multicaixa, Dinheiro/Cash e Pagamento na entrega.'}
                     </div>
                   </div>
                 </div>
@@ -865,82 +758,145 @@ export default function App() {
           </div>
         ) : (
           <div className="products-grid">
-            {filteredProducts.map(product => (
-              <div key={product.id} className="product-card">
-                {product.badge && (
-                  <span className="product-badge">{product.badge}</span>
-                )}
-                
-                <div
-                  className={`product-img-wrapper${product.whiteBg ? ' white-bg' : ''}${product.orangeBg ? ' orange-bg' : ''}`}
-                  onClick={() => {
-                    trackProductView(product.name, product.price);
-                    setSelectedProduct(product);
-                  }}
-                >
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      e.currentTarget.onerror = null;
-                      e.currentTarget.src = product.fallbackImage;
-                    }}
-                  />
-                </div>
+            {filteredProducts.map(product => {
+              const effectivePrice = getEffectivePrice(product);
+              const previousPrice = getPreviousPrice(product);
+              const isOutOfStock = Number(product.stock) <= 0;
+              const isFav = isInWishlist(product.id);
+              const productSlug = product.slug || createSlug(product.name);
 
-                <div className="product-body">
-                  <span className="product-category">{product.category}</span>
-                  <h3
-                    className="product-name"
-                    style={{ cursor: 'pointer' }}
+              return (
+                <div key={product.id} className="product-card">
+                  {(isOutOfStock || product.badge) && (
+                    <span
+                      className="product-badge"
+                      style={isOutOfStock ? { background: '#DC2626', color: '#FFFFFF' } : undefined}
+                    >
+                      {isOutOfStock ? t('outOfStock') : product.badge}
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(product.id);
+                    }}
+                    title={isFav ? t('removeFavorite') : t('addFavorite')}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      zIndex: 6,
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.9)',
+                      border: '1px solid var(--border-light)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Heart size={15} color={isFav ? '#F37021' : '#64748B'} fill={isFav ? '#F37021' : 'none'} />
+                  </button>
+
+                  <div
+                    className={`product-img-wrapper${product.whiteBg ? ' white-bg' : ''}${product.orangeBg ? ' orange-bg' : ''}`}
                     onClick={() => {
-                      trackProductView(product.name, product.price);
+                      trackProductView(product.name, effectivePrice);
                       setSelectedProduct(product);
                     }}
                   >
-                    {product.name}
-                  </h3>
-
-                  <div className="rating-row">
-                    <div className="stars">
-                      <Star size={14} fill="#FFB800" color="#FFB800" />
-                      <strong style={{ marginLeft: '4px' }}>{product.rating}</strong>
-                    </div>
-                    <span>({product.reviewsCount} {t('reviews')})</span>
+                    <img
+                      src={product.image_url || product.image}
+                      alt={product.name}
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = product.fallbackImage;
+                      }}
+                    />
                   </div>
 
-                  <div className="product-price-box">
-                    {product.oldPrice && (
-                      <span className="old-price">{t('before')}: {formatKz(product.oldPrice)}</span>
-                    )}
-                    <div className="current-price">{t('now')}: {formatKz(product.price)}</div>
-                    <div className="pix-price">
-                      ⚡ {formatKz(product.price * 0.9)} {t('cashDiscount')}
-                    </div>
-                  </div>
-
-                  <div className="product-actions">
-                    <button
-                      className="btn-add-cart"
-                      onClick={() => addToCart(product)}
-                    >
-                      <Plus size={18} /> {t('addToCart')}
-                    </button>
-                    <button
-                      className="btn-view-details"
-                      title={t('viewDetails')}
+                  <div className="product-body">
+                    <span className="product-category">{product.category}</span>
+                    <h3
+                      className="product-name"
+                      style={{ cursor: 'pointer' }}
                       onClick={() => {
-                        trackProductView(product.name, product.price);
+                        trackProductView(product.name, effectivePrice);
                         setSelectedProduct(product);
                       }}
                     >
-                      <Eye size={18} />
-                    </button>
+                      {product.name}
+                    </h3>
+
+                    <div className="rating-row">
+                      <div className="stars">
+                        <Star size={14} fill="#FFB800" color="#FFB800" />
+                        <strong style={{ marginLeft: '4px' }}>{product.rating}</strong>
+                      </div>
+                      <span>({product.reviews_count ?? product.reviewsCount} {t('reviews')})</span>
+                    </div>
+
+                    <div className="product-price-box">
+                      {previousPrice && (
+                        <span className="old-price">{t('before')}: {formatPriceKz(previousPrice, lang)}</span>
+                      )}
+                      <div className="current-price">{t('now')}: {formatPriceKz(effectivePrice, lang)}</div>
+                      {effectivePrice > 0 && (
+                        <div className="pix-price">
+                          ⚡ {formatPriceKz(effectivePrice * 0.9, lang)} {t('cashDiscount')}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="product-actions">
+                      {isOutOfStock ? (
+                        <a
+                          href={`https://wa.me/244950752933?text=${encodeURIComponent(
+                            `Olá AQUI TEM! Gostaria de saber sobre a reposição/importação do produto "${product.name}".`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn-add-cart"
+                          style={{ background: '#25D366', textDecoration: 'none', fontSize: '0.78rem' }}
+                        >
+                          <MessageCircle size={16} /> {t('askRestockWhatsApp')}
+                        </a>
+                      ) : (
+                        <button
+                          className="btn-add-cart"
+                          onClick={() => addToCart(product)}
+                        >
+                          <Plus size={18} /> {t('addToCart')}
+                        </button>
+                      )}
+                      <button
+                        className="btn-view-details"
+                        title={t('viewDetails')}
+                        onClick={() => {
+                          trackProductView(product.name, effectivePrice);
+                          setSelectedProduct(product);
+                        }}
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <Link
+                        to={`/produto/${productSlug}`}
+                        className="btn-view-details"
+                        title={t('openProductPage')}
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none' }}
+                      >
+                        <ExternalLink size={16} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -1087,12 +1043,29 @@ export default function App() {
             {(() => {
               const translatedSelected = getTranslatedProduct(selectedProduct, lang);
               const productReviews = getProductTestimonials(selectedProduct, lang);
+              const effectivePrice = getEffectivePrice(translatedSelected);
+              const previousPrice = getPreviousPrice(translatedSelected);
+              const isSelectedOutOfStock = Number(translatedSelected.stock) <= 0;
+              const selectedSlug = translatedSelected.slug || createSlug(translatedSelected.name);
+
               return (
                 <div>
                   <div className="modal-grid">
-                    <div className={`modal-img-col${translatedSelected.whiteBg ? ' white-bg' : ''}${translatedSelected.orangeBg ? ' orange-bg' : ''}`}>
+                    <div className={`modal-img-col${translatedSelected.whiteBg ? ' white-bg' : ''}${translatedSelected.orangeBg ? ' orange-bg' : ''}`} style={{ position: 'relative' }}>
+                      {(isSelectedOutOfStock || translatedSelected.badge) && (
+                        <span
+                          className="product-badge"
+                          style={{
+                            top: '12px',
+                            left: '12px',
+                            ...(isSelectedOutOfStock ? { background: '#DC2626', color: '#FFFFFF' } : {})
+                          }}
+                        >
+                          {isSelectedOutOfStock ? t('outOfStock') : translatedSelected.badge}
+                        </span>
+                      )}
                       <img
-                        src={translatedSelected.image}
+                        src={translatedSelected.image_url || translatedSelected.image}
                         alt={translatedSelected.name}
                         referrerPolicy="no-referrer"
                         onError={(e) => {
@@ -1113,46 +1086,87 @@ export default function App() {
                           <Star size={15} fill="#FFB800" color="#FFB800" />
                           <strong style={{ marginLeft: '4px' }}>{translatedSelected.rating}</strong>
                         </div>
-                        <span>({translatedSelected.reviewsCount} {t('reviews')})</span>
+                        <span>({translatedSelected.reviews_count ?? translatedSelected.reviewsCount} {t('reviews')})</span>
+                        <span>·</span>
+                        <span
+                          style={{
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            color: isSelectedOutOfStock ? '#DC2626' : '#16A34A'
+                          }}
+                        >
+                          {isSelectedOutOfStock ? t('outOfStock') : t('inStock')}
+                        </span>
                       </div>
 
                       <div className="product-price-box" style={{ marginTop: '4px', marginBottom: '14px', padding: '14px', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
-                        {translatedSelected.oldPrice && (
+                        {previousPrice && (
                           <span className="old-price" style={{ fontSize: '0.85rem' }}>
-                            {t('before')}: {formatKz(translatedSelected.oldPrice)}
+                            {t('before')}: {formatPriceKz(previousPrice, lang)}
                           </span>
                         )}
                         <div className="current-price" style={{ fontSize: '1.5rem' }}>
-                          {t('now')}: {formatKz(translatedSelected.price)}
+                          {t('now')}: {formatPriceKz(effectivePrice, lang)}
                         </div>
-                        <div className="pix-price" style={{ fontSize: '0.88rem' }}>
-                          ⚡ {formatKz(translatedSelected.price * 0.9)} {t('cashDiscount')}
-                        </div>
+                        {effectivePrice > 0 && (
+                          <div className="pix-price" style={{ fontSize: '0.88rem' }}>
+                            ⚡ {formatPriceKz(effectivePrice * 0.9, lang)} {t('cashDiscount')}
+                          </div>
+                        )}
                       </div>
 
                       <div className="modal-actions-row">
-                        <button
-                          className="btn-primary"
-                          style={{ flex: 1, justifyContent: 'center' }}
-                          onClick={() => {
-                            addToCart(selectedProduct);
-                            setSelectedProduct(null);
-                            setIsCartOpen(true);
-                          }}
-                        >
-                          <ShoppingBag size={17} /> {t('buyNow')}
-                        </button>
+                        {isSelectedOutOfStock ? (
+                          <button
+                            className="btn-whatsapp"
+                            style={{ flex: 1, justifyContent: 'center' }}
+                            onClick={() => {
+                              const msg = encodeURIComponent(
+                                `Olá AQUI TEM! Gostaria de consultar a reposição/importação do produto "${translatedSelected.name}".`
+                              );
+                              window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
+                            }}
+                          >
+                            <MessageCircle size={17} /> {t('askRestockWhatsApp')}
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              className="btn-primary"
+                              style={{ flex: 1, justifyContent: 'center' }}
+                              onClick={() => {
+                                addToCart(selectedProduct);
+                                setSelectedProduct(null);
+                                setIsCartOpen(true);
+                              }}
+                            >
+                              <ShoppingBag size={17} /> {t('buyNow')}
+                            </button>
 
-                        <button
-                          className="btn-whatsapp"
-                          style={{ flex: 1, justifyContent: 'center' }}
-                          onClick={() => {
-                            const msg = encodeURIComponent(`Olá AQUI TEM! Tenho interesse no produto "${translatedSelected.name}" (${formatKz(translatedSelected.price)}). Poderia me passar mais informações?`);
-                            window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
-                          }}
+                            <button
+                              className="btn-whatsapp"
+                              style={{ flex: 1, justifyContent: 'center' }}
+                              onClick={() => {
+                                const msg = encodeURIComponent(
+                                  `Olá AQUI TEM! Tenho interesse no produto "${translatedSelected.name}" pelo valor de ${formatPriceKz(effectivePrice, lang)}.`
+                                );
+                                window.open(`https://wa.me/244950752933?text=${msg}`, '_blank');
+                              }}
+                            >
+                              <MessageCircle size={17} /> {t('quoteWhatsApp')}
+                            </button>
+                          </>
+                        )}
+                      </div>
+
+                      <div style={{ marginTop: '10px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <Link
+                          to={`/produto/${selectedSlug}`}
+                          onClick={() => setSelectedProduct(null)}
+                          style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary-orange)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
                         >
-                          <MessageCircle size={17} /> {t('quoteWhatsApp')}
-                        </button>
+                          <ExternalLink size={14} /> {t('openProductPage')}
+                        </Link>
                       </div>
                     </div>
                   </div>
@@ -1246,207 +1260,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Cart Drawer */}
-      {isCartOpen && (
-        <div className="cart-drawer-overlay" onClick={() => setIsCartOpen(false)}>
-          <div className="cart-drawer" onClick={e => e.stopPropagation()}>
-            <div className="cart-header">
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <ShoppingBag size={22} color="var(--primary-orange)" />
-                <h3 style={{ fontSize: '1.2rem' }}>{t('cart')}</h3>
-              </div>
-              <button onClick={() => setIsCartOpen(false)}>
-                <X size={22} />
-              </button>
-            </div>
-
-            <div className="cart-body">
-              {cart.length === 0 ? (
-                <div style={{ textAlign: 'center', margin: 'auto' }}>
-                  <ShoppingBag size={56} color="var(--text-light)" style={{ marginBottom: '12px' }} />
-                  <h4>{t('cartEmpty')}</h4>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '6px' }}>
-                    {t('cartEmptySub')}
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {cart.map(rawItem => {
-                    const item = getTranslatedProduct(rawItem, lang);
-                    return (
-                      <div key={item.id} className="cart-item">
-                        <img
-                          src={item.image}
-                          alt={item.name}
-                          className={`cart-item-img${item.whiteBg ? ' white-bg' : ''}${item.orangeBg ? ' orange-bg' : ''}`}
-                          referrerPolicy="no-referrer"
-                          onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            e.currentTarget.src = item.fallbackImage;
-                          }}
-                        />
-                        <div className="cart-item-details">
-                          <div className="cart-item-title">{item.name}</div>
-                          <div className="cart-item-price">
-                            {formatKz(item.price * item.quantity)}
-                          </div>
-                          <div className="qty-controls">
-                            <button className="qty-btn" onClick={() => updateQuantity(item.id, -1)}>
-                              <Minus size={14} />
-                            </button>
-                            <span style={{ fontSize: '0.9rem', fontWeight: '700' }}>{item.quantity}</span>
-                            <button className="qty-btn" onClick={() => updateQuantity(item.id, 1)}>
-                              <Plus size={14} />
-                            </button>
-                          </div>
-                        </div>
-                        <button onClick={() => removeFromCart(item.id)} style={{ color: 'var(--text-light)' }}>
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    );
-                  })}
-
-                  {/* Cupom de Desconto */}
-                  <form onSubmit={handleApplyCoupon} style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
-                    <input
-                      type="text"
-                      placeholder={t('couponPlaceholder')}
-                      className="form-input"
-                      value={coupon}
-                      onChange={e => setCoupon(e.target.value)}
-                      style={{ flex: 1 }}
-                    />
-                    <button type="submit" className="nav-btn" style={{ padding: '8px 16px' }}>
-                      {t('apply')}
-                    </button>
-                  </form>
-                </>
-              )}
-            </div>
-
-            {cart.length > 0 && (
-              <div className="cart-footer">
-                <div className="cart-summary-row">
-                  <span>{t('subtotal')}:</span>
-                  <span>{formatKz(subtotal)}</span>
-                </div>
-                {appliedDiscount > 0 && (
-                  <div className="cart-summary-row" style={{ color: 'var(--accent-green)' }}>
-                    <span>{t('couponDiscount')}:</span>
-                    <span>-{formatKz(discountAmount)}</span>
-                  </div>
-                )}
-                <div className="cart-summary-row">
-                  <span>{t('delivery')}:</span>
-                  <span>{shippingFee === 0 ? <strong style={{ color: 'var(--accent-green)' }}>{t('free')}</strong> : formatKz(shippingFee)}</span>
-                </div>
-                <div className="cart-summary-total">
-                  <span>Total:</span>
-                  <span>{formatKz(finalTotal)}</span>
-                </div>
-
-                <button
-                  className="btn-whatsapp-checkout"
-                  onClick={() => setIsCheckoutOpen(true)}
-                >
-                  <Send size={20} /> {t('checkoutWhatsApp')}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* WhatsApp Checkout Form Modal */}
-      {isCheckoutOpen && (
-        <div className="modal-overlay" onClick={() => setIsCheckoutOpen(false)}>
-          <div className="modal-content" style={{ maxWidth: '520px', padding: '32px' }} onClick={e => e.stopPropagation()}>
-            <button className="btn-close-modal" onClick={() => setIsCheckoutOpen(false)}>
-              <X size={20} />
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-              <div style={{ background: '#25D366', color: '#FFF', width: '42px', height: '42px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <MessageCircle size={24} />
-              </div>
-              <div>
-                <h3 style={{ fontSize: '1.3rem' }}>{t('checkoutTitle')}</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  AQUI TEM - {t('siteSlogan')} (Angola)
-                </p>
-              </div>
-            </div>
-
-            <form onSubmit={handleWhatsAppCheckoutSubmit}>
-              <div className="form-group">
-                <label className="form-label">{t('fullName')} *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Manuel Kassamano"
-                  className="form-input"
-                  value={checkoutForm.name}
-                  onChange={e => setCheckoutForm({ ...checkoutForm, name: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">{t('phoneWhatsApp')} *</label>
-                <input
-                  type="tel"
-                  required
-                  placeholder="Ex: 950752933"
-                  className="form-input"
-                  value={checkoutForm.phone}
-                  onChange={e => setCheckoutForm({ ...checkoutForm, phone: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">{t('deliveryAddress')} *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder={lang === 'en' ? 'Neighborhood, Street, Reference Point' : 'Bairro, Rua ou Ponto de Referência'}
-                  className="form-input"
-                  value={checkoutForm.address}
-                  onChange={e => setCheckoutForm({ ...checkoutForm, address: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">{t('provinceCity')} *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Luanda"
-                  className="form-input"
-                  value={checkoutForm.city}
-                  onChange={e => setCheckoutForm({ ...checkoutForm, city: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">{t('paymentMethod')}</label>
-                <select
-                  className="form-input"
-                  value={checkoutForm.paymentMethod}
-                  onChange={e => setCheckoutForm({ ...checkoutForm, paymentMethod: e.target.value })}
-                >
-                  <option value="Pagamento na Entrega (Multicaixa / Cash)">{t('payOnDelivery')}</option>
-                  <option value="Transferência Bancária / Express Kz">{t('bankTransfer')}</option>
-                  <option value="A Prazo / Cotação WhatsApp">{t('quoteWhatsApp')}</option>
-                </select>
-              </div>
-
-              <button type="submit" className="btn-whatsapp-checkout" style={{ marginTop: '24px' }}>
-                <Send size={20} /> {t('sendOrderWhatsApp')} (950752933)
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* Shared Cart Drawer, Wishlist Modal, Checkout Modal & Toast */}
+      <StoreDrawers />
 
       {/* Ultra-Slim 2-3 Line Footer */}
       <footer className="footer">
@@ -1464,7 +1279,7 @@ export default function App() {
               rel="noreferrer"
               className="footer-wa-inline"
             >
-              <MessageCircle size={13} /> WhatsApp: 950 752 933
+              <MessageCircle size={13} /> WhatsApp: +244 950 752 933
             </a>
           </div>
 
@@ -1485,11 +1300,15 @@ export default function App() {
             <button type="button" className="footer-link-item" onClick={() => setActiveInfoModal('warranty')}>
               {t('warrantyAndExchanges')}
             </button>
+            <span className="footer-dot">•</span>
+            <Link to="/admin" className="footer-link-item" style={{ textDecoration: 'none' }}>
+              {t('adminPanel')}
+            </Link>
           </div>
 
           {/* Line 3: Copyright, Payment & Location */}
           <div className="footer-line-bottom">
-            <span>© {new Date().getFullYear()} {t('allRightsReserved')} • TPA / Cash na Entrega • {t('luandaAngola')}</span>
+            <span>© {new Date().getFullYear()} AQUI TEM • {t('allRightsReserved')} • Multicaixa / Dinheiro / Pagamento na Entrega • Avenida Fidel de Castro, Benfica - Zona Verde, Cabolombo, Luanda - Angola</span>
           </div>
         </div>
       </footer>

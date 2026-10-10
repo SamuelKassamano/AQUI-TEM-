@@ -1,14 +1,12 @@
+import { createSlug } from '../utils/slug.js';
+
 export function createProductStructuredData(product) {
   const siteUrl = 'https://aqui-tem29.vercel.app';
 
-  const slug = product.name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
+  const slug = product.slug || createSlug(product.name || 'produto');
   const productUrl = `${siteUrl}/produto/${slug}`;
+  const salePrice = Number(product.sale_price ?? product.salePrice);
+  const effectivePrice = Number.isFinite(salePrice) && salePrice > 0 ? salePrice : Number(product.price || 0);
 
   return {
     '@context': 'https://schema.org',
@@ -17,18 +15,18 @@ export function createProductStructuredData(product) {
     name: product.name,
     description: product.description,
     image: [
-      product.image
+      product.image_url || product.image
     ],
-    sku: String(product.id),
+    sku: String(product.sku || product.id),
     brand: {
       '@type': 'Brand',
-      name: 'Oraimo'
+      name: product.brand || 'Oraimo'
     },
     offers: {
       '@type': 'Offer',
       url: productUrl,
       priceCurrency: 'AOA',
-      price: String(product.price),
+      price: String(effectivePrice),
       availability: 'https://schema.org/InStock',
       seller: {
         '@type': 'Organization',
@@ -40,7 +38,7 @@ export function createProductStructuredData(product) {
       ? {
           '@type': 'AggregateRating',
           ratingValue: String(product.rating),
-          reviewCount: String(product.reviewsCount || 0)
+          reviewCount: String(product.reviews_count ?? product.reviewsCount ?? 0)
         }
       : undefined
   };
@@ -48,13 +46,7 @@ export function createProductStructuredData(product) {
 
 export function createBreadcrumbStructuredData(product) {
   const siteUrl = 'https://aqui-tem29.vercel.app';
-
-  const slug = product.name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+  const slug = product.slug || createSlug(product.name || 'produto');
 
   return {
     '@context': 'https://schema.org',
@@ -70,12 +62,7 @@ export function createBreadcrumbStructuredData(product) {
         '@type': 'ListItem',
         position: 2,
         name: product.category,
-        item: `${siteUrl}/categoria/${product.category
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9]+/g, '-')
-          .replace(/^-+|-+$/g, '')}`
+        item: `${siteUrl}/categoria/${createSlug(product.category || 'produtos')}`
       },
       {
         '@type': 'ListItem',

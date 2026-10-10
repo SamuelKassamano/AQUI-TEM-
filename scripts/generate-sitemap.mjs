@@ -17,6 +17,7 @@ const productNames = [
 ].map(match => match[1]);
 
 const uniqueProductNames = [...new Set(productNames)];
+const extraSlugs = ['smart-tv-55'];
 
 const urls = [
   {
@@ -27,6 +28,12 @@ const urls = [
   },
   ...uniqueProductNames.map(name => ({
     loc: `${siteUrl}/produto/${createSlug(name)}`,
+    lastmod: currentDate,
+    changefreq: 'weekly',
+    priority: '0.8'
+  })),
+  ...extraSlugs.map(slug => ({
+    loc: `${siteUrl}/produto/${slug}`,
     lastmod: currentDate,
     changefreq: 'weekly',
     priority: '0.8'

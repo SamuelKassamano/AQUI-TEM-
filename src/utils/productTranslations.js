@@ -5,14 +5,25 @@ import { TESTIMONIALS } from '../data/testimonials';
 export function getTranslatedProduct(product, lang) {
   if (!product) return product;
 
-  // Always find base product from PRODUCTS array to guarantee we can recover original Portuguese text
-  const baseProduct = PRODUCTS.find(p => p.id === product.id) || product;
+  // Match base product by id, slug, or name so Supabase UUID rows still match translations & fallbacks
+  const baseProduct =
+    PRODUCTS.find(
+      p =>
+        String(p.id) === String(product.id) ||
+        (product.slug && p.slug === product.slug) ||
+        (product.name && p.name.toLowerCase() === product.name.toLowerCase())
+    ) || product;
+
+  const mergedProduct = {
+    ...baseProduct,
+    ...product,
+    originalCategory: product.category || baseProduct.category,
+    fallbackImage: product.fallbackImage || baseProduct.fallbackImage,
+    quantity: product.quantity || baseProduct.quantity
+  };
 
   if (lang !== 'en') {
-    return {
-      ...baseProduct,
-      quantity: product.quantity || baseProduct.quantity
-    };
+    return mergedProduct;
   }
 
   const enMap = {
@@ -88,12 +99,21 @@ export function getTranslatedProduct(product, lang) {
     }
   };
 
-  const translated = enMap[product.id];
-  if (!translated) return baseProduct;
+  const lookupId = baseProduct?.id ?? product.id;
+  const translated = enMap[lookupId];
+  if (!translated) return mergedProduct;
 
   return {
-    ...baseProduct,
+    ...mergedProduct,
     ...translated,
+    // Keep custom overrides if edited in Admin
+    price: product.price ?? baseProduct.price,
+    sale_price: product.sale_price ?? baseProduct.sale_price,
+    old_price: product.old_price ?? product.oldPrice ?? baseProduct.old_price,
+    oldPrice: product.old_price ?? product.oldPrice ?? baseProduct.oldPrice,
+    stock: product.stock ?? baseProduct.stock,
+    image: product.image_url || product.image || baseProduct.image,
+    image_url: product.image_url || product.image || baseProduct.image_url,
     quantity: product.quantity || baseProduct.quantity
   };
 }
@@ -105,18 +125,30 @@ export function getTranslatedCategory(category, lang) {
     'Todos': 'All',
     'Acessórios & Tech': 'Accessories & Tech',
     'Áudio & Som': 'Audio & Sound',
+    'Áudio': 'Audio',
+    'Smartwatches': 'Smartwatches',
     'Eletrodomésticos': 'Home Appliances',
     'Acessórios & Casa': 'Accessories & Home',
-    'TV & Vídeo': 'TV & Video'
+    'Casa': 'Home',
+    'Energia': 'Power & Energy',
+    'Celular': 'Mobile & Phones',
+    'TV & Vídeo': 'TV & Video',
+    'Outros': 'Others'
   };
 
   const mapToPt = {
     'All': 'Todos',
     'Accessories & Tech': 'Acessórios & Tech',
     'Audio & Sound': 'Áudio & Som',
+    'Audio': 'Áudio & Som',
+    'Smartwatches': 'Smartwatches',
     'Home Appliances': 'Eletrodomésticos',
     'Accessories & Home': 'Acessórios & Casa',
-    'TV & Video': 'TV & Vídeo'
+    'Home': 'Acessórios & Casa',
+    'Power & Energy': 'Energia',
+    'Mobile & Phones': 'Celular',
+    'TV & Video': 'TV & Vídeo',
+    'Others': 'Outros'
   };
 
   if (lang === 'en') {
@@ -283,7 +315,14 @@ export function getTranslatedTestimonial(testimonial, lang) {
 
 export function getProductTestimonials(product, lang = 'pt') {
   if (!product) return [];
-  const matched = TESTIMONIALS.filter(t => t.productId === product.id);
+  const baseProduct = PRODUCTS.find(
+    p =>
+      String(p.id) === String(product.id) ||
+      (product.slug && p.slug === product.slug) ||
+      (product.name && p.name.toLowerCase() === product.name.toLowerCase())
+  );
+  const targetId = baseProduct ? baseProduct.id : product.id;
+  const matched = TESTIMONIALS.filter(t => String(t.productId) === String(targetId));
   const list = matched.length > 0 ? matched : TESTIMONIALS.slice(0, 2);
   return list.map(item => getTranslatedTestimonial(item, lang));
 }
