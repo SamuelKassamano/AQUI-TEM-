@@ -73,14 +73,13 @@ export default function AdminPage() {
     toastMessage
   } = useStore();
 
-  // Auth State
+  // Auth State (Strictly backed by Supabase Auth)
   const [session, setSession] = useState(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
-  const [previewUnlocked, setPreviewUnlocked] = useState(false);
 
   // Admin UI Filters
   const [searchTerm, setSearchTerm] = useState('');
@@ -106,74 +105,133 @@ export default function AdminPage() {
   // Delete Confirmation Modal
   const [deleteConfirmProduct, setDeleteConfirmProduct] = useState(null);
   const [syncingSupabase, setSyncingSupabase] = useState(false);
+  const [persistenceError, setPersistenceError] = useState('');
 
   useEffect(() => {
     document.title = 'Painel Administrativo | AQUI TEM Angola';
   }, []);
 
-  // Check Supabase Auth Session
+  // Check Supabase Auth Session via supabase.auth.getSession()
   useEffect(() => {
+    let isMounted = true;
+
     if (!isSupabaseConfigured || !supabase) {
+      setSession(null);
       setAuthChecking(false);
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      setAuthChecking(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error || !data?.session?.user || !data?.session?.access_token) {
+          setSession(null);
+        } else {
+          setSession(data.session);
+        }
+        setAuthChecking(false);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setSession(null);
+        setAuthChecking(false);
+      });
 
     const {
       data: { subscription }
     } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+      if (!isMounted) return;
+      if (nextSession?.user && nextSession?.access_token) {
+        setSession(nextSession);
+      } else {
+        setSession(null);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError('');
 
-    if (isSupabaseConfigured && supabase) {
-      setAuthLoading(true);
-      try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password
-        });
-        if (error) {
-          setAuthError(error.message || 'Credenciais inválidas no Supabase Auth.');
-        } else {
-          showToast('Sessão administrativa iniciada com sucesso!');
-          refreshProducts();
-        }
-      } catch (err) {
-        setAuthError(err.message || 'Erro ao autenticar com o Supabase.');
-      } finally {
-        setAuthLoading(false);
-      }
-    } else {
-      if (!email.trim() || !password.trim()) {
-        setAuthError('Preencha o e-mail e palavra-passe do administrador.');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      setSession(null);
+      setAuthError('Preencha o e-mail e a palavra-passe do administrador.');
+      return;
+    }
+
+    if (!isSupabaseConfigured || !supabase) {
+      setSession(null);
+      setAuthError(
+        'Autenticação indisponível: A chave pública VITE_SUPABASE_PUBLISHABLE_KEY não está configurada. O acesso ao painel administrativo está bloqueado.'
+      );
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password
+      });
+
+      if (error || !data?.session?.user || !data?.session?.access_token) {
+        setSession(null);
+        const rawMsg = error?.message || '';
+        const isInvalidCredentials =
+          rawMsg.toLowerCase().includes('invalid login credentials') ||
+          error?.status === 400;
+
+        setAuthError(
+          isInvalidCredentials
+            ? 'Credenciais inválidas: E-mail ou palavra-passe incorretos no Supabase Authentication. Acesso bloqueado.'
+            : rawMsg || 'Credenciais inválidas no Supabase Authentication. Acesso bloqueado.'
+        );
         return;
       }
-      setPreviewUnlocked(true);
-      showToast('Painel Admin desbloqueado (Modo de Pré-visualização Local)');
+
+      setSession(data.session);
+      setPassword('');
+      showToast('Sessão administrativa iniciada com sucesso!');
+      refreshProducts();
+    } catch (err) {
+      setSession(null);
+      setAuthError(
+        err?.message || 'Erro ao autenticar com o Supabase Authentication. Acesso bloqueado.'
+      );
+    } finally {
+      setAuthLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    if (isSupabaseConfigured && supabase) {
-      await supabase.auth.signOut();
+    setAuthLoading(true);
+    try {
+      if (isSupabaseConfigured && supabase) {
+        await supabase.auth.signOut();
+      }
+    } finally {
+      setSession(null);
+      setPassword('');
+      setAuthError('');
+      setAuthLoading(false);
+      showToast('Sessão encerrada.');
     }
-    setPreviewUnlocked(false);
-    setSession(null);
-    showToast('Sessão encerrada.');
   };
 
-  const isAuthenticated = Boolean(session || (!isSupabaseConfigured && previewUnlocked));
+  const isAuthenticated = Boolean(
+    isSupabaseConfigured &&
+      supabase &&
+      session &&
+      session.user &&
+      session.access_token
+  );
 
   // Filtered products
   const filteredProducts = useMemo(() => {
@@ -228,20 +286,35 @@ export default function AdminPage() {
     setEditingProduct(product);
     setSlugManuallyEdited(true);
     setFormData({
-      name: product.name || '',
+      name: product.name ?? '',
       slug: product.slug || createSlug(product.name || ''),
-      description: product.description || '',
+      description: product.description ?? '',
       price: product.price ?? '',
-      old_price: product.old_price ?? product.oldPrice ?? '',
-      sale_price: product.sale_price ?? product.salePrice ?? '',
+      old_price:
+        product.old_price !== null && product.old_price !== undefined
+          ? product.old_price
+          : '',
+      sale_price:
+        product.sale_price !== null && product.sale_price !== undefined
+          ? product.sale_price
+          : '',
       category: product.category || 'Acessórios & Tech',
-      brand: product.brand || 'Oraimo',
-      sku: product.sku || '',
-      stock: product.stock ?? 15,
-      image_url: product.image_url || product.image || '',
-      badge: product.badge || '',
-      rating: product.rating ?? 4.9,
-      reviews_count: product.reviews_count ?? product.reviewsCount ?? 20,
+      brand: product.brand ?? 'Oraimo',
+      sku: product.sku ?? '',
+      stock:
+        product.stock !== null && product.stock !== undefined
+          ? Number(product.stock)
+          : 0,
+      image_url: product.raw_image_url || product.image_url || product.image || '',
+      badge: product.badge ?? '',
+      rating:
+        product.rating !== null && product.rating !== undefined
+          ? product.rating
+          : 4.9,
+      reviews_count:
+        product.reviews_count !== null && product.reviews_count !== undefined
+          ? product.reviews_count
+          : 0,
       specsText: Array.isArray(product.specs) ? product.specs.join('\n') : '',
       active: product.active !== false
     });
@@ -253,43 +326,30 @@ export default function AdminPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (isSupabaseConfigured && supabase) {
-      setUploadingImage(true);
-      try {
-        const publicUrl = await uploadProductImageToSupabase(
-          file,
-          formData.slug || formData.name || 'produto'
-        );
-        setFormData(prev => ({ ...prev, image_url: publicUrl }));
-        showToast('Imagem enviada para o Supabase Storage (product-images)!');
-      } catch (err) {
-        // Fallback to Data URL if bucket does not exist yet
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (typeof reader.result === 'string') {
-            setFormData(prev => ({ ...prev, image_url: reader.result }));
-            showToast('Imagem carregada! (Verifique o bucket product-images no Supabase se necessário)');
-          }
-        };
-        reader.readAsDataURL(file);
-      } finally {
-        setUploadingImage(false);
-      }
-    } else {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setFormData(prev => ({ ...prev, image_url: reader.result }));
-          showToast('Imagem carregada com sucesso!');
-        }
-      };
-      reader.readAsDataURL(file);
+    if (!isAuthenticated || !isSupabaseConfigured || !supabase) {
+      showToast('Sessão administrativa necessária para enviar imagens.');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const publicUrl = await uploadProductImageToSupabase(
+        file,
+        formData.slug || formData.name || 'produto'
+      );
+      setFormData(prev => ({ ...prev, image_url: publicUrl }));
+      showToast('Imagem enviada para o Supabase Storage!');
+    } catch (err) {
+      showToast(`Erro no upload: ${err.message || 'Verifique permissões de Storage no Supabase.'}`);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
-  // Save Product (Create or Update)
+  // Save Product (Create via INSERT or Update via UPDATE by id in public.products)
   const handleSaveProduct = async (e) => {
     e.preventDefault();
+    setPersistenceError('');
     if (!formData.name.trim()) {
       showToast('Informe o nome do produto.');
       return;
@@ -300,6 +360,10 @@ export default function AdminPage() {
       return;
     }
 
+    const parsedStock = parseInt(formData.stock, 10);
+    const parsedReviews = parseInt(formData.reviews_count, 10);
+    const parsedRating = Number(formData.rating);
+
     setSavingProduct(true);
     try {
       const payload = {
@@ -307,16 +371,34 @@ export default function AdminPage() {
         slug: (formData.slug || createSlug(formData.name)).trim(),
         description: formData.description.trim(),
         price: numericPrice,
-        old_price: formData.old_price !== '' && Number(formData.old_price) > 0 ? Number(formData.old_price) : null,
-        sale_price: formData.sale_price !== '' && Number(formData.sale_price) > 0 ? Number(formData.sale_price) : null,
+        old_price:
+          formData.old_price !== '' &&
+          formData.old_price !== null &&
+          Number(formData.old_price) > 0
+            ? Number(formData.old_price)
+            : null,
+        sale_price:
+          formData.sale_price !== '' &&
+          formData.sale_price !== null &&
+          Number(formData.sale_price) > 0
+            ? Number(formData.sale_price)
+            : null,
         category: formData.category,
         brand: formData.brand.trim() || 'Oraimo',
-        sku: formData.sku.trim() || `AT-${Date.now().toString().slice(-4)}`,
-        stock: Math.max(0, parseInt(formData.stock, 10) || 0),
-        image_url: formData.image_url.trim() || '/logo.jpg',
-        badge: formData.badge.trim(),
-        rating: Number(formData.rating) || 4.9,
-        reviews_count: parseInt(formData.reviews_count, 10) || 0,
+        sku: formData.sku.trim() || null,
+        stock: Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : 0,
+        image_url:
+          formData.image_url.trim() ||
+          editingProduct?.raw_image_url ||
+          editingProduct?.image_url ||
+          '/logo.jpg',
+        badge: formData.badge.trim() || null,
+        rating:
+          Number.isFinite(parsedRating) && parsedRating > 0
+            ? Math.min(5, Math.max(1, parsedRating))
+            : 4.9,
+        reviews_count:
+          Number.isFinite(parsedReviews) && parsedReviews >= 0 ? parsedReviews : 0,
         specs: formData.specsText
           .split('\n')
           .map(s => s.trim())
@@ -326,14 +408,18 @@ export default function AdminPage() {
 
       if (editingProduct) {
         await updateProduct(editingProduct.id, payload);
-        showToast(`Produto "${payload.name}" atualizado com sucesso!`);
+        await refreshProducts();
+        showToast(`Produto "${payload.name}" gravado no Supabase com sucesso!`);
       } else {
         await createProduct(payload);
-        showToast(`Produto "${payload.name}" adicionado com sucesso!`);
+        await refreshProducts();
+        showToast(`Produto "${payload.name}" inserido no Supabase com sucesso!`);
       }
       setIsProductModalOpen(false);
     } catch (err) {
-      showToast(`Erro ao salvar: ${err.message || 'Tente novamente'}`);
+      const msg = err?.message || 'Erro ao gravar na tabela public.products do Supabase.';
+      setPersistenceError(msg);
+      showToast(`Erro ao salvar no Supabase: ${msg}`);
     } finally {
       setSavingProduct(false);
     }
@@ -344,14 +430,21 @@ export default function AdminPage() {
     setPriceModalProduct(product);
     setPriceForm({
       price: product.price ?? '',
-      sale_price: product.sale_price ?? product.salePrice ?? '',
-      old_price: product.old_price ?? product.oldPrice ?? ''
+      sale_price:
+        product.sale_price !== null && product.sale_price !== undefined
+          ? product.sale_price
+          : '',
+      old_price:
+        product.old_price !== null && product.old_price !== undefined
+          ? product.old_price
+          : ''
     });
   };
 
   const handleSaveQuickPrice = async (e) => {
     e.preventDefault();
     if (!priceModalProduct) return;
+    setPersistenceError('');
     const priceNum = Number(priceForm.price);
     if (!Number.isFinite(priceNum) || priceNum <= 0) {
       showToast('Informe um preço base válido maior que 0 Kz.');
@@ -361,18 +454,25 @@ export default function AdminPage() {
       await updateProduct(priceModalProduct.id, {
         price: priceNum,
         sale_price:
-          priceForm.sale_price !== '' && Number(priceForm.sale_price) > 0
+          priceForm.sale_price !== '' &&
+          priceForm.sale_price !== null &&
+          Number(priceForm.sale_price) > 0
             ? Number(priceForm.sale_price)
             : null,
         old_price:
-          priceForm.old_price !== '' && Number(priceForm.old_price) > 0
+          priceForm.old_price !== '' &&
+          priceForm.old_price !== null &&
+          Number(priceForm.old_price) > 0
             ? Number(priceForm.old_price)
             : null
       });
-      showToast('Preços atualizados com sucesso!');
+      await refreshProducts();
+      showToast('Preços gravados no Supabase com sucesso!');
       setPriceModalProduct(null);
     } catch (err) {
-      showToast(`Erro ao atualizar preço: ${err.message}`);
+      const msg = err?.message || 'Erro ao atualizar preço no Supabase.';
+      setPersistenceError(msg);
+      showToast(`Erro ao atualizar preço: ${msg}`);
     }
   };
 
@@ -385,13 +485,18 @@ export default function AdminPage() {
   const handleSaveQuickStock = async (e) => {
     e.preventDefault();
     if (!stockModalProduct) return;
+    setPersistenceError('');
     try {
-      const nextStock = Math.max(0, parseInt(stockValue, 10) || 0);
+      const parsed = parseInt(stockValue, 10);
+      const nextStock = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
       await updateProduct(stockModalProduct.id, { stock: nextStock });
-      showToast(`Estoque atualizado para ${nextStock} unidades!`);
+      await refreshProducts();
+      showToast(`Estoque gravado no Supabase (${nextStock} unidades)!`);
       setStockModalProduct(null);
     } catch (err) {
-      showToast(`Erro ao atualizar estoque: ${err.message}`);
+      const msg = err?.message || 'Erro ao atualizar estoque no Supabase.';
+      setPersistenceError(msg);
+      showToast(`Erro ao atualizar estoque: ${msg}`);
     }
   };
 
@@ -592,8 +697,11 @@ export default function AdminPage() {
                 <span>
                   Supabase ({SUPABASE_PROJECT_ID}):{' '}
                   <strong style={{ color: supabaseConnected ? '#16A34A' : '#D97706' }}>
-                    {supabaseConnected ? 'Conectado (products)' : 'Modo Local / Aguardando Chave Pública'}
+                    {supabaseConnected ? 'Conectado (products)' : 'Reconectando...'}
                   </strong>
+                  {session?.user?.email && (
+                    <span> • Sessão: <strong>{session.user.email}</strong></span>
+                  )}
                 </span>
               </div>
             </div>
@@ -637,6 +745,33 @@ export default function AdminPage() {
 
       {/* Main Content */}
       <main style={{ maxWidth: '1320px', margin: '24px auto', padding: '0 20px' }}>
+        {persistenceError && (
+          <div
+            style={{
+              background: 'rgba(220, 38, 38, 0.08)',
+              border: '1px solid rgba(220, 38, 38, 0.35)',
+              color: '#DC2626',
+              padding: '14px 18px',
+              borderRadius: '14px',
+              marginBottom: '20px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: '12px'
+            }}
+          >
+            <div style={{ fontSize: '0.86rem', lineHeight: 1.5 }}>
+              <strong>Erro de Persistência no Supabase (public.products):</strong> {persistenceError}
+            </div>
+            <button
+              onClick={() => setPersistenceError('')}
+              style={{ background: 'transparent', border: 'none', color: '#DC2626', cursor: 'pointer', fontWeight: 800 }}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* KPI Row */}
         <div
           style={{
@@ -767,9 +902,9 @@ export default function AdminPage() {
                     <td style={{ padding: '12px 16px', minWidth: '260px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <img
+                          key={product.image_url || product.image}
                           src={product.image_url || product.image}
                           alt={product.name}
-                          referrerPolicy="no-referrer"
                           style={{
                             width: '52px',
                             height: '52px',
@@ -781,8 +916,14 @@ export default function AdminPage() {
                             flexShrink: 0
                           }}
                           onError={e => {
-                            e.currentTarget.onerror = null;
-                            if (product.fallbackImage) e.currentTarget.src = product.fallbackImage;
+                            if (product.fallbackImage && e.currentTarget.src !== product.fallbackImage) {
+                              e.currentTarget.src = product.fallbackImage;
+                            } else if (product.svgFallbackImage) {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = product.svgFallbackImage;
+                            } else {
+                              e.currentTarget.onerror = null;
+                            }
                           }}
                         />
                         <div>
@@ -892,8 +1033,16 @@ export default function AdminPage() {
                           className="nav-btn"
                           style={{ padding: '6px 10px', fontSize: '0.76rem' }}
                           onClick={async () => {
-                            await duplicateProduct(product);
-                            showToast(`Cópia de "${product.name}" criada!`);
+                            setPersistenceError('');
+                            try {
+                              await duplicateProduct(product);
+                              await refreshProducts();
+                              showToast(`Cópia de "${product.name}" criada no Supabase!`);
+                            } catch (err) {
+                              const msg = err?.message || 'Erro ao duplicar produto no Supabase.';
+                              setPersistenceError(msg);
+                              showToast(`Erro ao duplicar: ${msg}`);
+                            }
                           }}
                           title="Duplicar Produto"
                         >
@@ -908,12 +1057,20 @@ export default function AdminPage() {
                             color: product.active !== false ? '#D97706' : '#16A34A'
                           }}
                           onClick={async () => {
-                            await toggleProductActive(product);
-                            showToast(
-                              product.active !== false
-                                ? `"${product.name}" desativado do catálogo público.`
-                                : `"${product.name}" ativado no catálogo público!`
-                            );
+                            setPersistenceError('');
+                            try {
+                              await toggleProductActive(product);
+                              await refreshProducts();
+                              showToast(
+                                product.active !== false
+                                  ? `"${product.name}" desativado no Supabase.`
+                                  : `"${product.name}" ativado no Supabase!`
+                              );
+                            } catch (err) {
+                              const msg = err?.message || 'Erro ao alterar estado no Supabase.';
+                              setPersistenceError(msg);
+                              showToast(`Erro ao alterar estado: ${msg}`);
+                            }
                           }}
                           title={product.active !== false ? 'Desativar produto' : 'Ativar produto'}
                         >
@@ -1306,9 +1463,17 @@ export default function AdminPage() {
                   className="nav-btn"
                   style={{ borderColor: '#D97706', color: '#D97706' }}
                   onClick={async () => {
-                    await toggleProductActive(deleteConfirmProduct);
-                    showToast(`"${deleteConfirmProduct.name}" foi desativado com segurança.`);
-                    setDeleteConfirmProduct(null);
+                    setPersistenceError('');
+                    try {
+                      await toggleProductActive(deleteConfirmProduct);
+                      await refreshProducts();
+                      showToast(`"${deleteConfirmProduct.name}" foi desativado no Supabase.`);
+                      setDeleteConfirmProduct(null);
+                    } catch (err) {
+                      const msg = err?.message || 'Erro ao desativar produto no Supabase.';
+                      setPersistenceError(msg);
+                      showToast(`Erro: ${msg}`);
+                    }
                   }}
                 >
                   <EyeOff size={14} /> Apenas Desativar
@@ -1318,10 +1483,18 @@ export default function AdminPage() {
                 className="nav-btn"
                 style={{ background: '#DC2626', color: '#FFF', border: 'none' }}
                 onClick={async () => {
-                  const name = deleteConfirmProduct.name;
-                  await deleteProduct(deleteConfirmProduct.id);
-                  showToast(`Produto "${name}" excluído permanentemente.`);
-                  setDeleteConfirmProduct(null);
+                  setPersistenceError('');
+                  try {
+                    const name = deleteConfirmProduct.name;
+                    await deleteProduct(deleteConfirmProduct.id);
+                    await refreshProducts();
+                    showToast(`Produto "${name}" excluído permanentemente do Supabase.`);
+                    setDeleteConfirmProduct(null);
+                  } catch (err) {
+                    const msg = err?.message || 'Erro ao excluir produto no Supabase.';
+                    setPersistenceError(msg);
+                    showToast(`Erro ao excluir: ${msg}`);
+                  }
                 }}
               >
                 <Trash2 size={14} /> Excluir Permanentemente

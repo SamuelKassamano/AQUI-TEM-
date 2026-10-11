@@ -234,9 +234,9 @@ export default function StoreDrawers() {
                       }}
                     >
                       <img
+                        key={prod.image_url || prod.image}
                         src={prod.image_url || prod.image}
                         alt={prod.name}
-                        referrerPolicy="no-referrer"
                         style={{
                           width: '68px',
                           height: '68px',
@@ -247,8 +247,14 @@ export default function StoreDrawers() {
                           border: '1px solid var(--border-light)'
                         }}
                         onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          if (prod.fallbackImage) e.currentTarget.src = prod.fallbackImage;
+                          if (prod.fallbackImage && e.currentTarget.src !== prod.fallbackImage) {
+                            e.currentTarget.src = prod.fallbackImage;
+                          } else if (prod.svgFallbackImage) {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = prod.svgFallbackImage;
+                          } else {
+                            e.currentTarget.onerror = null;
+                          }
                         }}
                       />
 
@@ -355,13 +361,19 @@ export default function StoreDrawers() {
                     return (
                       <div key={item.id} className="cart-item">
                         <img
+                          key={item.image_url || item.image}
                           src={item.image_url || item.image}
                           alt={item.name}
                           className="cart-item-img"
-                          referrerPolicy="no-referrer"
                           onError={(e) => {
-                            e.currentTarget.onerror = null;
-                            if (item.fallbackImage) e.currentTarget.src = item.fallbackImage;
+                            if (item.fallbackImage && e.currentTarget.src !== item.fallbackImage) {
+                              e.currentTarget.src = item.fallbackImage;
+                            } else if (item.svgFallbackImage) {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = item.svgFallbackImage;
+                            } else {
+                              e.currentTarget.onerror = null;
+                            }
                           }}
                         />
                         <div className="cart-item-details">

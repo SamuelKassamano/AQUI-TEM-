@@ -78,6 +78,9 @@ for (const product of products) {
 
   let html = templateHtml;
 
+  // Ensure relative asset paths resolve from root when served at /produto/:slug
+  html = html.replace(/(src|href)="\.\/assets\//g, '$1="/assets/');
+
   // Replace Title
   html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${title}</title>`);
 

@@ -65,6 +65,10 @@ export default function ProductPage() {
   }, [slug]);
 
   useEffect(() => {
+    setSelectedGalleryImg(null);
+  }, [product?.image_url]);
+
+  useEffect(() => {
     if (!product) return;
 
     const effectivePrice = getEffectivePrice(product);
@@ -298,13 +302,17 @@ export default function ProductPage() {
                 </button>
 
                 <img
+                  key={mainImage}
                   src={mainImage}
                   alt={product.name}
-                  referrerPolicy="no-referrer"
                   onError={(e) => {
-                    if (product.fallbackImage) {
-                      e.currentTarget.onerror = null;
+                    if (product.fallbackImage && e.currentTarget.src !== product.fallbackImage) {
                       e.currentTarget.src = product.fallbackImage;
+                    } else if (product.svgFallbackImage) {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = product.svgFallbackImage;
+                    } else {
+                      e.currentTarget.onerror = null;
                     }
                   }}
                 />
@@ -549,12 +557,18 @@ export default function ProductPage() {
                     {rel.badge && <span className="product-badge">{rel.badge}</span>}
                     <Link to={`/produto/${relSlug}`} className="product-img-wrapper" style={{ display: 'flex' }}>
                       <img
+                        key={rel.image_url || rel.image}
                         src={rel.image_url || rel.image}
                         alt={rel.name}
-                        referrerPolicy="no-referrer"
                         onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          if (rel.fallbackImage) e.currentTarget.src = rel.fallbackImage;
+                          if (rel.fallbackImage && e.currentTarget.src !== rel.fallbackImage) {
+                            e.currentTarget.src = rel.fallbackImage;
+                          } else if (rel.svgFallbackImage) {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = rel.svgFallbackImage;
+                          } else {
+                            e.currentTarget.onerror = null;
+                          }
                         }}
                       />
                     </Link>

@@ -3,14 +3,27 @@ import { createSlug } from '../utils/slug';
 import { PRODUCTS, PRODUCT_FALLBACK_IMAGES } from '../../data/products';
 
 export const SUPABASE_PROJECT_ID = 'essjwjbtzytefycjodgh';
+
+const rawEnvUrl = import.meta.env.VITE_SUPABASE_URL || '';
 export const SUPABASE_URL =
-  import.meta.env.VITE_SUPABASE_URL ||
+  (rawEnvUrl.split('VITE_SUPABASE_')[0] || '').trim() ||
   `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
-export const SUPABASE_PUBLISHABLE_KEY =
+const rawEnvKey =
   import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
   import.meta.env.VITE_SUPABASE_ANON_KEY ||
   '';
+
+const sanitizedKey = rawEnvKey
+  .split('VITE_SUPABASE_')[0]
+  .trim();
+
+// Never allow a Supabase Secret Key / service_role key in the frontend client
+const isForbiddenSecretKey =
+  sanitizedKey.startsWith('sb_secret_') ||
+  sanitizedKey.includes('service_role');
+
+export const SUPABASE_PUBLISHABLE_KEY = isForbiddenSecretKey ? '' : sanitizedKey;
 
 export const isSupabaseConfigured = Boolean(
   SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && SUPABASE_PUBLISHABLE_KEY.length > 10
@@ -20,25 +33,53 @@ export const supabase = isSupabaseConfigured
   ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
       auth: {
         persistSession: true,
-        autoRefreshToken: true
+        autoRefreshToken: true,
+        detectSessionInUrl: true
       }
     })
   : null;
 
 /**
+ * Verifies that there is a valid authenticated session in Supabase Auth.
+ * Throws an error if no valid session exists.
+ */
+export async function requireAdminSession() {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error(
+      'Cliente Supabase não configurado (VITE_SUPABASE_PUBLISHABLE_KEY ausente).'
+    );
+  }
+  const { data, error } = await supabase.auth.getSession();
+  if (error || !data?.session?.user || !data?.session?.access_token) {
+    throw new Error(
+      'Sessão administrativa inválida ou expirada. Faça login novamente no Supabase Auth.'
+    );
+  }
+  return data.session;
+}
+
+/**
  * Safely returns the effective selling price of a product.
- * Uses sale_price if > 0, otherwise price. Never returns NaN or negative.
+ * Uses sale_price if > 0 and lower than regular price (or when regular price is 0), otherwise price.
+ * Never returns NaN or negative.
  */
 export function getEffectivePrice(product) {
   if (!product) return 0;
   const salePrice = Number(product.sale_price ?? product.salePrice);
   const regularPrice = Number(product.price);
 
-  if (Number.isFinite(salePrice) && salePrice > 0) {
+  if (
+    Number.isFinite(salePrice) &&
+    salePrice > 0 &&
+    (!Number.isFinite(regularPrice) || regularPrice <= 0 || salePrice < regularPrice)
+  ) {
     return salePrice;
   }
   if (Number.isFinite(regularPrice) && regularPrice > 0) {
     return regularPrice;
+  }
+  if (Number.isFinite(salePrice) && salePrice > 0) {
+    return salePrice;
   }
   return 0;
 }
@@ -93,83 +134,192 @@ export function inferBrand(raw) {
 }
 
 /**
+ * Finds matching fallback product from local catalog by supabaseId, id, slug, slugAliases, sku, or name
+ */
+export function findBaseCatalogMatch(raw) {
+  if (!raw) return null;
+  const rawId = raw.id !== undefined && raw.id !== null ? String(raw.id).trim() : '';
+  const rawSlug = raw.slug ? String(raw.slug).toLowerCase().trim() : '';
+  const rawNameSlug = raw.name ? createSlug(raw.name).toLowerCase() : '';
+  const rawSku = raw.sku ? String(raw.sku).toLowerCase().trim() : '';
+
+  return (
+    PRODUCTS.find(p => {
+      if (rawId && (String(p.supabaseId) === rawId || String(p.id) === rawId)) return true;
+      if (rawSku && p.sku && String(p.sku).toLowerCase().trim() === rawSku) return true;
+      const pSlug = (p.slug || createSlug(p.name)).toLowerCase();
+      const aliases = Array.isArray(p.slugAliases)
+        ? p.slugAliases.map(a => a.toLowerCase())
+        : [];
+      if (rawSlug && (pSlug === rawSlug || aliases.includes(rawSlug))) return true;
+      if (
+        rawNameSlug &&
+        (pSlug === rawNameSlug ||
+          createSlug(p.name) === rawNameSlug ||
+          aliases.includes(rawNameSlug))
+      ) {
+        return true;
+      }
+      return false;
+    }) || null
+  );
+}
+
+/**
+ * Resolves the primary product image URL.
+ * When product.image_url exists and is non-empty, uses it directly.
+ * Only falls back to local/existing images when image_url is empty.
+ */
+export function getProductMainImage(product, baseMatch = null) {
+  if (!product) return '/logo.jpg';
+  const match = baseMatch || findBaseCatalogMatch(product);
+
+  const rawImageUrl =
+    typeof product.image_url === 'string'
+      ? product.image_url.trim().replace(/^['"]+|['"]+$/g, '')
+      : '';
+
+  if (rawImageUrl !== '') {
+    if (rawImageUrl.startsWith('/storage/v1/')) {
+      return `${SUPABASE_URL}${rawImageUrl}`;
+    }
+    return rawImageUrl;
+  }
+
+  const fallbackLocal =
+    (typeof product.image === 'string' && product.image.trim() !== ''
+      ? product.image.trim()
+      : '') ||
+    match?.image ||
+    product.fallbackImage ||
+    match?.fallbackImage ||
+    '/logo.jpg';
+
+  return fallbackLocal;
+}
+
+/**
  * Normalizes a product record from Supabase (`products` table) or local catalog
  * so both schemas work seamlessly across the entire app.
  */
 export function normalizeProduct(raw, index = 0) {
   if (!raw) return null;
 
-  const baseMatch = PRODUCTS.find(
-    p =>
-      String(p.id) === String(raw.id) ||
-      (raw.slug && (p.slug === raw.slug || createSlug(p.name) === raw.slug)) ||
-      (raw.name && createSlug(p.name) === createSlug(raw.name))
+  const baseMatch = findBaseCatalogMatch(raw);
+  const isSupabaseRow = Boolean(
+    raw.id && typeof raw.id === 'string' && raw.id.length > 10
   );
 
-  const name = String(raw.name || baseMatch?.name || 'Produto AQUI TEM').trim();
+  const name = String(raw.name ?? baseMatch?.name ?? 'Produto AQUI TEM').trim();
   const slug = String(raw.slug || baseMatch?.slug || createSlug(name)).trim();
   const price = Number(raw.price ?? baseMatch?.price ?? 0);
-  const salePriceRaw = raw.sale_price ?? raw.salePrice ?? baseMatch?.sale_price ?? null;
+
+  const salePriceRaw = isSupabaseRow
+    ? raw.sale_price
+    : (raw.sale_price ?? raw.salePrice ?? baseMatch?.sale_price ?? null);
   const sale_price =
-    salePriceRaw !== null && salePriceRaw !== '' && Number(salePriceRaw) > 0
+    salePriceRaw !== null &&
+    salePriceRaw !== undefined &&
+    salePriceRaw !== '' &&
+    Number(salePriceRaw) > 0
       ? Number(salePriceRaw)
       : null;
 
-  const oldPriceRaw = raw.old_price ?? raw.oldPrice ?? baseMatch?.old_price ?? baseMatch?.oldPrice ?? null;
+  const oldPriceRaw = isSupabaseRow
+    ? raw.old_price
+    : (raw.old_price ?? raw.oldPrice ?? baseMatch?.old_price ?? baseMatch?.oldPrice ?? null);
   const old_price =
-    oldPriceRaw !== null && oldPriceRaw !== '' && Number(oldPriceRaw) > 0
+    oldPriceRaw !== null &&
+    oldPriceRaw !== undefined &&
+    oldPriceRaw !== '' &&
+    Number(oldPriceRaw) > 0
       ? Number(oldPriceRaw)
       : null;
 
-  const stockRaw = raw.stock ?? baseMatch?.stock;
-  const stock =
-    stockRaw !== undefined && stockRaw !== null && stockRaw !== ''
-      ? Math.max(0, parseInt(stockRaw, 10) || 0)
-      : 0;
+  const stockRaw = isSupabaseRow ? raw.stock : (raw.stock ?? baseMatch?.stock);
+  const parsedStock = parseInt(stockRaw, 10);
+  const stock = Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : 0;
 
-  const image_url = String(raw.image_url || raw.image || baseMatch?.image || '/logo.jpg').trim();
+  const rawSupabaseImage =
+    typeof raw.image_url === 'string'
+      ? raw.image_url.trim().replace(/^['"]+|['"]+$/g, '')
+      : '';
+  const mainImage = getProductMainImage(raw, baseMatch);
+  const image_url = rawSupabaseImage !== '' ? mainImage : mainImage;
+
   const fallbackImage =
+    baseMatch?.image ||
     raw.fallbackImage ||
     baseMatch?.fallbackImage ||
     PRODUCT_FALLBACK_IMAGES.boompop;
 
-  const ratingRaw = Number(raw.rating ?? baseMatch?.rating ?? 4.9);
-  const rating = Number.isFinite(ratingRaw) && ratingRaw > 0 ? Math.min(5, Math.max(1, ratingRaw)) : 4.9;
+  const ratingRaw = Number(
+    isSupabaseRow ? (raw.rating ?? 4.9) : (raw.rating ?? baseMatch?.rating ?? 4.9)
+  );
+  const rating =
+    Number.isFinite(ratingRaw) && ratingRaw > 0
+      ? Math.min(5, Math.max(1, ratingRaw))
+      : 4.9;
 
-  const reviewsCountRaw = Number(raw.reviews_count ?? raw.reviewsCount ?? baseMatch?.reviewsCount ?? 50);
-  const reviews_count = Number.isFinite(reviewsCountRaw) && reviewsCountRaw >= 0 ? Math.round(reviewsCountRaw) : 50;
+  const reviewsCountRaw = Number(
+    isSupabaseRow
+      ? (raw.reviews_count ?? 0)
+      : (raw.reviews_count ?? raw.reviewsCount ?? baseMatch?.reviewsCount ?? 50)
+  );
+  const reviews_count =
+    Number.isFinite(reviewsCountRaw) && reviewsCountRaw >= 0
+      ? Math.round(reviewsCountRaw)
+      : 0;
 
-  const specs =
-    Array.isArray(raw.specs) && raw.specs.length > 0
-      ? raw.specs.filter(Boolean)
-      : typeof raw.specs === 'string' && raw.specs.trim()
-      ? raw.specs.split('\n').map(s => s.trim()).filter(Boolean)
-      : Array.isArray(baseMatch?.specs)
-      ? baseMatch.specs
-      : [];
+  const specs = Array.isArray(raw.specs)
+    ? raw.specs.filter(Boolean)
+    : typeof raw.specs === 'string' && raw.specs.trim()
+    ? raw.specs.split('\n').map(s => s.trim()).filter(Boolean)
+    : !isSupabaseRow && Array.isArray(baseMatch?.specs)
+    ? baseMatch.specs
+    : [];
 
-  const active = raw.active !== undefined && raw.active !== null ? Boolean(raw.active) : true;
-  const category = String(raw.category || baseMatch?.category || 'Acessórios & Tech').trim();
-  const brand = inferBrand(raw.brand ? raw : baseMatch || raw);
-  const sku = String(
-    raw.sku ||
-      baseMatch?.sku ||
-      `AT-${String(index + 1).padStart(3, '0')}`
+  const active =
+    raw.active !== undefined && raw.active !== null ? Boolean(raw.active) : true;
+  const category = String(
+    raw.category || baseMatch?.category || 'Acessórios & Tech'
   ).trim();
-  const badge =
-    raw.badge !== undefined && raw.badge !== null && String(raw.badge).trim() !== ''
-      ? String(raw.badge).trim()
-      : (baseMatch?.badge || '');
+  const brand =
+    raw.brand !== undefined && raw.brand !== null && String(raw.brand).trim() !== ''
+      ? String(raw.brand).trim()
+      : inferBrand(baseMatch || raw);
+  const sku =
+    raw.sku !== undefined && raw.sku !== null && String(raw.sku).trim() !== ''
+      ? String(raw.sku).trim()
+      : String(baseMatch?.sku || `AT-${String(index + 1).padStart(3, '0')}`).trim();
+  const badge = isSupabaseRow
+    ? (raw.badge !== undefined && raw.badge !== null ? String(raw.badge).trim() : '')
+    : (raw.badge !== undefined && raw.badge !== null && String(raw.badge).trim() !== ''
+        ? String(raw.badge).trim()
+        : (baseMatch?.badge || ''));
+
+  const mergedAliases = Array.from(
+    new Set([
+      ...(Array.isArray(baseMatch?.slugAliases) ? baseMatch.slugAliases : []),
+      ...(Array.isArray(raw.slugAliases) ? raw.slugAliases : []),
+      ...(baseMatch?.slug ? [baseMatch.slug] : []),
+      ...(slug ? [slug] : [])
+    ])
+  );
 
   return {
     ...baseMatch,
     ...raw,
-    id: raw.id ?? baseMatch?.id ?? `local-${index + 1}`,
+    id: raw.id ?? baseMatch?.supabaseId ?? baseMatch?.id ?? `local-${index + 1}`,
     created_at: raw.created_at || new Date().toISOString(),
     name,
     slug,
-    slugAliases: raw.slugAliases || baseMatch?.slugAliases || [],
-    description: String(raw.description || baseMatch?.description || '').trim(),
+    slugAliases: mergedAliases,
+    description: String(
+      isSupabaseRow
+        ? (raw.description ?? '')
+        : (raw.description || baseMatch?.description || '')
+    ).trim(),
     price: Number.isFinite(price) && price > 0 ? price : (baseMatch?.price || 10000),
     sale_price,
     salePrice: sale_price,
@@ -179,9 +329,11 @@ export function normalizeProduct(raw, index = 0) {
     brand,
     stock,
     sku,
+    raw_image_url: rawSupabaseImage,
     image_url,
-    image: image_url,
+    image: mainImage,
     fallbackImage,
+    svgFallbackImage: baseMatch?.fallbackImage || PRODUCT_FALLBACK_IMAGES.boompop,
     whiteBg: raw.whiteBg !== undefined ? Boolean(raw.whiteBg) : Boolean(baseMatch?.whiteBg),
     orangeBg: raw.orangeBg !== undefined ? Boolean(raw.orangeBg) : Boolean(baseMatch?.orangeBg),
     active,
@@ -194,84 +346,159 @@ export function normalizeProduct(raw, index = 0) {
 }
 
 /**
- * Formats a product object into the exact columns of the Supabase `products` table
+ * Formats a product object into the exact columns of the Supabase `public.products` table:
+ * - name
+ * - slug
+ * - description
+ * - price
+ * - sale_price
+ * - old_price
+ * - category
+ * - brand
+ * - stock
+ * - sku
+ * - image_url
+ * - active
+ * - rating
+ * - reviews_count
+ * - badge
+ * - specs
  */
 export function toSupabaseProductPayload(product) {
-  const baseMatch = PRODUCTS.find(
-    p =>
-      String(p.id) === String(product.id) ||
-      (product.slug && (p.slug === product.slug || createSlug(p.name) === product.slug)) ||
-      (product.name && createSlug(p.name) === createSlug(product.name))
-  );
+  const baseMatch = findBaseCatalogMatch(product);
 
-  const name = String(product.name || baseMatch?.name || '').trim();
+  const name = String(product.name ?? baseMatch?.name ?? '').trim();
   const slug = String(product.slug || baseMatch?.slug || createSlug(name)).trim();
-  const price = Number(product.price ?? baseMatch?.price) || 0;
-  const salePriceNum = Number(product.sale_price ?? product.salePrice);
-  const oldPriceNum = Number(product.old_price ?? product.oldPrice ?? baseMatch?.old_price);
-  const stockNum = parseInt(product.stock ?? baseMatch?.stock ?? 0, 10);
-  const ratingNum = Number(product.rating ?? baseMatch?.rating ?? 5.0);
-  const reviewsCountNum = parseInt(
-    product.reviews_count ?? product.reviewsCount ?? baseMatch?.reviewsCount ?? 50,
-    10
-  );
+  const description = String(product.description ?? '').trim();
 
-  const specsArray =
-    Array.isArray(product.specs) && product.specs.length > 0
-      ? product.specs.map(s => String(s).trim()).filter(Boolean)
-      : typeof product.specs === 'string' && product.specs.trim()
-      ? product.specs.split('\n').map(s => s.trim()).filter(Boolean)
-      : Array.isArray(baseMatch?.specs)
-      ? baseMatch.specs
-      : [];
+  const priceNum = Number(product.price);
+  const price = Number.isFinite(priceNum) && priceNum > 0 ? priceNum : (baseMatch?.price || 1000);
 
-  const badgeVal =
+  const rawSalePrice = 'sale_price' in product ? product.sale_price : product.salePrice;
+  const salePriceNum =
+    rawSalePrice !== null && rawSalePrice !== undefined && rawSalePrice !== ''
+      ? Number(rawSalePrice)
+      : null;
+  const sale_price =
+    salePriceNum !== null && Number.isFinite(salePriceNum) && salePriceNum > 0
+      ? salePriceNum
+      : null;
+
+  const rawOldPrice = 'old_price' in product ? product.old_price : product.oldPrice;
+  const oldPriceNum =
+    rawOldPrice !== null && rawOldPrice !== undefined && rawOldPrice !== ''
+      ? Number(rawOldPrice)
+      : null;
+  const old_price =
+    oldPriceNum !== null && Number.isFinite(oldPriceNum) && oldPriceNum > 0
+      ? oldPriceNum
+      : null;
+
+  const category = String(
+    product.category || baseMatch?.category || 'Acessórios & Tech'
+  ).trim();
+
+  const brand =
+    product.brand !== undefined && product.brand !== null && String(product.brand).trim() !== ''
+      ? String(product.brand).trim()
+      : String(baseMatch?.brand || inferBrand(product)).trim();
+
+  const stockParsed = parseInt(product.stock, 10);
+  const stock = Number.isFinite(stockParsed) && stockParsed >= 0 ? stockParsed : 0;
+
+  const sku =
+    product.sku !== undefined && product.sku !== null && String(product.sku).trim() !== ''
+      ? String(product.sku).trim()
+      : null;
+
+  const explicitImageUrl =
+    typeof product.image_url === 'string'
+      ? product.image_url.trim().replace(/^['"]+|['"]+$/g, '')
+      : '';
+  const image_url =
+    explicitImageUrl !== ''
+      ? explicitImageUrl
+      : getProductMainImage(product, baseMatch);
+
+  const active =
+    product.active !== undefined && product.active !== null
+      ? Boolean(product.active)
+      : true;
+
+  const ratingParsed = Number(product.rating);
+  const rating =
+    Number.isFinite(ratingParsed) && ratingParsed > 0
+      ? Math.min(5, Math.max(1, ratingParsed))
+      : 4.9;
+
+  const rawReviews =
+    'reviews_count' in product ? product.reviews_count : product.reviewsCount;
+  const reviewsParsed = parseInt(rawReviews, 10);
+  const reviews_count =
+    Number.isFinite(reviewsParsed) && reviewsParsed >= 0 ? reviewsParsed : 0;
+
+  const badge =
     product.badge !== undefined && product.badge !== null && String(product.badge).trim() !== ''
       ? String(product.badge).trim()
-      : (baseMatch?.badge || null);
+      : null;
+
+  const specs = Array.isArray(product.specs)
+    ? product.specs.map(s => String(s).trim()).filter(Boolean)
+    : typeof product.specs === 'string' && product.specs.trim() !== ''
+    ? product.specs
+        .split('\n')
+        .map(s => s.trim())
+        .filter(Boolean)
+    : [];
 
   return {
     name,
     slug,
-    description: String(product.description || baseMatch?.description || '').trim(),
-    price: price > 0 ? price : (baseMatch?.price || 1000),
-    sale_price: Number.isFinite(salePriceNum) && salePriceNum > 0 ? salePriceNum : null,
-    old_price: Number.isFinite(oldPriceNum) && oldPriceNum > 0 ? oldPriceNum : null,
-    category: String(product.category || baseMatch?.category || 'Acessórios & Tech').trim(),
-    brand: String(product.brand || baseMatch?.brand || inferBrand(product)).trim(),
-    stock: Number.isFinite(stockNum) && stockNum >= 0 ? stockNum : 0,
-    sku: String(product.sku || baseMatch?.sku || '').trim() || `AT-${Date.now().toString().slice(-5)}`,
-    image_url: String(product.image_url || product.image || baseMatch?.image || '/logo.jpg').trim(),
-    active: product.active !== undefined ? Boolean(product.active) : true,
-    rating: Number.isFinite(ratingNum) && ratingNum > 0 ? ratingNum : 5.0,
-    reviews_count: Number.isFinite(reviewsCountNum) && reviewsCountNum >= 0 ? reviewsCountNum : 10,
-    badge: badgeVal,
-    specs: specsArray
+    description,
+    price,
+    sale_price,
+    old_price,
+    category,
+    brand,
+    stock,
+    sku,
+    image_url,
+    active,
+    rating,
+    reviews_count,
+    badge,
+    specs
   };
 }
 
 /**
- * Uploads an image file to Supabase Storage bucket `product-images`
+ * Uploads an image file to Supabase Storage bucket (`products` or `product-images`)
  */
 export async function uploadProductImageToSupabase(file, slugPrefix = 'produto') {
-  if (!supabase) {
-    throw new Error('Supabase não está configurado com a chave pública.');
-  }
+  await requireAdminSession();
   const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
   const safeSlug = createSlug(slugPrefix || 'produto') || 'produto';
-  const filePath = `products/${safeSlug}-${Date.now()}.${ext}`;
+  const fileName = `${safeSlug}-${Date.now()}.${ext}`;
 
-  const { error: uploadError } = await supabase.storage
-    .from('product-images')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true
-    });
+  // Try bucket `products` first (already configured in project), fallback to `product-images`
+  const bucketsToTry = ['products', 'product-images'];
+  let lastError = null;
 
-  if (uploadError) {
-    throw uploadError;
+  for (const bucketName of bucketsToTry) {
+    const filePath = bucketName === 'products' ? fileName : `products/${fileName}`;
+    const { error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (!uploadError) {
+      const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
+      return data.publicUrl;
+    }
+    lastError = uploadError;
   }
 
-  const { data } = supabase.storage.from('product-images').getPublicUrl(filePath);
-  return data.publicUrl;
+  throw lastError || new Error('Erro ao enviar imagem para o Supabase Storage.');
 }

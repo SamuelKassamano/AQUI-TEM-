@@ -810,12 +810,18 @@ export default function App() {
                     }}
                   >
                     <img
+                      key={product.image_url || product.image}
                       src={product.image_url || product.image}
                       alt={product.name}
-                      referrerPolicy="no-referrer"
                       onError={(e) => {
-                        e.currentTarget.onerror = null;
-                        e.currentTarget.src = product.fallbackImage;
+                        if (product.fallbackImage && e.currentTarget.src !== product.fallbackImage) {
+                          e.currentTarget.src = product.fallbackImage;
+                        } else if (product.svgFallbackImage) {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = product.svgFallbackImage;
+                        } else {
+                          e.currentTarget.onerror = null;
+                        }
                       }}
                     />
                   </div>
@@ -1041,8 +1047,14 @@ export default function App() {
             </button>
 
             {(() => {
-              const translatedSelected = getTranslatedProduct(selectedProduct, lang);
-              const productReviews = getProductTestimonials(selectedProduct, lang);
+              const liveSelected =
+                activeProducts.find(
+                  p =>
+                    String(p.id) === String(selectedProduct.id) ||
+                    (selectedProduct.slug && p.slug === selectedProduct.slug)
+                ) || selectedProduct;
+              const translatedSelected = getTranslatedProduct(liveSelected, lang);
+              const productReviews = getProductTestimonials(liveSelected, lang);
               const effectivePrice = getEffectivePrice(translatedSelected);
               const previousPrice = getPreviousPrice(translatedSelected);
               const isSelectedOutOfStock = Number(translatedSelected.stock) <= 0;
@@ -1065,12 +1077,18 @@ export default function App() {
                         </span>
                       )}
                       <img
+                        key={translatedSelected.image_url || translatedSelected.image}
                         src={translatedSelected.image_url || translatedSelected.image}
                         alt={translatedSelected.name}
-                        referrerPolicy="no-referrer"
                         onError={(e) => {
-                          e.currentTarget.onerror = null;
-                          e.currentTarget.src = translatedSelected.fallbackImage;
+                          if (translatedSelected.fallbackImage && e.currentTarget.src !== translatedSelected.fallbackImage) {
+                            e.currentTarget.src = translatedSelected.fallbackImage;
+                          } else if (translatedSelected.svgFallbackImage) {
+                            e.currentTarget.onerror = null;
+                            e.currentTarget.src = translatedSelected.svgFallbackImage;
+                          } else {
+                            e.currentTarget.onerror = null;
+                          }
                         }}
                       />
                     </div>

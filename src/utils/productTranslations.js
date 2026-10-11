@@ -5,20 +5,38 @@ import { TESTIMONIALS } from '../data/testimonials';
 export function getTranslatedProduct(product, lang) {
   if (!product) return product;
 
-  // Match base product by id, slug, or name so Supabase UUID rows still match translations & fallbacks
+  // Match base product by supabaseId, id, slug, slugAliases, or name so Supabase UUID rows still match translations & fallbacks
+  const pSlug = product.slug ? String(product.slug).toLowerCase().trim() : '';
   const baseProduct =
     PRODUCTS.find(
       p =>
+        String(p.supabaseId) === String(product.id) ||
         String(p.id) === String(product.id) ||
-        (product.slug && p.slug === product.slug) ||
+        (pSlug &&
+          (p.slug === pSlug ||
+            (Array.isArray(p.slugAliases) &&
+              p.slugAliases.map(a => a.toLowerCase()).includes(pSlug)))) ||
         (product.name && p.name.toLowerCase() === product.name.toLowerCase())
     ) || product;
+
+  const rawSupabaseImageUrl =
+    typeof product.image_url === 'string' ? product.image_url.trim() : '';
+
+  const mainImage =
+    rawSupabaseImageUrl !== ''
+      ? rawSupabaseImageUrl
+      : (typeof product.image === 'string' && product.image.trim() !== ''
+          ? product.image.trim()
+          : baseProduct?.image || baseProduct?.fallbackImage || '/logo.jpg');
 
   const mergedProduct = {
     ...baseProduct,
     ...product,
+    image_url: mainImage,
+    image: mainImage,
     originalCategory: product.category || baseProduct.category,
-    fallbackImage: product.fallbackImage || baseProduct.fallbackImage,
+    fallbackImage: baseProduct?.image || product.fallbackImage || baseProduct?.fallbackImage,
+    svgFallbackImage: baseProduct?.fallbackImage || product.svgFallbackImage,
     quantity: product.quantity || baseProduct.quantity
   };
 
@@ -112,8 +130,8 @@ export function getTranslatedProduct(product, lang) {
     old_price: product.old_price ?? product.oldPrice ?? baseProduct.old_price,
     oldPrice: product.old_price ?? product.oldPrice ?? baseProduct.oldPrice,
     stock: product.stock ?? baseProduct.stock,
-    image: product.image_url || product.image || baseProduct.image,
-    image_url: product.image_url || product.image || baseProduct.image_url,
+    image: mainImage,
+    image_url: mainImage,
     quantity: product.quantity || baseProduct.quantity
   };
 }
@@ -317,6 +335,7 @@ export function getProductTestimonials(product, lang = 'pt') {
   if (!product) return [];
   const baseProduct = PRODUCTS.find(
     p =>
+      String(p.supabaseId) === String(product.id) ||
       String(p.id) === String(product.id) ||
       (product.slug && p.slug === product.slug) ||
       (product.name && p.name.toLowerCase() === product.name.toLowerCase())

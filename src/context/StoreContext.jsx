@@ -5,6 +5,7 @@ import { getTranslatedProduct } from '../utils/productTranslations';
 import {
   supabase,
   isSupabaseConfigured,
+  requireAdminSession,
   normalizeProduct,
   toSupabaseProductPayload,
   getEffectivePrice,
@@ -17,29 +18,27 @@ const StoreContext = createContext();
 
 const CART_STORAGE_KEY = 'aquitem_cart_v1';
 const WISHLIST_STORAGE_KEY = 'aquitem_wishlist_v1';
-const LOCAL_ADMIN_PRODUCTS_KEY = 'aquitem_admin_products_v3';
 const THEME_STORAGE_KEY = 'aquitem_theme_v1';
 
 export function StoreProvider({ children }) {
   const { lang } = useLanguage();
 
-  // Products state (initialized with normalized local catalog so first render is instant)
-  const [products, setProducts] = useState(() => {
+  // Clear any legacy local product caches so localStorage is never used as product source
+  useEffect(() => {
     try {
       localStorage.removeItem('aquitem_admin_products_v1');
       localStorage.removeItem('aquitem_admin_products_v2');
-      const savedLocal = localStorage.getItem(LOCAL_ADMIN_PRODUCTS_KEY);
-      if (savedLocal) {
-        const parsed = JSON.parse(savedLocal);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((p, idx) => normalizeProduct(p, idx)).filter(Boolean);
-        }
-      }
+      localStorage.removeItem('aquitem_admin_products_v3');
+      localStorage.removeItem('aquitem_admin_products_v4');
     } catch (e) {
       // ignore
     }
-    return PRODUCTS.map((p, idx) => normalizeProduct(p, idx));
-  });
+  }, []);
+
+  // Products state (loaded from Supabase `public.products` on mount; local catalog only as initial render placeholder)
+  const [products, setProducts] = useState(() =>
+    PRODUCTS.map((p, idx) => normalizeProduct(p, idx))
+  );
 
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [supabaseConnected, setSupabaseConnected] = useState(false);
@@ -132,20 +131,11 @@ export function StoreProvider({ children }) {
     }
   }, [wishlist]);
 
-  // Persist local mirror of products
-  const saveLocalProductsMirror = useCallback((nextProducts) => {
-    try {
-      localStorage.setItem(LOCAL_ADMIN_PRODUCTS_KEY, JSON.stringify(nextProducts));
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
-  // Fetch products from Supabase `products` table
+  // Fetch products directly from Supabase `public.products` table
   const refreshProducts = useCallback(async () => {
     if (!isSupabaseConfigured || !supabase) {
       setSupabaseConnected(false);
-      return;
+      return null;
     }
 
     setLoadingProducts(true);
@@ -157,55 +147,54 @@ export function StoreProvider({ children }) {
 
       if (!error && Array.isArray(data)) {
         setSupabaseConnected(true);
-        if (data.length > 0) {
-          let needsStockReset = false;
-          try {
-            needsStockReset = localStorage.getItem('aquitem_stock_reset_v3') !== 'done';
-          } catch (e) {
-            // ignore
-          }
+        const normalized = data
+          .map((row, idx) => normalizeProduct(row, idx))
+          .filter(Boolean);
 
-          const normalized = data
-            .map((row, idx) =>
-              normalizeProduct(
-                needsStockReset ? { ...row, stock: 0 } : row,
-                idx
-              )
-            )
-            .filter(Boolean);
-
+        if (normalized.length > 0) {
           setProducts(normalized);
-          saveLocalProductsMirror(normalized);
 
-          if (needsStockReset) {
-            try {
-              localStorage.setItem('aquitem_stock_reset_v3', 'done');
-            } catch (e) {
-              // ignore
-            }
-            data.forEach(row => {
-              if (row.id && Number(row.stock) > 0) {
-                supabase
-                  .from('products')
-                  .update({ stock: 0 })
-                  .eq('id', row.id)
-                  .then(() => {});
-              }
-            });
-          }
+          // Sync any cart items with the latest product data (including image_url, price, stock) from Supabase
+          setCart(prevCart =>
+            prevCart.map(item => {
+              const liveMatch = normalized.find(
+                p =>
+                  String(p.id) === String(item.id) ||
+                  (item.slug && p.slug === item.slug) ||
+                  (item.name && p.name === item.name)
+              );
+              if (!liveMatch) return item;
+              return {
+                ...item,
+                image_url: liveMatch.image_url,
+                image: liveMatch.image,
+                price: getEffectivePrice(liveMatch),
+                stock: liveMatch.stock
+              };
+            })
+          );
         }
+        return normalized;
       } else {
         setSupabaseConnected(false);
+        return null;
       }
     } catch (err) {
       setSupabaseConnected(false);
+      return null;
     } finally {
       setLoadingProducts(false);
     }
-  }, [saveLocalProductsMirror]);
+  }, []);
 
   useEffect(() => {
     refreshProducts();
+
+    const handleFocus = () => {
+      refreshProducts();
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [refreshProducts]);
 
   // Public active products only (active = true)
@@ -380,126 +369,141 @@ export function StoreProvider({ children }) {
   const shippingFee = subtotal > 150000 || subtotal === 0 ? 0 : 3000;
   const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
 
-  // Admin CRUD Operations (Supabase + local state sync)
+  // Admin CRUD Operations (Strictly persisted in Supabase `public.products` and reloaded from Supabase)
   const createProduct = useCallback(
     async (productData) => {
+      await requireAdminSession();
       const payload = toSupabaseProductPayload(productData);
 
-      if (isSupabaseConfigured && supabase) {
-        const { data, error } = await supabase
-          .from('products')
-          .insert([payload])
-          .select()
-          .single();
+      const { data, error } = await supabase
+        .from('products')
+        .insert([payload])
+        .select('*');
 
-        if (error) throw error;
-        const created = normalizeProduct(data, products.length);
-        setProducts(prev => {
-          const next = [created, ...prev];
-          saveLocalProductsMirror(next);
-          return next;
-        });
-        return created;
+      if (error) {
+        throw error;
       }
 
-      // Local fallback when Supabase env is not set in preview
-      const newLocal = normalizeProduct(
-        {
-          ...productData,
-          ...payload,
-          id: Date.now(),
-          created_at: new Date().toISOString()
-        },
-        products.length
-      );
-      setProducts(prev => {
-        const next = [newLocal, ...prev];
-        saveLocalProductsMirror(next);
-        return next;
-      });
-      return newLocal;
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error(
+          'O produto não foi gravado na tabela public.products do Supabase (0 linhas inseridas). Verifique se a política RLS de INSERT para utilizadores autenticados está ativa na tabela public.products.'
+        );
+      }
+
+      const insertedRow = data[0];
+      const reloaded = await refreshProducts();
+      const confirmed =
+        (Array.isArray(reloaded)
+          ? reloaded.find(p => String(p.id) === String(insertedRow.id))
+          : null) || normalizeProduct(insertedRow, products.length);
+
+      return confirmed;
     },
-    [products.length, saveLocalProductsMirror]
+    [products.length, refreshProducts]
   );
 
   const updateProduct = useCallback(
     async (id, updates) => {
-      const existing = products.find(p => String(p.id) === String(id));
-      const merged = { ...(existing || {}), ...updates };
+      await requireAdminSession();
+      const existing = products.find(
+        p => String(p.id) === String(id) || String(p.supabaseId) === String(id)
+      );
+
+      const merged = {
+        ...(existing || {}),
+        ...updates
+      };
+      if ('sale_price' in updates) merged.salePrice = updates.sale_price;
+      if ('old_price' in updates) merged.oldPrice = updates.old_price;
+      if ('reviews_count' in updates) merged.reviewsCount = updates.reviews_count;
+      if ('image_url' in updates) merged.image = updates.image_url;
+
       const payload = toSupabaseProductPayload(merged);
 
-      if (isSupabaseConfigured && supabase && typeof id === 'string' && id.length > 10) {
-        const { data, error } = await supabase
-          .from('products')
-          .update(payload)
-          .eq('id', id)
-          .select()
-          .single();
+      let targetId =
+        typeof id === 'string' && id.length > 10 && !id.startsWith('local-')
+          ? id
+          : existing?.supabaseId || null;
 
-        if (error) throw error;
-        const updated = normalizeProduct({ ...merged, ...data });
-        setProducts(prev => {
-          const next = prev.map(p => (String(p.id) === String(id) ? updated : p));
-          saveLocalProductsMirror(next);
-          return next;
-        });
-        return updated;
-      }
-
-      // If row in Supabase matches by slug/sku
-      if (isSupabaseConfigured && supabase && existing?.slug) {
-        const { data, error } = await supabase
+      if (!targetId && existing?.slug) {
+        const { data: matchRows, error: findErr } = await supabase
           .from('products')
-          .update(payload)
+          .select('id')
           .eq('slug', existing.slug)
-          .select();
-
-        if (!error && Array.isArray(data) && data.length > 0) {
-          const updated = normalizeProduct({ ...merged, ...data[0] });
-          setProducts(prev => {
-            const next = prev.map(p => (String(p.id) === String(id) ? updated : p));
-            saveLocalProductsMirror(next);
-            return next;
-          });
-          return updated;
+          .limit(1);
+        if (findErr) throw findErr;
+        if (Array.isArray(matchRows) && matchRows[0]?.id) {
+          targetId = matchRows[0].id;
         }
       }
 
-      const updatedLocal = normalizeProduct({ ...merged, ...payload, id });
-      setProducts(prev => {
-        const next = prev.map(p => (String(p.id) === String(id) ? updatedLocal : p));
-        saveLocalProductsMirror(next);
-        return next;
-      });
-      return updatedLocal;
+      if (!targetId) {
+        throw new Error('ID do produto inválido para atualização no Supabase.');
+      }
+
+      const { data, error } = await supabase
+        .from('products')
+        .update(payload)
+        .eq('id', targetId)
+        .select('*');
+
+      if (error) {
+        throw error;
+      }
+
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error(
+          'A alteração não foi persistida na tabela public.products do Supabase (0 linhas atualizadas). Verifique se a política RLS de UPDATE para utilizadores autenticados está ativa na tabela public.products.'
+        );
+      }
+
+      const updatedRow = data[0];
+      const reloaded = await refreshProducts();
+      const confirmed =
+        (Array.isArray(reloaded)
+          ? reloaded.find(p => String(p.id) === String(updatedRow.id))
+          : null) || normalizeProduct(updatedRow);
+
+      return confirmed;
     },
-    [products, saveLocalProductsMirror]
+    [products, refreshProducts]
   );
 
   const deleteProduct = useCallback(
     async (id) => {
-      const existing = products.find(p => String(p.id) === String(id));
+      await requireAdminSession();
+      const existing = products.find(
+        p => String(p.id) === String(id) || String(p.supabaseId) === String(id)
+      );
+      const targetId =
+        typeof id === 'string' && id.length > 10 && !id.startsWith('local-')
+          ? id
+          : existing?.supabaseId || id;
 
-      if (isSupabaseConfigured && supabase) {
-        if (typeof id === 'string' && id.length > 10) {
-          const { error } = await supabase.from('products').delete().eq('id', id);
-          if (error) throw error;
-        } else if (existing?.slug) {
-          await supabase.from('products').delete().eq('slug', existing.slug);
-        }
+      const { data, error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', targetId)
+        .select('id');
+
+      if (error) {
+        throw error;
       }
 
-      setProducts(prev => {
-        const next = prev.filter(p => String(p.id) !== String(id));
-        saveLocalProductsMirror(next);
-        return next;
-      });
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error(
+          'O produto não foi excluído na tabela public.products do Supabase (0 linhas afetadas). Verifique se a política RLS de DELETE para utilizadores autenticados está ativa.'
+        );
+      }
+
+      await refreshProducts();
     },
-    [products, saveLocalProductsMirror]
+    [products, refreshProducts]
   );
 
   const duplicateProduct = useCallback(
     async (product) => {
+      await requireAdminSession();
       const baseName = `${product.name} (Cópia)`;
       const newSlug = `${product.slug || createSlug(product.name)}-copia-${Date.now().toString().slice(-4)}`;
       const newSku = `${product.sku || 'AT'}-COPY-${Date.now().toString().slice(-3)}`;
@@ -518,30 +522,32 @@ export function StoreProvider({ children }) {
 
   const toggleProductActive = useCallback(
     async (product) => {
+      await requireAdminSession();
       return updateProduct(product.id, { active: !product.active });
     },
     [updateProduct]
   );
 
   const syncCatalogToSupabase = useCallback(async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      throw new Error('Configure VITE_SUPABASE_PUBLISHABLE_KEY para sincronizar com o banco Supabase.');
-    }
+    await requireAdminSession();
 
     const { data: existingRows, error: fetchErr } = await supabase
       .from('products')
-      .select('id, slug, name');
+      .select('*');
 
     if (fetchErr) throw fetchErr;
 
     const existingList = Array.isArray(existingRows) ? existingRows : [];
     const results = [];
 
-    for (const p of PRODUCTS) {
+    // Sync current products without overwriting existing database stock/prices with static defaults
+    for (const p of products) {
       const payload = toSupabaseProductPayload(p);
+      const pAliases = Array.isArray(p.slugAliases) ? p.slugAliases : [];
       const match = existingList.find(
         row =>
-          (row.slug && row.slug === payload.slug) ||
+          String(row.id) === String(p.id) ||
+          (row.slug && (row.slug === payload.slug || pAliases.includes(row.slug))) ||
           (row.name && createSlug(row.name) === payload.slug)
       );
 
@@ -550,14 +556,14 @@ export function StoreProvider({ children }) {
           .from('products')
           .update(payload)
           .eq('id', match.id)
-          .select();
+          .select('*');
         if (updErr) throw updErr;
         if (Array.isArray(updated) && updated[0]) results.push(updated[0]);
       } else {
         const { data: inserted, error: insErr } = await supabase
           .from('products')
           .insert([payload])
-          .select();
+          .select('*');
         if (insErr) throw insErr;
         if (Array.isArray(inserted) && inserted[0]) results.push(inserted[0]);
       }
@@ -565,7 +571,7 @@ export function StoreProvider({ children }) {
 
     await refreshProducts();
     return results;
-  }, [refreshProducts]);
+  }, [products, refreshProducts]);
 
   return (
     <StoreContext.Provider

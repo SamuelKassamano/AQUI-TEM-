@@ -19,6 +19,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
               <Route path="/" element={<Home />} />
               <Route path="/produto/:slug" element={<ProductPage />} />
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/*" element={<AdminPage />} />
             </Routes>
           </StoreProvider>
         </CRMProvider>
