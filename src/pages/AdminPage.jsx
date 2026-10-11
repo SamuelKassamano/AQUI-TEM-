@@ -321,7 +321,7 @@ export default function AdminPage() {
     setIsProductModalOpen(true);
   };
 
-  // Image file upload to Supabase Storage `product-images`
+  // Image file upload to Supabase Storage `products`
   const handleImageFileUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -331,18 +331,36 @@ export default function AdminPage() {
       return;
     }
 
+    setPersistenceError('');
     setUploadingImage(true);
     try {
       const publicUrl = await uploadProductImageToSupabase(
         file,
-        formData.slug || formData.name || 'produto'
+        formData.slug || formData.name || editingProduct?.slug || editingProduct?.name || 'produto'
       );
       setFormData(prev => ({ ...prev, image_url: publicUrl }));
-      showToast('Imagem enviada para o Supabase Storage!');
+
+      if (editingProduct?.id) {
+        const updated = await updateProduct(editingProduct.id, {
+          image_url: publicUrl
+        });
+        if (updated) {
+          setEditingProduct(updated);
+        }
+        await refreshProducts();
+        showToast('Imagem enviada para o bucket "products" e gravada em public.products.image_url!');
+      } else {
+        showToast('Imagem enviada para o bucket "products" no Supabase Storage!');
+      }
     } catch (err) {
-      showToast(`Erro no upload: ${err.message || 'Verifique permissões de Storage no Supabase.'}`);
+      const msg = err?.message || 'Verifique permissões de Storage no bucket products do Supabase.';
+      setPersistenceError(msg);
+      showToast(`Erro no upload: ${msg}`);
     } finally {
       setUploadingImage(false);
+      if (e.target) {
+        e.target.value = '';
+      }
     }
   };
 
@@ -1270,7 +1288,7 @@ export default function AdminPage() {
 
               {/* Image URL & Upload */}
               <div className="form-group" style={{ marginTop: '10px' }}>
-                <label className="form-label">Imagem do Produto (URL ou Upload para Supabase Storage `product-images`)</label>
+                <label className="form-label">Imagem do Produto (URL ou Upload para Supabase Storage `products`)</label>
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
                   <input
                     type="text"
@@ -1288,12 +1306,33 @@ export default function AdminPage() {
                     <span>{uploadingImage ? 'Enviando...' : 'Upload Imagem'}</span>
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/*"
                       style={{ display: 'none' }}
                       onChange={handleImageFileUpload}
                     />
                   </label>
                 </div>
+                {formData.image_url && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
+                    <img
+                      key={formData.image_url}
+                      src={formData.image_url}
+                      alt="Pré-visualização"
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        objectFit: 'contain',
+                        background: '#FFF',
+                        borderRadius: '8px',
+                        border: '1px solid var(--border-light)',
+                        padding: '2px'
+                      }}
+                    />
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
+                      {formData.image_url}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">

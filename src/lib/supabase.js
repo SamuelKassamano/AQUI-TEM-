@@ -183,6 +183,21 @@ export function getProductMainImage(product, baseMatch = null) {
     if (rawImageUrl.startsWith('/storage/v1/')) {
       return `${SUPABASE_URL}${rawImageUrl}`;
     }
+    if (
+      !rawImageUrl.startsWith('http://') &&
+      !rawImageUrl.startsWith('https://') &&
+      !rawImageUrl.startsWith('/') &&
+      !rawImageUrl.startsWith('data:')
+    ) {
+      const cleanObjectPath = rawImageUrl.replace(/^products\//, '');
+      if (supabase) {
+        const { data } = supabase.storage
+          .from('products')
+          .getPublicUrl(cleanObjectPath);
+        if (data?.publicUrl) return data.publicUrl;
+      }
+      return `${SUPABASE_URL}/storage/v1/object/public/products/${cleanObjectPath}`;
+    }
     return rawImageUrl;
   }
 
@@ -472,33 +487,40 @@ export function toSupabaseProductPayload(product) {
 }
 
 /**
- * Uploads an image file to Supabase Storage bucket (`products` or `product-images`)
+ * Uploads an image file strictly to Supabase Storage bucket `products`
+ * using `supabase.storage.from('products')` and returns its public URL.
  */
 export async function uploadProductImageToSupabase(file, slugPrefix = 'produto') {
   await requireAdminSession();
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+
+  const ext =
+    (file.name.split('.').pop() || 'jpg')
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '') || 'jpg';
   const safeSlug = createSlug(slugPrefix || 'produto') || 'produto';
-  const fileName = `${safeSlug}-${Date.now()}.${ext}`;
+  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+  const filePath = `${safeSlug}-${uniqueSuffix}.${ext}`;
 
-  // Try bucket `products` first (already configured in project), fallback to `product-images`
-  const bucketsToTry = ['products', 'product-images'];
-  let lastError = null;
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('products')
+    .upload(filePath, file, {
+      cacheControl: '3600',
+      upsert: true,
+      contentType: file.type || undefined
+    });
 
-  for (const bucketName of bucketsToTry) {
-    const filePath = bucketName === 'products' ? fileName : `products/${fileName}`;
-    const { error: uploadError } = await supabase.storage
-      .from(bucketName)
-      .upload(filePath, file, {
-        cacheControl: '3600',
-        upsert: true
-      });
-
-    if (!uploadError) {
-      const { data } = supabase.storage.from(bucketName).getPublicUrl(filePath);
-      return data.publicUrl;
-    }
-    lastError = uploadError;
+  if (uploadError) {
+    throw uploadError;
   }
 
-  throw lastError || new Error('Erro ao enviar imagem para o Supabase Storage.');
+  const finalPath = uploadData?.path || filePath;
+  const { data: publicUrlData } = supabase.storage
+    .from('products')
+    .getPublicUrl(finalPath);
+
+  if (!publicUrlData?.publicUrl) {
+    throw new Error('Não foi possível gerar a URL pública no bucket products.');
+  }
+
+  return publicUrlData.publicUrl;
 }
