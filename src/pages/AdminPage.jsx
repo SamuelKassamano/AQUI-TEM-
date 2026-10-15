@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Package,
   Plus,
@@ -21,9 +21,25 @@ import {
   Database,
   ExternalLink,
   X,
-  Save
+  Save,
+  Users,
+  BarChart3,
+  Settings,
+  ShieldCheck,
+  MessageCircle,
+  Phone,
+  Clock,
+  FileText,
+  Send,
+  Check,
+  Mail,
+  Key,
+  Terminal,
+  AlertCircle,
+  Globe
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
+import { useCRM } from '../context/CRMContext';
 import {
   supabase,
   isSupabaseConfigured,
@@ -31,6 +47,7 @@ import {
   SUPABASE_URL,
   uploadProductImageToSupabase
 } from '../lib/supabase';
+import { sendAdminPasswordReset, checkUserIsAdmin } from '../lib/crmService';
 import { CATEGORIES } from '../../data/products';
 import { createSlug } from '../utils/slug';
 import OriginalLogoImage from '../components/OriginalLogoImage';
@@ -54,7 +71,24 @@ const EMPTY_FORM = {
   active: true
 };
 
-export default function AdminPage() {
+const EMPTY_LEAD_FORM = {
+  name: '',
+  phone: '',
+  city: 'Luanda',
+  address: '',
+  productName: '',
+  totalValue: '',
+  notes: ''
+};
+
+export default function AdminPage({ defaultTab = 'products' }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || defaultTab || 'products';
+
+  const setTab = (tabName) => {
+    setSearchParams({ tab: tabName });
+  };
+
   const {
     products,
     loadingProducts,
@@ -67,11 +101,25 @@ export default function AdminPage() {
     toggleProductActive,
     syncCatalogToSupabase,
     getEffectivePrice,
-     getPreviousPrice,
+    getPreviousPrice,
     formatPriceKz,
     showToast,
     toastMessage
   } = useStore();
+
+  const {
+    leads,
+    analytics,
+    webhookUrl,
+    refreshCRMData,
+    isLoadingLeads,
+    leadsError,
+    tableMissingWarning,
+    updateLeadStatus,
+    deleteLead,
+    captureLead,
+    saveWebhookUrl
+  } = useCRM();
 
   // Auth State (Strictly backed by Supabase Auth)
   const [session, setSession] = useState(null);
@@ -80,13 +128,21 @@ export default function AdminPage() {
   const [password, setPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [isAdminRole, setIsAdminRole] = useState(true);
 
-  // Admin UI Filters
+  // Password Recovery
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSuccess, setForgotSuccess] = useState('');
+  const [forgotError, setForgotError] = useState('');
+
+  // Products UI Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  // Modals State
+  // Product Modals State
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
@@ -107,9 +163,30 @@ export default function AdminPage() {
   const [syncingSupabase, setSyncingSupabase] = useState(false);
   const [persistenceError, setPersistenceError] = useState('');
 
+  // CRM State
+  const [leadSearch, setLeadSearch] = useState('');
+  const [leadFilterStatus, setLeadFilterStatus] = useState('all');
+  const [selectedLeadHistory, setSelectedLeadHistory] = useState(null);
+  const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
+  const [newLeadForm, setNewLeadForm] = useState(EMPTY_LEAD_FORM);
+  const [savingNewLead, setSavingNewLead] = useState(false);
+
+  // Webhook State
+  const [webhookInput, setWebhookInput] = useState('');
+  const [savingWebhook, setSavingWebhook] = useState(false);
+  const [testWebhookLoading, setTestWebhookLoading] = useState(false);
+  const [testWebhookResult, setTestWebhookResult] = useState(null);
+  const [copiedSql, setCopiedSql] = useState(false);
+
   useEffect(() => {
-    document.title = 'Painel Administrativo | AQUI TEM Angola';
+    document.title = 'Painel Administrativo & CRM | AQUI TEM Angola';
   }, []);
+
+  useEffect(() => {
+    if (webhookUrl) {
+      setWebhookInput(webhookUrl);
+    }
+  }, [webhookUrl]);
 
   // Check Supabase Auth Session via supabase.auth.getSession()
   useEffect(() => {
@@ -123,12 +200,16 @@ export default function AdminPage() {
 
     supabase.auth
       .getSession()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (!isMounted) return;
         if (error || !data?.session?.user || !data?.session?.access_token) {
           setSession(null);
+          setIsAdminRole(false);
         } else {
           setSession(data.session);
+          const hasRole = await checkUserIsAdmin(data.session.user);
+          if (isMounted) setIsAdminRole(hasRole);
+          refreshCRMData();
         }
         setAuthChecking(false);
       })
@@ -140,12 +221,16 @@ export default function AdminPage() {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       if (!isMounted) return;
       if (nextSession?.user && nextSession?.access_token) {
         setSession(nextSession);
+        const hasRole = await checkUserIsAdmin(nextSession.user);
+        if (isMounted) setIsAdminRole(hasRole);
+        refreshCRMData();
       } else {
         setSession(null);
+        setIsAdminRole(false);
       }
     });
 
@@ -153,7 +238,7 @@ export default function AdminPage() {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [refreshCRMData]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -196,10 +281,21 @@ export default function AdminPage() {
         return;
       }
 
+      // Verifica papel de administrador
+      const hasAdminRole = await checkUserIsAdmin(data.session.user);
+      if (!hasAdminRole) {
+        await supabase.auth.signOut();
+        setSession(null);
+        setAuthError('Acesso Negado: Esta conta não possui privilégios de administrador.');
+        return;
+      }
+
       setSession(data.session);
+      setIsAdminRole(true);
       setPassword('');
       showToast('Sessão administrativa iniciada com sucesso!');
       refreshProducts();
+      refreshCRMData();
     } catch (err) {
       setSession(null);
       setAuthError(
@@ -207,6 +303,29 @@ export default function AdminPage() {
       );
     } finally {
       setAuthLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    setForgotError('');
+    setForgotSuccess('');
+
+    if (!forgotEmail.trim()) {
+      setForgotError('Informe o seu e-mail de administrador.');
+      return;
+    }
+
+    setForgotLoading(true);
+    try {
+      await sendAdminPasswordReset(forgotEmail.trim());
+      setForgotSuccess(
+        `Link de redefinição enviado com sucesso para ${forgotEmail.trim()}. Verifique o seu e-mail.`
+      );
+    } catch (err) {
+      setForgotError(err?.message || 'Erro ao enviar e-mail de recuperação.');
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -221,7 +340,7 @@ export default function AdminPage() {
       setPassword('');
       setAuthError('');
       setAuthLoading(false);
-      showToast('Sessão encerrada.');
+      showToast('Sessão administrativa encerrada.');
     }
   };
 
@@ -230,7 +349,8 @@ export default function AdminPage() {
       supabase &&
       session &&
       session.user &&
-      session.access_token
+      session.access_token &&
+      isAdminRole
   );
 
   // Filtered products
@@ -261,8 +381,8 @@ export default function AdminPage() {
     });
   }, [products, searchTerm, categoryFilter, statusFilter]);
 
-  // Stats
-  const stats = useMemo(() => {
+  // Product Stats
+  const productStats = useMemo(() => {
     const total = products.length;
     const activeCount = products.filter(p => p.active !== false).length;
     const inactiveCount = products.filter(p => p.active === false).length;
@@ -270,8 +390,39 @@ export default function AdminPage() {
     return { total, activeCount, inactiveCount, outOfStockCount };
   }, [products]);
 
-  // Open Add Modal
-  const handleOpenAdd = () => {
+  // Filtered CRM Leads
+  const filteredLeads = useMemo(() => {
+    return leads.filter(l => {
+      const q = leadSearch.toLowerCase().trim();
+      const matchesQuery =
+        !q ||
+        (l.name || '').toLowerCase().includes(q) ||
+        (l.phone || '').toLowerCase().includes(q) ||
+        (l.city || '').toLowerCase().includes(q) ||
+        (l.productName || '').toLowerCase().includes(q) ||
+        (l.leadCode || '').toLowerCase().includes(q);
+
+      const matchesStatus =
+        leadFilterStatus === 'all' || l.status === leadFilterStatus;
+
+      return matchesQuery && matchesStatus;
+    });
+  }, [leads, leadSearch, leadFilterStatus]);
+
+  // CRM KPI Stats
+  const crmStats = useMemo(() => {
+    const total = leads.length;
+    const novos = leads.filter(l => l.status === 'Novo Lead').length;
+    const atendimento = leads.filter(l => l.status === 'Em Atendimento').length;
+    const vendas = leads.filter(l => l.status === 'Venda Realizada').length;
+    const perdidos = leads.filter(l => l.status === 'Perdido').length;
+    const totalKz = leads.reduce((sum, l) => sum + (Number(l.totalValue) || 0), 0);
+    const taxaConversao = total > 0 ? Math.round((vendas / total) * 100) : 0;
+    return { total, novos, atendimento, vendas, perdidos, totalKz, taxaConversao };
+  }, [leads]);
+
+  // Open Add Product Modal
+  const handleOpenAddProduct = () => {
     setEditingProduct(null);
     setSlugManuallyEdited(false);
     setFormData({
@@ -281,8 +432,8 @@ export default function AdminPage() {
     setIsProductModalOpen(true);
   };
 
-  // Open Edit Modal
-  const handleOpenEdit = (product) => {
+  // Open Edit Product Modal
+  const handleOpenEditProduct = (product) => {
     setEditingProduct(product);
     setSlugManuallyEdited(true);
     setFormData({
@@ -334,10 +485,13 @@ export default function AdminPage() {
     setPersistenceError('');
     setUploadingImage(true);
     try {
-      const publicUrl = await uploadProductImageToSupabase(
+      const uploadResult = await uploadProductImageToSupabase(
         file,
         formData.slug || formData.name || editingProduct?.slug || editingProduct?.name || 'produto'
       );
+      const publicUrl = typeof uploadResult === 'object' && uploadResult?.url ? uploadResult.url : uploadResult;
+      const isStorage = typeof uploadResult === 'object' && uploadResult?.source === 'storage';
+
       setFormData(prev => ({ ...prev, image_url: publicUrl }));
 
       if (editingProduct?.id) {
@@ -348,12 +502,20 @@ export default function AdminPage() {
           setEditingProduct(updated);
         }
         await refreshProducts();
-        showToast('Imagem enviada para o bucket "products" e gravada em public.products.image_url!');
+        showToast(
+          isStorage
+            ? 'Imagem salva no Supabase Storage e gravada no produto!'
+            : 'Imagem associada e salva no produto com sucesso!'
+        );
       } else {
-        showToast('Imagem enviada para o bucket "products" no Supabase Storage!');
+        showToast(
+          isStorage
+            ? 'Imagem salva no Supabase Storage! Conclua clicando em "Salvar Produto".'
+            : 'Imagem carregada! Conclua o cadastro clicando em "Salvar Produto".'
+        );
       }
     } catch (err) {
-      const msg = err?.message || 'Verifique permissões de Storage no bucket products do Supabase.';
+      const msg = err?.message || 'Não foi possível carregar o arquivo.';
       setPersistenceError(msg);
       showToast(`Erro no upload: ${msg}`);
     } finally {
@@ -437,111 +599,197 @@ export default function AdminPage() {
     } catch (err) {
       const msg = err?.message || 'Erro ao gravar na tabela public.products do Supabase.';
       setPersistenceError(msg);
-      showToast(`Erro ao salvar no Supabase: ${msg}`);
+      showToast(`Erro de persistência: ${msg}`);
     } finally {
       setSavingProduct(false);
     }
   };
 
-  // Quick Price Update
-  const handleOpenPriceModal = (product) => {
-    setPriceModalProduct(product);
-    setPriceForm({
-      price: product.price ?? '',
-      sale_price:
-        product.sale_price !== null && product.sale_price !== undefined
-          ? product.sale_price
-          : '',
-      old_price:
-        product.old_price !== null && product.old_price !== undefined
-          ? product.old_price
-          : ''
-    });
-  };
-
-  const handleSaveQuickPrice = async (e) => {
-    e.preventDefault();
-    if (!priceModalProduct) return;
-    setPersistenceError('');
-    const priceNum = Number(priceForm.price);
-    if (!Number.isFinite(priceNum) || priceNum <= 0) {
-      showToast('Informe um preço base válido maior que 0 Kz.');
+  // Sync catalog to Supabase
+  const handleSyncToSupabase = async () => {
+    if (!confirm('Deseja sincronizar o catálogo com a tabela public.products no Supabase?')) {
       return;
     }
-    try {
-      await updateProduct(priceModalProduct.id, {
-        price: priceNum,
-        sale_price:
-          priceForm.sale_price !== '' &&
-          priceForm.sale_price !== null &&
-          Number(priceForm.sale_price) > 0
-            ? Number(priceForm.sale_price)
-            : null,
-        old_price:
-          priceForm.old_price !== '' &&
-          priceForm.old_price !== null &&
-          Number(priceForm.old_price) > 0
-            ? Number(priceForm.old_price)
-            : null
-      });
-      await refreshProducts();
-      showToast('Preços gravados no Supabase com sucesso!');
-      setPriceModalProduct(null);
-    } catch (err) {
-      const msg = err?.message || 'Erro ao atualizar preço no Supabase.';
-      setPersistenceError(msg);
-      showToast(`Erro ao atualizar preço: ${msg}`);
-    }
-  };
-
-  // Quick Stock Update
-  const handleOpenStockModal = (product) => {
-    setStockModalProduct(product);
-    setStockValue(Number(product.stock ?? 0));
-  };
-
-  const handleSaveQuickStock = async (e) => {
-    e.preventDefault();
-    if (!stockModalProduct) return;
     setPersistenceError('');
-    try {
-      const parsed = parseInt(stockValue, 10);
-      const nextStock = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
-      await updateProduct(stockModalProduct.id, { stock: nextStock });
-      await refreshProducts();
-      showToast(`Estoque gravado no Supabase (${nextStock} unidades)!`);
-      setStockModalProduct(null);
-    } catch (err) {
-      const msg = err?.message || 'Erro ao atualizar estoque no Supabase.';
-      setPersistenceError(msg);
-      showToast(`Erro ao atualizar estoque: ${msg}`);
-    }
-  };
-
-  // Sync initial products to Supabase
-  const handleSyncToSupabase = async () => {
     setSyncingSupabase(true);
     try {
-      await syncCatalogToSupabase();
-      showToast('Catálogo sincronizado com a tabela products no Supabase!');
+      const result = await syncCatalogToSupabase();
+      await refreshProducts();
+      showToast(
+        `Catálogo sincronizado: ${result.inserted} novos, ${result.updated} atualizados.`
+      );
     } catch (err) {
-      showToast(`Aviso: ${err.message}`);
+      const msg = err?.message || 'Erro ao sincronizar base com Supabase.';
+      setPersistenceError(msg);
+      showToast(`Erro na sincronização: ${msg}`);
     } finally {
       setSyncingSupabase(false);
     }
   };
 
+  // Save manual lead
+  const handleSaveManualLead = async (e) => {
+    e.preventDefault();
+    if (!newLeadForm.name.trim()) {
+      showToast('Informe o nome do cliente.');
+      return;
+    }
+
+    setSavingNewLead(true);
+    try {
+      await captureLead({
+        name: newLeadForm.name.trim(),
+        phone: newLeadForm.phone.trim(),
+        city: newLeadForm.city.trim() || 'Luanda',
+        address: newLeadForm.address.trim() || 'Angola',
+        productName: newLeadForm.productName.trim() || 'Atendimento Balcão / Loja',
+        totalValue: Number(newLeadForm.totalValue) || 0,
+        notes: newLeadForm.notes.trim() || 'Cadastrado manualmente pelo painel CRM'
+      });
+      setIsNewLeadModalOpen(false);
+      setNewLeadForm(EMPTY_LEAD_FORM);
+      showToast('Lead cadastrado com sucesso no Supabase!');
+    } catch (err) {
+      showToast(`Erro ao salvar lead: ${err.message}`);
+    } finally {
+      setSavingNewLead(false);
+    }
+  };
+
+  // Save Webhook
+  const handleSaveWebhookUrl = async () => {
+    setSavingWebhook(true);
+    try {
+      await saveWebhookUrl(webhookInput.trim());
+      showToast('Webhook salvo no Supabase com sucesso!');
+    } catch (err) {
+      showToast(`Erro ao salvar webhook: ${err.message}`);
+    } finally {
+      setSavingWebhook(false);
+    }
+  };
+
+  // Test Webhook
+  const handleTestWebhook = async () => {
+    const targetUrl = webhookInput.trim();
+    if (!targetUrl) {
+      showToast('Informe a URL do webhook antes de testar.');
+      return;
+    }
+
+    setTestWebhookLoading(true);
+    setTestWebhookResult(null);
+    try {
+      const testPayload = {
+        event: 'test.ping',
+        timestamp: new Date().toISOString(),
+        site: 'AQUI TEM Angola',
+        testLead: {
+          name: 'Cliente Teste AQUI TEM',
+          phone: '+244950752933',
+          product: 'Oraimo BoomPop Pro',
+          value: 35000,
+          city: 'Luanda'
+        }
+      };
+
+      const res = await fetch(targetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(testPayload)
+      });
+
+      setTestWebhookResult({
+        success: res.ok,
+        status: res.status,
+        statusText: res.statusText || 'OK'
+      });
+      showToast(res.ok ? 'Webhook testado com sucesso!' : `Servidor respondeu HTTP ${res.status}`);
+    } catch (err) {
+      setTestWebhookResult({
+        success: false,
+        error: err.message
+      });
+      showToast(`Falha no envio do teste: ${err.message}`);
+    } finally {
+      setTestWebhookLoading(false);
+    }
+  };
+
+  const crmStatusList = [
+    'Novo Lead',
+    'Em Atendimento',
+    'Venda Realizada',
+    'Perdido',
+    'Nutrição'
+  ];
+
+  // SQL Script text for copy
+  const sqlScriptContent = `-- Executar no SQL Editor do Supabase:
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL DEFAULT 'admin',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS public.crm_leads (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  lead_code TEXT,
+  name TEXT NOT NULL,
+  phone TEXT,
+  city TEXT DEFAULT 'Luanda',
+  address TEXT DEFAULT 'Angola',
+  product_name TEXT DEFAULT 'Consulta Geral',
+  product_price NUMERIC(14, 2) DEFAULT 0,
+  total_value NUMERIC(14, 2) DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'Novo Lead',
+  traffic_source TEXT DEFAULT 'Direto',
+  time_on_site TEXT DEFAULT '0m 0s',
+  pages_viewed INTEGER DEFAULT 1,
+  notes TEXT,
+  history JSONB DEFAULT '[]'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.crm_leads ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS public.crm_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+ALTER TABLE public.crm_settings ENABLE ROW LEVEL SECURITY;
+
+-- RLS: Qualquer cliente insere novo pedido; apenas admins autenticados leem/editam
+CREATE POLICY "Public checkout can insert leads" ON public.crm_leads FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Admins can view leads" ON public.crm_leads FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Admins can update leads" ON public.crm_leads FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Admins can delete leads" ON public.crm_leads FOR DELETE TO authenticated USING (true);
+CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO authenticated USING (true);`;
+
+  // Se está verificando sessão inicial
   if (authChecking) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-body)' }}>
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'var(--bg-body)'
+        }}
+      >
         <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>
-          Verificando sessão administrativa...
+          <RefreshCw size={28} className="animate-spin" style={{ margin: '0 auto 12px' }} />
+          <p style={{ margin: 0, fontSize: '0.9rem' }}>Verificando autenticação no Supabase...</p>
         </div>
       </div>
     );
   }
 
-  // Login Gate
+  // Se NÃO autenticado -> Exibe Tela de Login Profissional
   if (!isAuthenticated) {
     return (
       <div
@@ -557,47 +805,30 @@ export default function AdminPage() {
         <div
           style={{
             width: '100%',
-            maxWidth: '440px',
+            maxWidth: '450px',
             background: 'var(--bg-card)',
             border: '1px solid var(--border-light)',
             borderRadius: '20px',
-            padding: '32px',
+            padding: '34px',
             boxShadow: 'var(--shadow-md)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={38} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+            <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={40} />
             <Link to="/" className="nav-btn" style={{ textDecoration: 'none', fontSize: '0.82rem' }}>
               <ArrowLeft size={15} /> Voltar à Loja
             </Link>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '6px' }}>
-            <Lock size={15} /> Acesso Restrito
+            <Lock size={15} /> Acesso Restrito Administrativo & CRM
           </div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: 900, marginBottom: '6px', color: 'var(--text-main)' }}>
-            Painel Administrativo AQUI TEM
+            Painel de Gestão AQUI TEM
           </h1>
-          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '20px', lineHeight: 1.5 }}>
-            Autentique-se com a sua conta de administrador do Supabase (Projeto: <code>{SUPABASE_PROJECT_ID}</code>) para gerir produtos, preços e estoque.
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '22px', lineHeight: 1.5 }}>
+            Entre com a sua conta de administrador no Supabase Auth para aceder ao CRM, catálogo, preços e estoque.
           </p>
-
-          {!isSupabaseConfigured && (
-            <div
-              style={{
-                background: 'rgba(243, 112, 33, 0.08)',
-                border: '1px solid rgba(243, 112, 33, 0.3)',
-                borderRadius: '12px',
-                padding: '12px',
-                fontSize: '0.8rem',
-                color: 'var(--text-main)',
-                marginBottom: '16px',
-                lineHeight: 1.5
-              }}
-            >
-              <strong>Nota de Ambiente:</strong> Defina <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> nas variáveis de ambiente (Vercel / <code>.env</code>) para conectar ao Supabase em produção (<code>{SUPABASE_URL}</code>).
-            </div>
-          )}
 
           {authError && (
             <div
@@ -605,56 +836,142 @@ export default function AdminPage() {
                 background: 'rgba(220, 38, 38, 0.1)',
                 border: '1px solid rgba(220, 38, 38, 0.3)',
                 color: '#DC2626',
-                padding: '10px 14px',
+                padding: '12px 14px',
                 borderRadius: '10px',
                 fontSize: '0.85rem',
                 fontWeight: 600,
-                marginBottom: '16px'
+                marginBottom: '18px',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center'
               }}
             >
-              {authError}
+              <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+              <span>{authError}</span>
             </div>
           )}
 
           <form onSubmit={handleLogin}>
-            <div className="form-group">
-              <label className="form-label">E-mail do Administrador *</label>
-              <input
-                type="email"
-                required
-                placeholder="admin@aquitem.ao"
-                className="form-input"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-              />
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', display: 'block' }}>
+                E-mail do Administrador *
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={16} style={{ position: 'absolute', left: 12, top: 13, color: 'var(--text-muted)' }} />
+                <input
+                  type="email"
+                  required
+                  placeholder="admin@aquitem.ao"
+                  className="form-input"
+                  style={{ paddingLeft: '38px', width: '100%', boxSizing: 'border-box' }}
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Palavra-passe *</label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••"
-                className="form-input"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-              />
+            <div className="form-group" style={{ marginBottom: '18px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0 }}>
+                  Palavra-passe *
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotEmail(email);
+                    setShowForgotModal(true);
+                  }}
+                  style={{ background: 'transparent', border: 0, color: 'var(--primary-orange)', fontSize: '0.8rem', cursor: 'pointer', fontWeight: 600, padding: 0 }}
+                >
+                  Esqueceu a palavra-passe?
+                </button>
+              </div>
+              <div style={{ position: 'relative' }}>
+                <Key size={16} style={{ position: 'absolute', left: 12, top: 13, color: 'var(--text-muted)' }} />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="form-input"
+                  style={{ paddingLeft: '38px', width: '100%', boxSizing: 'border-box' }}
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+              </div>
             </div>
 
             <button
               type="submit"
               disabled={authLoading}
               className="nav-btn nav-btn-orange"
-              style={{ width: '100%', justifyContent: 'center', padding: '12px', marginTop: '12px', fontSize: '0.95rem' }}
+              style={{ width: '100%', justifyContent: 'center', padding: '13px', marginTop: '6px', fontSize: '0.95rem' }}
             >
-              <Lock size={17} /> {authLoading ? 'Autenticando...' : 'Entrar no Painel Admin'}
+              <Lock size={17} /> {authLoading ? 'Verificando Credenciais...' : 'Entrar no Painel Seguro'}
             </button>
           </form>
+
+          {/* Modal de Recuperação de Palavra-passe */}
+          {showForgotModal && (
+            <div className="modal-overlay" onClick={() => setShowForgotModal(false)}>
+              <div
+                className="modal-content"
+                style={{ maxWidth: '420px', padding: '24px' }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Recuperar Palavra-passe</h3>
+                  <button onClick={() => setShowForgotModal(false)} style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '16px', lineHeight: 1.5 }}>
+                  Insira o seu e-mail de administrador para receber o link seguro de redefinição de palavra-passe do Supabase Authentication.
+                </p>
+
+                {forgotSuccess && (
+                  <div style={{ padding: '12px', background: '#e6f4ea', color: '#137333', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '14px' }}>
+                    {forgotSuccess}
+                  </div>
+                )}
+
+                {forgotError && (
+                  <div style={{ padding: '12px', background: '#fdeded', color: '#d32f2f', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '14px' }}>
+                    {forgotError}
+                  </div>
+                )}
+
+                <form onSubmit={handleForgotPassword}>
+                  <div style={{ marginBottom: '14px' }}>
+                    <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>E-mail</label>
+                    <input
+                      type="email"
+                      required
+                      value={forgotEmail}
+                      onChange={e => setForgotEmail(e.target.value)}
+                      placeholder="admin@aquitem.ao"
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-light)', boxSizing: 'border-box' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                    <button type="button" className="nav-btn" onClick={() => setShowForgotModal(false)}>
+                      Fechar
+                    </button>
+                    <button type="submit" disabled={forgotLoading} className="nav-btn nav-btn-orange">
+                      {forgotLoading ? 'Enviando...' : 'Enviar Link'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
+  // SE AUTENTICADO -> Painel Completo com Navegação de Abas
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-body)', color: 'var(--text-main)', paddingBottom: '60px' }}>
       {toastMessage && (
@@ -693,7 +1010,7 @@ export default function AdminPage() {
       >
         <div
           style={{
-            maxWidth: '1320px',
+            maxWidth: '1360px',
             margin: '0 auto',
             display: 'flex',
             justifyContent: 'space-between',
@@ -708,17 +1025,17 @@ export default function AdminPage() {
             </Link>
             <div>
               <h1 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>
-                Painel Administrativo — AQUI TEM
+                Painel Administrativo & CRM — AQUI TEM
               </h1>
               <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <Database size={12} />
                 <span>
                   Supabase ({SUPABASE_PROJECT_ID}):{' '}
                   <strong style={{ color: supabaseConnected ? '#16A34A' : '#D97706' }}>
-                    {supabaseConnected ? 'Conectado (products)' : 'Reconectando...'}
+                    {supabaseConnected ? 'Conectado' : 'Reconectando...'}
                   </strong>
                   {session?.user?.email && (
-                    <span> • Sessão: <strong>{session.user.email}</strong></span>
+                    <span> • Admin: <strong>{session.user.email}</strong></span>
                   )}
                 </span>
               </div>
@@ -726,32 +1043,52 @@ export default function AdminPage() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <button
-              className="nav-btn"
-              onClick={refreshProducts}
-              disabled={loadingProducts}
-              title="Recarregar produtos do Supabase"
-            >
-              <RefreshCw size={15} /> Atualizar
-            </button>
+            {currentTab === 'products' && (
+              <>
+                <button
+                  className="nav-btn"
+                  onClick={refreshProducts}
+                  disabled={loadingProducts}
+                  title="Recarregar produtos do Supabase"
+                >
+                  <RefreshCw size={15} /> Atualizar
+                </button>
 
-            {isSupabaseConfigured && (
-              <button
-                className="nav-btn"
-                onClick={handleSyncToSupabase}
-                disabled={syncingSupabase}
-                title="Sincronizar catálogo inicial com a tabela products do Supabase"
-              >
-                <Database size={15} /> {syncingSupabase ? 'Sincronizando...' : 'Sincronizar Base'}
-              </button>
+                <button
+                  className="nav-btn"
+                  onClick={handleSyncToSupabase}
+                  disabled={syncingSupabase}
+                  title="Sincronizar catálogo inicial com o Supabase"
+                >
+                  <Database size={15} /> {syncingSupabase ? 'Sincronizando...' : 'Sincronizar Base'}
+                </button>
+
+                <button className="nav-btn nav-btn-orange" onClick={handleOpenAddProduct}>
+                  <Plus size={16} /> Novo Produto
+                </button>
+              </>
             )}
 
-            <button className="nav-btn nav-btn-orange" onClick={handleOpenAdd}>
-              <Plus size={16} /> Novo Produto
-            </button>
+            {currentTab === 'crm' && (
+              <>
+                <button
+                  className="nav-btn"
+                  onClick={refreshCRMData}
+                  disabled={isLoadingLeads}
+                  title="Recarregar leads do Supabase"
+                >
+                  <RefreshCw size={15} className={isLoadingLeads ? 'animate-spin' : ''} />
+                  Atualizar Leads
+                </button>
+
+                <button className="nav-btn nav-btn-orange" onClick={() => setIsNewLeadModalOpen(true)}>
+                  <Plus size={16} /> Novo Lead Manual
+                </button>
+              </>
+            )}
 
             <Link to="/" className="nav-btn" style={{ textDecoration: 'none' }}>
-              <ArrowLeft size={15} /> Ver Loja Pública
+              <ArrowLeft size={15} /> Ver Loja
             </Link>
 
             <button className="nav-btn" onClick={handleLogout} style={{ color: '#DC2626' }}>
@@ -761,8 +1098,133 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main style={{ maxWidth: '1320px', margin: '24px auto', padding: '0 20px' }}>
+      {/* Modern Navigation Tabs Bar */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          borderBottom: '1px solid var(--border-light)',
+          padding: '0 24px'
+        }}
+      >
+        <div
+          style={{
+            maxWidth: '1360px',
+            margin: '0 auto',
+            display: 'flex',
+            gap: '8px',
+            overflowX: 'auto',
+            paddingTop: '6px'
+          }}
+        >
+          <button
+            onClick={() => setTab('products')}
+            style={{
+              padding: '12px 18px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: currentTab === 'products' ? '3px solid #F37021' : '3px solid transparent',
+              color: currentTab === 'products' ? '#F37021' : 'var(--text-muted)',
+              fontWeight: currentTab === 'products' ? 800 : 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Package size={17} /> Produtos & Estoque ({products.length})
+          </button>
+
+          <button
+            onClick={() => setTab('crm')}
+            style={{
+              padding: '12px 18px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: currentTab === 'crm' ? '3px solid #F37021' : '3px solid transparent',
+              color: currentTab === 'crm' ? '#F37021' : 'var(--text-muted)',
+              fontWeight: currentTab === 'crm' ? 800 : 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Users size={17} /> CRM & Leads ({leads.length})
+            {crmStats.novos > 0 && (
+              <span style={{ background: '#F37021', color: '#FFF', padding: '2px 7px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 800 }}>
+                {crmStats.novos} novos
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setTab('analytics')}
+            style={{
+              padding: '12px 18px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: currentTab === 'analytics' ? '3px solid #F37021' : '3px solid transparent',
+              color: currentTab === 'analytics' ? '#F37021' : 'var(--text-muted)',
+              fontWeight: currentTab === 'analytics' ? 800 : 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <BarChart3 size={17} /> Relatórios & Vendas
+          </button>
+
+          <button
+            onClick={() => setTab('automations')}
+            style={{
+              padding: '12px 18px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: currentTab === 'automations' ? '3px solid #F37021' : '3px solid transparent',
+              color: currentTab === 'automations' ? '#F37021' : 'var(--text-muted)',
+              fontWeight: currentTab === 'automations' ? 800 : 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Settings size={17} /> Automação & Webhooks
+          </button>
+
+          <button
+            onClick={() => setTab('security')}
+            style={{
+              padding: '12px 18px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: currentTab === 'security' ? '3px solid #F37021' : '3px solid transparent',
+              color: currentTab === 'security' ? '#F37021' : 'var(--text-muted)',
+              fontWeight: currentTab === 'security' ? 800 : 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <ShieldCheck size={17} /> Segurança & SQL Supabase
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <main style={{ maxWidth: '1360px', margin: '24px auto', padding: '0 20px' }}>
         {persistenceError && (
           <div
             style={{
@@ -779,7 +1241,7 @@ export default function AdminPage() {
             }}
           >
             <div style={{ fontSize: '0.86rem', lineHeight: 1.5 }}>
-              <strong>Erro de Persistência no Supabase (public.products):</strong> {persistenceError}
+              <strong>Aviso de Persistência no Supabase:</strong> {persistenceError}
             </div>
             <button
               onClick={() => setPersistenceError('')}
@@ -790,413 +1252,1122 @@ export default function AdminPage() {
           </div>
         )}
 
-        {/* KPI Row */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
-            gap: '16px',
-            marginBottom: '24px'
-          }}
-        >
-          <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total de Produtos</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
-              {stats.total}
+        {/* ============================================================== */}
+        {/* ABA 1: PRODUTOS & ESTOQUE */}
+        {/* ============================================================== */}
+        {currentTab === 'products' && (
+          <div>
+            {/* KPI Row */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                gap: '16px',
+                marginBottom: '24px'
+              }}
+            >
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total de Produtos</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                  {productStats.total}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Ativos no Catálogo</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: '#16A34A', fontVariantNumeric: 'tabular-nums' }}>
+                  {productStats.activeCount}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Inativos / Ocultos</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: '#64748B', fontVariantNumeric: 'tabular-nums' }}>
+                  {productStats.inactiveCount}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Produtos Esgotados (stock = 0)</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: productStats.outOfStockCount > 0 ? '#DC2626' : '#16A34A', fontVariantNumeric: 'tabular-nums' }}>
+                  {productStats.outOfStockCount}
+                </div>
+              </div>
+            </div>
+
+            {/* Filters Bar */}
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                padding: '16px',
+                borderRadius: '14px',
+                border: '1px solid var(--border-light)',
+                marginBottom: '20px',
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, minWidth: '280px' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    placeholder="Pesquisar por nome, SKU, categoria..."
+                    className="form-input"
+                    style={{ paddingLeft: '36px', width: '100%', boxSizing: 'border-box' }}
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <select
+                  className="form-input"
+                  style={{ width: 'auto', minWidth: '160px' }}
+                  value={categoryFilter}
+                  onChange={e => setCategoryFilter(e.target.value)}
+                >
+                  <option value="Todos">Todas as Categorias</option>
+                  {CATEGORIES.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+
+                <select
+                  className="form-input"
+                  style={{ width: 'auto', minWidth: '150px' }}
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                >
+                  <option value="all">Todos os Estados</option>
+                  <option value="active">Apenas Ativos</option>
+                  <option value="inactive">Apenas Inativos</option>
+                  <option value="promo">Em Promoção</option>
+                  <option value="out_of_stock">Esgotados</option>
+                </select>
+              </div>
+
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                {filteredProducts.length} de {products.length} produtos
+              </div>
+            </div>
+
+            {/* Products Table */}
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                borderRadius: '14px',
+                border: '1px solid var(--border-light)',
+                overflow: 'hidden',
+                boxShadow: 'var(--shadow-sm)'
+              }}
+            >
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-body)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Produto</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Categoria</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Preço Efetivo</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Estoque</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Estado</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700, textAlign: 'right' }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.length === 0 ? (
+                      <tr>
+                        <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                          Nenhum produto encontrado com os filtros selecionados.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredProducts.map(p => {
+                        const effective = getEffectivePrice(p);
+                        const prevPrice = getPreviousPrice(p);
+                        const isOut = Number(p.stock) <= 0;
+
+                        return (
+                          <tr
+                            key={p.id}
+                            style={{
+                              borderBottom: '1px solid var(--border-light)',
+                              opacity: p.active === false ? 0.6 : 1
+                            }}
+                          >
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                <img
+                                  src={p.image_url || p.image || '/logo.jpg'}
+                                  alt={p.name}
+                                  style={{
+                                    width: '46px',
+                                    height: '46px',
+                                    borderRadius: '8px',
+                                    objectFit: 'cover',
+                                    border: '1px solid var(--border-light)',
+                                    background: '#f8fafc'
+                                  }}
+                                  onError={(e) => { e.currentTarget.src = '/logo.jpg'; }}
+                                />
+                                <div>
+                                  <div style={{ fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    {p.name}
+                                    {p.badge && (
+                                      <span style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'var(--primary-orange)', color: '#FFF', fontWeight: 800 }}>
+                                        {p.badge}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                                    SKU: {p.sku || 'N/A'} • Slug: {p.slug || createSlug(p.name)}
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            <td style={{ padding: '12px 16px' }}>
+                              <span style={{ fontSize: '0.8rem', padding: '3px 8px', borderRadius: '6px', background: 'var(--bg-body)', border: '1px solid var(--border-light)' }}>
+                                {p.category}
+                              </span>
+                            </td>
+
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ fontWeight: 800, color: 'var(--primary-orange)' }}>
+                                {formatPriceKz(effective)}
+                              </div>
+                              {prevPrice && (
+                                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                                  {formatPriceKz(prevPrice)}
+                                </div>
+                              )}
+                            </td>
+
+                            <td style={{ padding: '12px 16px' }}>
+                              <button
+                                onClick={() => {
+                                  setStockModalProduct(p);
+                                  setStockValue(Number(p.stock) || 0);
+                                }}
+                                style={{
+                                  border: '1px solid',
+                                  borderColor: isOut ? '#DC2626' : '#16A34A',
+                                  color: isOut ? '#DC2626' : '#16A34A',
+                                  background: isOut ? 'rgba(220, 38, 38, 0.08)' : 'rgba(22, 163, 74, 0.08)',
+                                  padding: '4px 8px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 800,
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {isOut ? 'Esgotado (0)' : `${p.stock} un.`}
+                              </button>
+                            </td>
+
+                            <td style={{ padding: '12px 16px' }}>
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await toggleProductActive(p);
+                                    await refreshProducts();
+                                  } catch (e) {
+                                    showToast(`Erro ao alterar estado: ${e.message}`);
+                                  }
+                                }}
+                                style={{
+                                  border: 'none',
+                                  background: 'transparent',
+                                  cursor: 'pointer',
+                                  color: p.active !== false ? '#16A34A' : '#DC2626',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700
+                                }}
+                              >
+                                {p.active !== false ? (
+                                  <>
+                                    <Eye size={14} /> Ativo
+                                  </>
+                                ) : (
+                                  <>
+                                    <EyeOff size={14} /> Inativo
+                                  </>
+                                )}
+                              </button>
+                            </td>
+
+                            <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                              <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                <button
+                                  className="nav-btn nav-btn-icon"
+                                  onClick={() => handleOpenEditProduct(p)}
+                                  title="Editar Produto"
+                                  style={{ padding: '6px' }}
+                                >
+                                  <Edit3 size={15} />
+                                </button>
+
+                                <button
+                                  className="nav-btn nav-btn-icon"
+                                  onClick={() => {
+                                    setPriceModalProduct(p);
+                                    setPriceForm({
+                                      price: p.price ?? '',
+                                      sale_price: p.sale_price ?? '',
+                                      old_price: p.old_price ?? ''
+                                    });
+                                  }}
+                                  title="Alterar Preço Rápido"
+                                  style={{ padding: '6px' }}
+                                >
+                                  <DollarSign size={15} />
+                                </button>
+
+                                <button
+                                  className="nav-btn nav-btn-icon"
+                                  onClick={async () => {
+                                    await duplicateProduct(p);
+                                    await refreshProducts();
+                                  }}
+                                  title="Duplicar Produto"
+                                  style={{ padding: '6px' }}
+                                >
+                                  <Copy size={15} />
+                                </button>
+
+                                <button
+                                  className="nav-btn nav-btn-icon"
+                                  onClick={() => setDeleteConfirmProduct(p)}
+                                  title="Excluir Produto"
+                                  style={{ padding: '6px', color: '#DC2626' }}
+                                >
+                                  <Trash2 size={15} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
+        )}
 
-          <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Ativos no Catálogo</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: '#16A34A', fontVariantNumeric: 'tabular-nums' }}>
-              {stats.activeCount}
+        {/* ============================================================== */}
+        {/* ABA 2: CRM & LEADS COMERCIAIS */}
+        {/* ============================================================== */}
+        {currentTab === 'crm' && (
+          <div>
+            {/* Aviso se a tabela crm_leads não existir no Supabase */}
+            {tableMissingWarning && (
+              <div
+                style={{
+                  background: '#FFFBEB',
+                  border: '1px solid #FDE68A',
+                  color: '#92400E',
+                  padding: '14px 18px',
+                  borderRadius: '14px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}
+              >
+                <AlertTriangle size={22} style={{ flexShrink: 0 }} />
+                <div style={{ fontSize: '0.86rem', lineHeight: 1.5, flex: 1 }}>
+                  <strong>Aviso de Banco de Dados:</strong> A tabela <code>public.crm_leads</code> ainda não existe no seu projeto Supabase. Os leads atuais estão protegidos em sessão. Para persistência permanente com segurança RLS, abra a aba <strong>Segurança & SQL Supabase</strong> e execute o script SQL.
+                </div>
+                <button
+                  onClick={() => setTab('security')}
+                  className="nav-btn nav-btn-orange"
+                  style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                >
+                  Ver Script SQL
+                </button>
+              </div>
+            )}
+
+            {/* KPI Cards do CRM */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '16px',
+                marginBottom: '24px'
+              }}
+            >
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total de Leads</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', fontVariantNumeric: 'tabular-nums' }}>
+                  {crmStats.total}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#D97706', fontWeight: 700 }}>Novos Leads (Pendentes)</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: '#D97706', fontVariantNumeric: 'tabular-nums' }}>
+                  {crmStats.novos}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#16A34A', fontWeight: 700 }}>Vendas Realizadas</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: '#16A34A', fontVariantNumeric: 'tabular-nums' }}>
+                  {crmStats.vendas}
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: '#0EA5E9', fontWeight: 700 }}>Taxa de Conversão</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: '#0EA5E9', fontVariantNumeric: 'tabular-nums' }}>
+                  {crmStats.taxaConversao}%
+                </div>
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.8rem', color: 'var(--primary-orange)', fontWeight: 700 }}>Volume em Pipeline</div>
+                <div style={{ fontSize: '1.4rem', fontWeight: 900, marginTop: '6px', color: 'var(--primary-orange)', fontVariantNumeric: 'tabular-nums' }}>
+                  {Number(crmStats.totalKz).toLocaleString('pt-AO')} Kz
+                </div>
+              </div>
             </div>
-          </div>
 
-          <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Inativos / Ocultos</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: '#64748B', fontVariantNumeric: 'tabular-nums' }}>
-              {stats.inactiveCount}
+            {/* Leads Search & Filter Bar */}
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                padding: '16px',
+                borderRadius: '14px',
+                border: '1px solid var(--border-light)',
+                marginBottom: '20px',
+                display: 'flex',
+                gap: '12px',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', flex: 1, minWidth: '280px' }}>
+                <div style={{ position: 'relative', flex: 1, minWidth: '220px' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--text-muted)' }} />
+                  <input
+                    type="text"
+                    placeholder="Pesquisar por cliente, telefone, cidade, produto..."
+                    className="form-input"
+                    style={{ paddingLeft: '36px', width: '100%', boxSizing: 'border-box' }}
+                    value={leadSearch}
+                    onChange={e => setLeadSearch(e.target.value)}
+                  />
+                </div>
+
+                <select
+                  className="form-input"
+                  style={{ width: 'auto', minWidth: '170px' }}
+                  value={leadFilterStatus}
+                  onChange={e => setLeadFilterStatus(e.target.value)}
+                >
+                  <option value="all">Todos os Estados</option>
+                  {crmStatusList.map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>
+                {filteredLeads.length} de {leads.length} leads
+              </div>
             </div>
-          </div>
 
-          <div style={{ background: 'var(--bg-card)', padding: '18px', borderRadius: '14px', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 700 }}>Produtos Esgotados (stock = 0)</div>
-            <div style={{ fontSize: '1.75rem', fontWeight: 900, marginTop: '4px', color: stats.outOfStockCount > 0 ? '#DC2626' : '#16A34A', fontVariantNumeric: 'tabular-nums' }}>
-              {stats.outOfStockCount}
-            </div>
-          </div>
-        </div>
+            {/* Leads Cards Grid */}
+            {filteredLeads.length === 0 ? (
+              <div
+                style={{
+                  background: 'var(--bg-card)',
+                  padding: '50px 20px',
+                  borderRadius: '16px',
+                  textAlign: 'center',
+                  border: '1px solid var(--border-light)'
+                }}
+              >
+                <Users size={48} style={{ opacity: 0.3, color: 'var(--primary-orange)', margin: '0 auto 12px' }} />
+                <h3 style={{ margin: '0 0 6px', fontWeight: 800 }}>Nenhum Lead Encontrado</h3>
+                <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                  Novos leads gerados no site via WhatsApp ou cadastrados manualmente aparecerão aqui.
+                </p>
+                <button
+                  onClick={() => setIsNewLeadModalOpen(true)}
+                  className="nav-btn nav-btn-orange"
+                  style={{ marginTop: '16px' }}
+                >
+                  <Plus size={16} /> Criar Primeiro Lead
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gap: '14px' }}>
+                {filteredLeads.map(lead => {
+                  const cleanPhone = (lead.phone || '').replace(/[^0-9]/g, '');
+                  const waUrl = cleanPhone
+                    ? `https://wa.me/${cleanPhone.startsWith('244') ? cleanPhone : `244${cleanPhone}`}?text=${encodeURIComponent(`Olá ${lead.name}, confirmamos o seu interesse na AQUI TEM Angola a respeito de ${lead.productName || 'nossos produtos'}. Podemos ajudar?`)}`
+                    : null;
 
-        {/* Filters Bar */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            padding: '16px',
-            borderRadius: '14px',
-            border: '1px solid var(--border-light)',
-            marginBottom: '20px',
-            display: 'flex',
-            gap: '12px',
-            flexWrap: 'wrap',
-            alignItems: 'center'
-          }}
-        >
-          <div style={{ flex: '1 1 280px', position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px' }} />
-            <input
-              type="text"
-              placeholder="Pesquisar por nome, SKU, marca ou descrição..."
-              className="form-input"
-              style={{ paddingLeft: '36px', width: '100%' }}
-              value={searchTerm}
-              onChange={e => setSearchTerm(e.target.value)}
-            />
-          </div>
-
-          <select
-            className="form-input"
-            style={{ width: 'auto', minWidth: '180px' }}
-            value={categoryFilter}
-            onChange={e => setCategoryFilter(e.target.value)}
-          >
-            {CATEGORIES.map(c => (
-              <option key={c} value={c}>
-                Categoria: {c}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="form-input"
-            style={{ width: 'auto', minWidth: '180px' }}
-            value={statusFilter}
-            onChange={e => setStatusFilter(e.target.value)}
-          >
-            <option value="all">Todos os Estados</option>
-            <option value="active">Somente Ativos (active = true)</option>
-            <option value="inactive">Somente Inativos (active = false)</option>
-            <option value="out_of_stock">Esgotados (stock = 0)</option>
-            <option value="promo">Com Preço Promocional</option>
-          </select>
-        </div>
-
-        {/* Products Table */}
-        <div
-          style={{
-            background: 'var(--bg-card)',
-            borderRadius: '16px',
-            border: '1px solid var(--border-light)',
-            overflowX: 'auto'
-          }}
-        >
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)', fontSize: '0.78rem', textTransform: 'uppercase' }}>
-                <th style={{ padding: '14px 16px' }}>Produto</th>
-                <th style={{ padding: '14px 12px' }}>Categoria / Marca</th>
-                <th style={{ padding: '14px 12px' }}>SKU</th>
-                <th style={{ padding: '14px 12px' }}>Preços (Kz)</th>
-                <th style={{ padding: '14px 12px' }}>Estoque</th>
-                <th style={{ padding: '14px 12px' }}>Estado</th>
-                <th style={{ padding: '14px 16px', textAlign: 'right' }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredProducts.map(product => {
-                const effectivePrice = getEffectivePrice(product);
-                const prevPrice = getPreviousPrice(product);
-                const isOutOfStock = Number(product.stock) <= 0;
-                const slug = product.slug || createSlug(product.name);
-
-                return (
-                  <tr
-                    key={product.id}
-                    style={{
-                      borderBottom: '1px solid var(--border-light)',
-                      opacity: product.active === false ? 0.65 : 1
-                    }}
-                  >
-                    <td style={{ padding: '12px 16px', minWidth: '260px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <img
-                          key={product.image_url || product.image}
-                          src={product.image_url || product.image}
-                          alt={product.name}
-                          style={{
-                            width: '52px',
-                            height: '52px',
-                            objectFit: 'contain',
-                            background: '#FFFFFF',
-                            borderRadius: '8px',
-                            border: '1px solid var(--border-light)',
-                            padding: '2px',
-                            flexShrink: 0
-                          }}
-                          onError={e => {
-                            if (product.fallbackImage && e.currentTarget.src !== product.fallbackImage) {
-                              e.currentTarget.src = product.fallbackImage;
-                            } else if (product.svgFallbackImage) {
-                              e.currentTarget.onerror = null;
-                              e.currentTarget.src = product.svgFallbackImage;
-                            } else {
-                              e.currentTarget.onerror = null;
-                            }
-                          }}
-                        />
-                        <div>
-                          <div style={{ fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.25 }}>
-                            {product.name}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <span>/produto/{slug}</span>
-                            <Link to={`/produto/${slug}`} target="_blank" style={{ color: 'var(--primary-orange)' }} title="Abrir página do produto">
-                              <ExternalLink size={12} />
-                            </Link>
-                          </div>
+                  return (
+                    <div
+                      key={lead.id}
+                      style={{
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-light)',
+                        borderRadius: '14px',
+                        padding: '18px 20px',
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                        gap: '16px',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <strong style={{ fontSize: '1.05rem', color: 'var(--text-main)' }}>{lead.name}</strong>
+                          <span style={{ fontSize: '0.72rem', padding: '2px 8px', background: 'var(--bg-body)', borderRadius: '6px', color: 'var(--text-muted)', fontWeight: 700 }}>
+                            {lead.leadCode || 'LEAD'}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          📍 {lead.city || 'Luanda'} • {lead.address || 'Angola'}
+                        </div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={12} /> {new Date(lead.createdAt).toLocaleString('pt-AO')}
                         </div>
                       </div>
-                    </td>
 
-                    <td style={{ padding: '12px' }}>
-                      <div style={{ fontWeight: 700 }}>{product.category}</div>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)' }}>
-                        {product.brand || 'Oraimo'} {product.badge ? `• ${product.badge}` : ''}
-                      </div>
-                    </td>
-
-                    <td style={{ padding: '12px', fontFamily: 'monospace', fontSize: '0.82rem' }}>
-                      {product.sku || `AT-${product.id}`}
-                    </td>
-
-                    <td style={{ padding: '12px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                      <div style={{ fontWeight: 800, color: 'var(--primary-orange)', fontSize: '0.95rem' }}>
-                        {formatPriceKz(effectivePrice)}
-                      </div>
-                      {prevPrice && (
-                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
-                          Antes: {formatPriceKz(prevPrice)}
+                      <div>
+                        <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1E5C9E' }}>
+                          📦 {lead.productName || 'Consulta Geral'}
                         </div>
-                      )}
-                      {Number(product.sale_price) > 0 && (
-                        <div style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700 }}>
-                          Promo ativa (Base: {formatPriceKz(product.price)})
+                        <div style={{ fontSize: '1.05rem', fontWeight: 900, color: 'var(--primary-orange)', marginTop: '2px' }}>
+                          {Number(lead.totalValue).toLocaleString('pt-AO')} Kz
                         </div>
-                      )}
-                    </td>
-
-                    <td style={{ padding: '12px', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span
-                          style={{
-                            fontWeight: 800,
-                            color: isOutOfStock ? '#DC2626' : '#16A34A'
-                          }}
-                        >
-                          {isOutOfStock ? '0 (Esgotado)' : `${product.stock} un.`}
-                        </span>
-                        <button
-                          className="nav-btn nav-btn-icon"
-                          style={{ width: '26px', height: '26px', padding: 0 }}
-                          onClick={() => handleOpenStockModal(product)}
-                          title="Alterar Estoque"
-                        >
-                          <Boxes size={13} />
-                        </button>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          Origem: <strong>{lead.trafficSource}</strong> ({lead.timeOnSite})
+                        </div>
                       </div>
-                    </td>
 
-                    <td style={{ padding: '12px', whiteSpace: 'nowrap' }}>
-                      <span
-                        style={{
-                          fontSize: '0.76rem',
-                          fontWeight: 800,
-                          color: product.active !== false ? '#16A34A' : '#64748B'
-                        }}
-                      >
-                        {product.active !== false ? 'Ativo' : 'Inativo'}
-                      </span>
-                    </td>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <label style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-muted)' }}>ESTADO:</label>
+                          <select
+                            value={lead.status}
+                            onChange={async (e) => {
+                              try {
+                                await updateLeadStatus(lead.id, e.target.value, 'Atualizado no painel CRM');
+                                showToast(`Estado de ${lead.name} alterado para ${e.target.value}`);
+                              } catch (err) {
+                                showToast(`Erro ao atualizar: ${err.message}`);
+                              }
+                            }}
+                            className="form-input"
+                            style={{
+                              padding: '5px 10px',
+                              fontSize: '0.82rem',
+                              fontWeight: 700,
+                              background: 'var(--bg-body)',
+                              borderColor:
+                                lead.status === 'Venda Realizada'
+                                  ? '#16A34A'
+                                  : lead.status === 'Novo Lead'
+                                  ? '#D97706'
+                                  : 'var(--border-light)'
+                            }}
+                          >
+                            {crmStatusList.map(s => (
+                              <option key={s} value={s}>{s}</option>
+                            ))}
+                          </select>
+                        </div>
 
-                    <td style={{ padding: '12px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-                        <button
-                          className="nav-btn"
-                          style={{ padding: '6px 10px', fontSize: '0.76rem' }}
-                          onClick={() => handleOpenEdit(product)}
-                          title="Editar todos os dados do produto"
-                        >
-                          <Edit3 size={13} /> Editar
-                        </button>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '4px' }}>
+                          {waUrl && (
+                            <a
+                              href={waUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '6px 12px',
+                                background: '#25D366',
+                                color: '#FFF',
+                                borderRadius: '8px',
+                                textDecoration: 'none',
+                                fontSize: '0.8rem',
+                                fontWeight: 700
+                              }}
+                            >
+                              <MessageCircle size={14} /> WhatsApp ({cleanPhone})
+                            </a>
+                          )}
 
-                        <button
-                          className="nav-btn"
-                          style={{ padding: '6px 10px', fontSize: '0.76rem' }}
-                          onClick={() => handleOpenPriceModal(product)}
-                          title="Alterar Preço / Promoção"
-                        >
-                          <DollarSign size={13} /> Preço
-                        </button>
+                          <button
+                            onClick={() => setSelectedLeadHistory(lead)}
+                            title="Ver Histórico e Notas"
+                            className="nav-btn nav-btn-icon"
+                            style={{ padding: '6px 10px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <FileText size={14} /> Histórico ({lead.history?.length || 0})
+                          </button>
 
-                        <button
-                          className="nav-btn"
-                          style={{ padding: '6px 10px', fontSize: '0.76rem' }}
-                          onClick={() => handleOpenStockModal(product)}
-                          title="Alterar Estoque"
-                        >
-                          <Boxes size={13} /> Estoque
-                        </button>
-
-                        <button
-                          className="nav-btn"
-                          style={{ padding: '6px 10px', fontSize: '0.76rem' }}
-                          onClick={async () => {
-                            setPersistenceError('');
-                            try {
-                              await duplicateProduct(product);
-                              await refreshProducts();
-                              showToast(`Cópia de "${product.name}" criada no Supabase!`);
-                            } catch (err) {
-                              const msg = err?.message || 'Erro ao duplicar produto no Supabase.';
-                              setPersistenceError(msg);
-                              showToast(`Erro ao duplicar: ${msg}`);
-                            }
-                          }}
-                          title="Duplicar Produto"
-                        >
-                          <Copy size={13} /> Duplicar
-                        </button>
-
-                        <button
-                          className="nav-btn"
-                          style={{
-                            padding: '6px 10px',
-                            fontSize: '0.76rem',
-                            color: product.active !== false ? '#D97706' : '#16A34A'
-                          }}
-                          onClick={async () => {
-                            setPersistenceError('');
-                            try {
-                              await toggleProductActive(product);
-                              await refreshProducts();
-                              showToast(
-                                product.active !== false
-                                  ? `"${product.name}" desativado no Supabase.`
-                                  : `"${product.name}" ativado no Supabase!`
-                              );
-                            } catch (err) {
-                              const msg = err?.message || 'Erro ao alterar estado no Supabase.';
-                              setPersistenceError(msg);
-                              showToast(`Erro ao alterar estado: ${msg}`);
-                            }
-                          }}
-                          title={product.active !== false ? 'Desativar produto' : 'Ativar produto'}
-                        >
-                          {product.active !== false ? <EyeOff size={13} /> : <Eye size={13} />}
-                          {product.active !== false ? 'Desativar' : 'Ativar'}
-                        </button>
-
-                        <button
-                          className="nav-btn"
-                          style={{ padding: '6px 10px', fontSize: '0.76rem', color: '#DC2626' }}
-                          onClick={() => setDeleteConfirmProduct(product)}
-                          title="Excluir Produto"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Deseja eliminar o lead de ${lead.name}?`)) {
+                                try {
+                                  await deleteLead(lead.id);
+                                  showToast('Lead excluído.');
+                                } catch (err) {
+                                  showToast(`Erro ao excluir: ${err.message}`);
+                                }
+                              }
+                            }}
+                            title="Eliminar Lead"
+                            className="nav-btn nav-btn-icon"
+                            style={{ padding: '6px 10px', color: '#DC2626' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 3: RELATÓRIOS & VENDAS */}
+        {/* ============================================================== */}
+        {currentTab === 'analytics' && (
+          <div style={{ display: 'grid', gap: '24px' }}>
+            {/* Sales Pipeline Funnel */}
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+              <h3 style={{ margin: '0 0 16px', fontSize: '1.15rem', fontWeight: 800 }}>
+                Funil Comercial & Conversão de Vendas
+              </h3>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-body)', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700 }}>1. Visitas ao Site</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, marginTop: '4px' }}>{analytics.totalVisits}</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>100% tráfego inicial</div>
+                </div>
+
+                <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(243, 112, 33, 0.08)', border: '1px solid rgba(243, 112, 33, 0.2)' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#D97706', fontWeight: 700 }}>2. Leads Capturados</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, marginTop: '4px', color: 'var(--primary-orange)' }}>
+                    {crmStats.total}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#D97706', marginTop: '4px' }}>
+                    {analytics.totalVisits > 0 ? ((crmStats.total / analytics.totalVisits) * 100).toFixed(1) : 0}% de conversão
+                  </div>
+                </div>
+
+                <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(14, 165, 233, 0.08)', border: '1px solid rgba(14, 165, 233, 0.2)' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#0EA5E9', fontWeight: 700 }}>3. Em Atendimento</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, marginTop: '4px', color: '#0EA5E9' }}>
+                    {crmStats.atendimento}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#0EA5E9', marginTop: '4px' }}>Negociações ativas</div>
+                </div>
+
+                <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(22, 163, 74, 0.08)', border: '1px solid rgba(22, 163, 74, 0.2)' }}>
+                  <div style={{ fontSize: '0.78rem', color: '#16A34A', fontWeight: 700 }}>4. Vendas Fechadas</div>
+                  <div style={{ fontSize: '1.6rem', fontWeight: 900, marginTop: '4px', color: '#16A34A' }}>
+                    {crmStats.vendas}
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: '#16A34A', marginTop: '4px' }}>
+                    {crmStats.taxaConversao}% de aproveitamento
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Fontes de Tráfego & Produtos */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+              <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+                <h4 style={{ margin: '0 0 14px', fontSize: '1rem', fontWeight: 800 }}>Origem dos Acessos & Campanhas</h4>
+                {Object.entries(analytics.sources || {}).length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum dado de origem registrado ainda.</p>
+                ) : (
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {Object.entries(analytics.sources || {}).map(([source, val]) => (
+                      <div key={source} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-body)', borderRadius: '8px', fontSize: '0.88rem' }}>
+                        <span>🌐 {source}</span>
+                        <strong>{val} acessos</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+                <h4 style={{ margin: '0 0 14px', fontSize: '1rem', fontWeight: 800 }}>Produtos com Maior Intenção de Compra</h4>
+                {Object.entries(analytics.productViews || {}).length === 0 ? (
+                  <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhum produto consultado ainda.</p>
+                ) : (
+                  <div style={{ display: 'grid', gap: '8px' }}>
+                    {Object.entries(analytics.productViews || {}).map(([prod, count]) => (
+                      <div key={prod} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-body)', borderRadius: '8px', fontSize: '0.88rem' }}>
+                        <span style={{ fontWeight: 600 }}>📦 {prod}</span>
+                        <strong style={{ color: 'var(--primary-orange)' }}>{count} cliques</strong>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 4: AUTOMAÇÕES & WEBHOOKS */}
+        {/* ============================================================== */}
+        {currentTab === 'automations' && (
+          <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <div style={{ background: 'var(--bg-card)', padding: '28px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ padding: '10px', background: 'rgba(243, 112, 33, 0.1)', borderRadius: '10px', color: 'var(--primary-orange)' }}>
+                  <Settings size={22} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>
+                    Integração Externa de Webhooks
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                    Conecte o seu CRM AQUI TEM ao n8n, Make, Zapier ou Google Sheets.
+                  </p>
+                </div>
+              </div>
+
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', lineHeight: 1.6, marginBottom: '20px' }}>
+                Sempre que um cliente clicar para falar no WhatsApp ou realizar um pedido na loja, um evento <code>lead.captured</code> será disparado automaticamente via requisição HTTP POST para o endereço configurado abaixo.
+              </p>
+
+              <div style={{ marginBottom: '18px' }}>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px' }}>
+                  URL de Destino do Webhook (HTTP POST) *
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://seu-n8n.com/webhook/aquitem-leads"
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box', padding: '12px' }}
+                  value={webhookInput}
+                  onChange={e => setWebhookInput(e.target.value)}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '24px' }}>
+                <button
+                  onClick={handleSaveWebhookUrl}
+                  disabled={savingWebhook}
+                  className="nav-btn nav-btn-orange"
+                  style={{ padding: '10px 18px' }}
+                >
+                  <Save size={16} /> {savingWebhook ? 'Salvando...' : 'Salvar Webhook no Supabase'}
+                </button>
+
+                <button
+                  onClick={handleTestWebhook}
+                  disabled={testWebhookLoading || !webhookInput.trim()}
+                  className="nav-btn"
+                  style={{ padding: '10px 18px' }}
+                >
+                  <Send size={16} /> {testWebhookLoading ? 'Enviando Teste...' : 'Testar Disparo'}
+                </button>
+              </div>
+
+              {testWebhookResult && (
+                <div
+                  style={{
+                    padding: '14px 18px',
+                    borderRadius: '10px',
+                    marginBottom: '20px',
+                    fontSize: '0.86rem',
+                    background: testWebhookResult.success ? '#e6f4ea' : '#fdeded',
+                    color: testWebhookResult.success ? '#137333' : '#d32f2f',
+                    border: '1px solid',
+                    borderColor: testWebhookResult.success ? '#b7e1cd' : '#f5c2c7'
+                  }}
+                >
+                  {testWebhookResult.success ? (
+                    <div>
+                      <strong>Teste Concluído com Sucesso!</strong> O endpoint respondeu status <code>{testWebhookResult.status} {testWebhookResult.statusText}</code>.
+                    </div>
+                  ) : (
+                    <div>
+                      <strong>Falha no Teste:</strong> {testWebhookResult.error || `Status HTTP ${testWebhookResult.status}`}. Verifique se a URL aceita CORS e conexões públicas.
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '20px' }}>
+                <h4 style={{ margin: '0 0 10px', fontSize: '0.95rem', fontWeight: 800 }}>
+                  Estrutura JSON do Payload Enviado
+                </h4>
+                <pre
+                  style={{
+                    background: 'var(--bg-body)',
+                    padding: '14px',
+                    borderRadius: '10px',
+                    fontSize: '0.78rem',
+                    overflowX: 'auto',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-main)',
+                    margin: 0
+                  }}
+                >
+{`{
+  "event": "lead.captured",
+  "timestamp": "2026-10-15T21:00:00.000Z",
+  "site": "AQUI TEM Angola",
+  "siteUrl": "https://aqui-tem29.vercel.app/",
+  "lead": {
+    "leadCode": "LEAD-123456",
+    "name": "João Manuel",
+    "phone": "950752933",
+    "city": "Luanda",
+    "address": "Talatona",
+    "productName": "Oraimo BoomPop Pro",
+    "totalValue": 35000,
+    "status": "Novo Lead",
+    "trafficSource": "Instagram (Social Media)",
+    "timeOnSite": "2m 14s"
+  }
+}`}
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA 5: SEGURANÇA & SQL SUPABASE */}
+        {/* ============================================================== */}
+        {currentTab === 'security' && (
+          <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gap: '24px' }}>
+            {/* Status de Segurança */}
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <div style={{ padding: '10px', background: 'rgba(22, 163, 74, 0.1)', borderRadius: '10px', color: '#16A34A' }}>
+                  <ShieldCheck size={24} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>Status de Segurança & Acesso</h3>
+                  <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                    Row Level Security (RLS) e Supabase Authentication
+                  </p>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                <div style={{ padding: '14px', background: 'var(--bg-body)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>ADMINISTRADOR AUTENTICADO</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: '4px', wordBreak: 'break-all' }}>{session?.user?.email}</div>
+                </div>
+
+                <div style={{ padding: '14px', background: 'var(--bg-body)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>PROJETO SUPABASE</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: '4px' }}>{SUPABASE_PROJECT_ID}</div>
+                </div>
+
+                <div style={{ padding: '14px', background: 'var(--bg-body)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>STORAGE BUCKET</div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: 800, marginTop: '4px', color: '#16A34A' }}>products (Público)</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <a
+                  href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}/sql`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nav-btn nav-btn-orange"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <ExternalLink size={16} /> Abrir SQL Editor no Supabase
+                </a>
+
+                <a
+                  href={`https://supabase.com/dashboard/project/${SUPABASE_PROJECT_ID}/auth/users`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nav-btn"
+                  style={{ textDecoration: 'none' }}
+                >
+                  <Users size={16} /> Gerir Administradores no Supabase Auth
+                </a>
+              </div>
+            </div>
+
+            {/* Script SQL para Configuração do CRM no Supabase */}
+            <div style={{ background: 'var(--bg-card)', padding: '24px', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
+                    Script SQL para Criação das Tabelas do CRM e Políticas RLS
+                  </h4>
+                  <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    Copie e execute este código no SQL Editor do Supabase se ainda não executou.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(sqlScriptContent);
+                    setCopiedSql(true);
+                    showToast('Script SQL copiado para a área de transferência!');
+                    setTimeout(() => setCopiedSql(false), 3000);
+                  }}
+                  className="nav-btn"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                >
+                  {copiedSql ? <Check size={16} color="#16A34A" /> : <Copy size={16} />}
+                  {copiedSql ? 'Copiado!' : 'Copiar Código SQL'}
+                </button>
+              </div>
+
+              <pre
+                style={{
+                  background: 'var(--bg-body)',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  fontSize: '0.8rem',
+                  overflowX: 'auto',
+                  border: '1px solid var(--border-light)',
+                  color: 'var(--text-main)',
+                  maxHeight: '360px',
+                  lineHeight: 1.5,
+                  margin: 0
+                }}
+              >
+                {sqlScriptContent}
+              </pre>
+            </div>
+          </div>
+        )}
       </main>
 
-      {/* Add / Edit Full Product Modal */}
+      {/* ============================================================== */}
+      {/* MODAL: HISTÓRICO DO LEAD */}
+      {/* ============================================================== */}
+      {selectedLeadHistory && (
+        <div className="modal-overlay" onClick={() => setSelectedLeadHistory(null)}>
+          <div className="modal-content" style={{ maxWidth: '520px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>Histórico do Lead</h3>
+                <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>{selectedLeadHistory.name} ({selectedLeadHistory.leadCode})</p>
+              </div>
+              <button onClick={() => setSelectedLeadHistory(null)} style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div style={{ marginBottom: '16px', padding: '12px', background: 'var(--bg-body)', borderRadius: '10px', fontSize: '0.85rem' }}>
+              <div><strong>Produto:</strong> {selectedLeadHistory.productName}</div>
+              <div><strong>Valor:</strong> {Number(selectedLeadHistory.totalValue).toLocaleString('pt-AO')} Kz</div>
+              <div><strong>Notas:</strong> {selectedLeadHistory.notes || 'Sem notas adicionais'}</div>
+            </div>
+
+            <h4 style={{ margin: '0 0 10px', fontSize: '0.9rem', fontWeight: 700 }}>Linha do Tempo</h4>
+            <div style={{ display: 'grid', gap: '8px', maxHeight: '240px', overflowY: 'auto' }}>
+              {(selectedLeadHistory.history || []).length === 0 ? (
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Sem registros anteriores de alterações.</p>
+              ) : (
+                selectedLeadHistory.history.map((h, i) => (
+                  <div key={i} style={{ padding: '8px 12px', background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '8px', fontSize: '0.8rem' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--primary-orange)' }}>{h.action}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem' }}>{new Date(h.date).toLocaleString('pt-AO')}</div>
+                    {h.details && <div style={{ marginTop: '2px' }}>{h.details}</div>}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '18px' }}>
+              <button className="nav-btn" onClick={() => setSelectedLeadHistory(null)}>Fechar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: NOVO LEAD MANUAL */}
+      {/* ============================================================== */}
+      {isNewLeadModalOpen && (
+        <div className="modal-overlay" onClick={() => setIsNewLeadModalOpen(false)}>
+          <div className="modal-content" style={{ maxWidth: '480px', padding: '24px' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>Novo Lead Manual</h3>
+              <button onClick={() => setIsNewLeadModalOpen(false)} style={{ background: 'transparent', border: 0, cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveManualLead}>
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', display: 'block' }}>Nome do Cliente *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Manuel António"
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  value={newLeadForm.name}
+                  onChange={e => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', display: 'block' }}>Telefone / WhatsApp</label>
+                <input
+                  type="text"
+                  placeholder="Ex: 950752933"
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  value={newLeadForm.phone}
+                  onChange={e => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', display: 'block' }}>Cidade / Província</label>
+                  <input
+                    type="text"
+                    placeholder="Luanda"
+                    className="form-input"
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                    value={newLeadForm.city}
+                    onChange={e => setNewLeadForm({ ...newLeadForm, city: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', display: 'block' }}>Valor (Kz)</label>
+                  <input
+                    type="number"
+                    placeholder="Ex: 25000"
+                    className="form-input"
+                    style={{ width: '100%', boxSizing: 'border-box' }}
+                    value={newLeadForm.totalValue}
+                    onChange={e => setNewLeadForm({ ...newLeadForm, totalValue: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '12px' }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', display: 'block' }}>Produto de Interesse</label>
+                <input
+                  type="text"
+                  placeholder="Ex: Fones Oraimo BoomPop Pro"
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  value={newLeadForm.productName}
+                  onChange={e => setNewLeadForm({ ...newLeadForm, productName: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '16px' }}>
+                <label className="form-label" style={{ fontSize: '0.82rem', fontWeight: 700, marginBottom: '4px', display: 'block' }}>Observações</label>
+                <textarea
+                  rows={2}
+                  placeholder="Ex: Pedido feito presencialmente no showroom."
+                  className="form-input"
+                  style={{ width: '100%', boxSizing: 'border-box' }}
+                  value={newLeadForm.notes}
+                  onChange={e => setNewLeadForm({ ...newLeadForm, notes: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button type="button" className="nav-btn" onClick={() => setIsNewLeadModalOpen(false)}>Cancelar</button>
+                <button type="submit" disabled={savingNewLead} className="nav-btn nav-btn-orange">
+                  {savingNewLead ? 'Gravando...' : 'Salvar Lead'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: EDITAR / CRIAR PRODUTO */}
+      {/* ============================================================== */}
       {isProductModalOpen && (
-        <div className="modal-overlay" onClick={() => setIsProductModalOpen(false)} style={{ zIndex: 2000 }}>
+        <div className="modal-overlay" onClick={() => setIsProductModalOpen(false)}>
           <div
             className="modal-content"
-            style={{ maxWidth: '760px', width: '96%', maxHeight: '92vh', overflowY: 'auto', padding: '28px' }}
+            style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', borderBottom: '1px solid var(--border-light)', paddingBottom: '12px' }}>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 900, margin: 0 }}>
-                {editingProduct ? `Editar Produto: ${editingProduct.name}` : 'Adicionar Novo Produto'}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>
+                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
               </h2>
               <button onClick={() => setIsProductModalOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                <X size={22} />
+                <X size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSaveProduct}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
-                <div className="form-group">
-                  <label className="form-label">Nome do Produto *</label>
-                  <input
-                    type="text"
-                    required
-                    className="form-input"
-                    value={formData.name}
-                    onChange={e => {
-                      const nextName = e.target.value;
-                      setFormData(prev => ({
-                        ...prev,
-                        name: nextName,
-                        slug: slugManuallyEdited ? prev.slug : createSlug(nextName)
-                      }));
-                    }}
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label">Nome do Produto *</label>
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  value={formData.name}
+                  onChange={e => {
+                    const nextName = e.target.value;
+                    setFormData(prev => ({
+                      ...prev,
+                      name: nextName,
+                      slug: slugManuallyEdited ? prev.slug : createSlug(nextName)
+                    }));
+                  }}
+                />
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">Slug (URL amigável) *</label>
-                  <input
-                    type="text"
-                    required
-                    className="form-input"
-                    value={formData.slug}
-                    onChange={e => {
-                      setSlugManuallyEdited(true);
-                      setFormData(prev => ({ ...prev, slug: createSlug(e.target.value) }));
-                    }}
-                  />
-                </div>
+              <div className="form-group">
+                <label className="form-label">URL Amigável (Slug) *</label>
+                <input
+                  type="text"
+                  required
+                  className="form-input"
+                  value={formData.slug}
+                  onChange={e => {
+                    setSlugManuallyEdited(true);
+                    setFormData(prev => ({ ...prev, slug: createSlug(e.target.value) }));
+                  }}
+                />
+              </div>
 
+              <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Categoria *</label>
-                  <select
-                    className="form-input"
-                    value={formData.category}
-                    onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  >
-                    {CATEGORIES.filter(c => c !== 'Todos').map(c => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Marca</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Ex: Oraimo"
-                    value={formData.brand}
-                    onChange={e => setFormData(prev => ({ ...prev, brand: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Preço Normal (price em Kz) *</label>
+                  <label className="form-label">Preço Regular (Kz) *</label>
                   <input
                     type="number"
-                    min="1"
                     required
+                    min="1"
                     className="form-input"
                     value={formData.price}
                     onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
@@ -1204,142 +2375,98 @@ export default function AdminPage() {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Preço Promocional (sale_price em Kz - Opcional)</label>
+                  <label className="form-label">Preço Promocional (Opcional)</label>
                   <input
                     type="number"
                     min="0"
-                    placeholder="Deixe vazio se sem promoção"
+                    placeholder="Ex: 29000"
                     className="form-input"
                     value={formData.sale_price}
                     onChange={e => setFormData(prev => ({ ...prev, sale_price: e.target.value }))}
                   />
                 </div>
+              </div>
 
+              <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">Preço Antigo (old_price em Kz - Opcional)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Ex: 48900"
+                  <label className="form-label">Categoria *</label>
+                  <select
                     className="form-input"
-                    value={formData.old_price}
-                    onChange={e => setFormData(prev => ({ ...prev, old_price: e.target.value }))}
-                  />
+                    value={formData.category}
+                    onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                  >
+                    {CATEGORIES.map(c => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Estoque (stock) *</label>
+                  <label className="form-label">Estoque (Unidades)</label>
                   <input
                     type="number"
                     min="0"
-                    required
                     className="form-input"
                     value={formData.stock}
                     onChange={e => setFormData(prev => ({ ...prev, stock: e.target.value }))}
                   />
                 </div>
+              </div>
 
+              <div className="form-row">
                 <div className="form-group">
-                  <label className="form-label">SKU</label>
+                  <label className="form-label">Marca</label>
                   <input
                     type="text"
                     className="form-input"
-                    placeholder="Ex: OR-WN2-002"
+                    value={formData.brand}
+                    onChange={e => setFormData(prev => ({ ...prev, brand: e.target.value }))}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">SKU (Código)</label>
+                  <input
+                    type="text"
+                    className="form-input"
                     value={formData.sku}
                     onChange={e => setFormData(prev => ({ ...prev, sku: e.target.value }))}
                   />
                 </div>
-
-                <div className="form-group">
-                  <label className="form-label">Badge / Destaque</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="Ex: OFERTA DO MÊS"
-                    value={formData.badge}
-                    onChange={e => setFormData(prev => ({ ...prev, badge: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Avaliação (rating 1 a 5)</label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="1"
-                    max="5"
-                    className="form-input"
-                    value={formData.rating}
-                    onChange={e => setFormData(prev => ({ ...prev, rating: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Nº de Avaliações (reviews_count)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="form-input"
-                    value={formData.reviews_count}
-                    onChange={e => setFormData(prev => ({ ...prev, reviews_count: e.target.value }))}
-                  />
-                </div>
               </div>
 
-              {/* Image URL & Upload */}
-              <div className="form-group" style={{ marginTop: '10px' }}>
-                <label className="form-label">Imagem do Produto (URL ou Upload para Supabase Storage `products`)</label>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div className="form-group">
+                <label className="form-label">Imagem do Produto (URL ou Envio para Supabase Storage)</label>
+                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                   <input
                     type="text"
+                    placeholder="https://... ou caminho local"
                     className="form-input"
-                    style={{ flex: 1, minWidth: '220px' }}
-                    placeholder="URL da imagem (ex: /product_watchnova2.jpg ou https://...)"
+                    style={{ flex: 1 }}
                     value={formData.image_url}
                     onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
                   />
                   <label
                     className="nav-btn"
-                    style={{ cursor: 'pointer', margin: 0, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                    style={{ cursor: uploadingImage ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
                   >
                     <Upload size={15} />
-                    <span>{uploadingImage ? 'Enviando...' : 'Upload Imagem'}</span>
+                    <span>{uploadingImage ? 'Enviando...' : 'Carregar'}</span>
                     <input
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/*"
+                      accept="image/*"
                       style={{ display: 'none' }}
+                      disabled={uploadingImage}
                       onChange={handleImageFileUpload}
                     />
                   </label>
                 </div>
-                {formData.image_url && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '8px' }}>
-                    <img
-                      key={formData.image_url}
-                      src={formData.image_url}
-                      alt="Pré-visualização"
-                      style={{
-                        width: '48px',
-                        height: '48px',
-                        objectFit: 'contain',
-                        background: '#FFF',
-                        borderRadius: '8px',
-                        border: '1px solid var(--border-light)',
-                        padding: '2px'
-                      }}
-                    />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', wordBreak: 'break-all' }}>
-                      {formData.image_url}
-                    </span>
-                  </div>
-                )}
               </div>
 
               <div className="form-group">
-                <label className="form-label">Descrição Completa *</label>
+                <label className="form-label">Descrição do Produto</label>
                 <textarea
                   rows={3}
-                  required
                   className="form-input"
                   value={formData.description}
                   onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -1347,90 +2474,32 @@ export default function AdminPage() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Especificações Técnicas (1 por linha)</label>
+                <label className="form-label">Especificações Técnicas (uma por linha)</label>
                 <textarea
                   rows={3}
+                  placeholder="Ex: Autonomia: 40 horas\nBluetooth: 5.3"
                   className="form-input"
-                  placeholder="Resistência à água IP68&#10;Notificações WhatsApp e Chamadas&#10;Monitor de Saúde e Sono"
                   value={formData.specsText}
                   onChange={e => setFormData(prev => ({ ...prev, specsText: e.target.value }))}
                 />
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '12px', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '14px 0' }}>
                 <input
                   type="checkbox"
-                  id="product-active-toggle"
+                  id="prod-active"
                   checked={formData.active}
                   onChange={e => setFormData(prev => ({ ...prev, active: e.target.checked }))}
-                  style={{ width: '18px', height: '18px' }}
                 />
-                <label htmlFor="product-active-toggle" style={{ fontWeight: 700, cursor: 'pointer' }}>
-                  Produto Ativo no Catálogo Público (`active = true`)
+                <label htmlFor="prod-active" style={{ fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}>
+                  Produto ativo e visível na loja pública
                 </label>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                <button type="button" className="nav-btn" onClick={() => setIsProductModalOpen(false)}>
-                  Cancelar
-                </button>
-                <button type="submit" disabled={savingProduct} className="nav-btn nav-btn-orange">
-                  <Save size={16} /> {savingProduct ? 'Salvando...' : 'Salvar Produto'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Quick Price Modal */}
-      {priceModalProduct && (
-        <div className="modal-overlay" onClick={() => setPriceModalProduct(null)} style={{ zIndex: 2100 }}>
-          <div className="modal-content" style={{ maxWidth: '420px', padding: '24px' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '6px' }}>Alterar Preço</h3>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
-              {priceModalProduct.name}
-            </p>
-            <form onSubmit={handleSaveQuickPrice}>
-              <div className="form-group">
-                <label className="form-label">Preço Normal (price em Kz) *</label>
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  className="form-input"
-                  value={priceForm.price}
-                  onChange={e => setPriceForm(prev => ({ ...prev, price: e.target.value }))}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Preço Promocional (sale_price em Kz)</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Opcional"
-                  className="form-input"
-                  value={priceForm.sale_price}
-                  onChange={e => setPriceForm(prev => ({ ...prev, sale_price: e.target.value }))}
-                />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Preço Antigo (old_price em Kz)</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="Opcional"
-                  className="form-input"
-                  value={priceForm.old_price}
-                  onChange={e => setPriceForm(prev => ({ ...prev, old_price: e.target.value }))}
-                />
-              </div>
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-                <button type="button" className="nav-btn" onClick={() => setPriceModalProduct(null)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="nav-btn nav-btn-orange">
-                  Salvar Preços
+                <button type="button" className="nav-btn" onClick={() => setIsProductModalOpen(false)}>Cancelar</button>
+                <button type="submit" disabled={savingProduct} className="nav-btn nav-btn-orange">
+                  {savingProduct ? 'Gravando no Supabase...' : 'Salvar Produto'}
                 </button>
               </div>
             </form>
@@ -1438,105 +2507,140 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* Quick Stock Modal */}
+      {/* ============================================================== */}
+      {/* MODAL: ESTOQUE RÁPIDO */}
+      {/* ============================================================== */}
       {stockModalProduct && (
-        <div className="modal-overlay" onClick={() => setStockModalProduct(null)} style={{ zIndex: 2100 }}>
-          <div className="modal-content" style={{ maxWidth: '400px', padding: '24px' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 800, marginBottom: '6px' }}>Alterar Estoque</h3>
-            <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '16px' }}>
+        <div className="modal-overlay" onClick={() => setStockModalProduct(null)}>
+          <div className="modal-content" style={{ maxWidth: '380px' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '1.1rem', fontWeight: 800 }}>Ajustar Estoque</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
               {stockModalProduct.name}
             </p>
-            <form onSubmit={handleSaveQuickStock}>
-              <div className="form-group">
-                <label className="form-label">Quantidade Disponível (stock = 0 exibe Esgotado)</label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  className="form-input"
-                  value={stockValue}
-                  onChange={e => setStockValue(e.target.value)}
-                />
-              </div>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                <button type="button" className="nav-btn" onClick={() => setStockValue(0)}>
-                  Marcar Esgotado (0)
-                </button>
-                <button type="button" className="nav-btn" onClick={() => setStockValue(prev => Number(prev) + 10)}>
-                  +10 un.
-                </button>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-                <button type="button" className="nav-btn" onClick={() => setStockModalProduct(null)}>
-                  Cancelar
-                </button>
-                <button type="submit" className="nav-btn nav-btn-orange">
-                  Salvar Estoque
-                </button>
-              </div>
-            </form>
+
+            <div style={{ marginBottom: '16px' }}>
+              <input
+                type="number"
+                min="0"
+                className="form-input"
+                style={{ width: '100%', fontSize: '1.1rem', fontWeight: 800, boxSizing: 'border-box' }}
+                value={stockValue}
+                onChange={e => setStockValue(parseInt(e.target.value, 10) || 0)}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button className="nav-btn" onClick={() => setStockModalProduct(null)}>Cancelar</button>
+              <button
+                className="nav-btn nav-btn-orange"
+                onClick={async () => {
+                  try {
+                    await updateProduct(stockModalProduct.id, { stock: Math.max(0, stockValue) });
+                    await refreshProducts();
+                    showToast('Estoque atualizado no Supabase!');
+                    setStockModalProduct(null);
+                  } catch (e) {
+                    showToast(`Erro: ${e.message}`);
+                  }
+                }}
+              >
+                Salvar Estoque
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* ============================================================== */}
+      {/* MODAL: PREÇO RÁPIDO */}
+      {/* ============================================================== */}
+      {priceModalProduct && (
+        <div className="modal-overlay" onClick={() => setPriceModalProduct(null)}>
+          <div className="modal-content" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ margin: '0 0 12px', fontSize: '1.1rem', fontWeight: 800 }}>Alterar Preço</h3>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '14px' }}>
+              {priceModalProduct.name}
+            </p>
+
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px' }}>Preço Regular (Kz)</label>
+              <input
+                type="number"
+                className="form-input"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+                value={priceForm.price}
+                onChange={e => setPriceForm({ ...priceForm, price: e.target.value })}
+              />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 700, marginBottom: '4px' }}>Preço Promocional (Kz)</label>
+              <input
+                type="number"
+                className="form-input"
+                style={{ width: '100%', boxSizing: 'border-box' }}
+                value={priceForm.sale_price}
+                onChange={e => setPriceForm({ ...priceForm, sale_price: e.target.value })}
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button className="nav-btn" onClick={() => setPriceModalProduct(null)}>Cancelar</button>
+              <button
+                className="nav-btn nav-btn-orange"
+                onClick={async () => {
+                  try {
+                    await updateProduct(priceModalProduct.id, {
+                      price: Number(priceForm.price) || priceModalProduct.price,
+                      sale_price: priceForm.sale_price ? Number(priceForm.sale_price) : null
+                    });
+                    await refreshProducts();
+                    showToast('Preço atualizado no Supabase!');
+                    setPriceModalProduct(null);
+                  } catch (e) {
+                    showToast(`Erro: ${e.message}`);
+                  }
+                }}
+              >
+                Salvar Preço
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* MODAL: CONFIRMAR EXCLUSÃO */}
+      {/* ============================================================== */}
       {deleteConfirmProduct && (
-        <div className="modal-overlay" onClick={() => setDeleteConfirmProduct(null)} style={{ zIndex: 2200 }}>
-          <div className="modal-content" style={{ maxWidth: '460px', padding: '26px' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" onClick={() => setDeleteConfirmProduct(null)}>
+          <div className="modal-content" style={{ maxWidth: '440px', padding: '24px' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#DC2626', marginBottom: '12px' }}>
               <AlertTriangle size={24} />
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Confirmar Exclusão</h3>
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800 }}>Confirmar Exclusão</h3>
             </div>
-            <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '12px' }}>
-              Tem certeza que deseja excluir permanentemente o produto <strong>"{deleteConfirmProduct.name}"</strong>?
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-main)', lineHeight: 1.5, marginBottom: '14px' }}>
+              Tem certeza que deseja excluir o produto <strong>"{deleteConfirmProduct.name}"</strong>?
             </p>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5, marginBottom: '20px', background: 'var(--bg-body)', padding: '12px', borderRadius: '10px' }}>
-              💡 <strong>Recomendação de SEO:</strong> Desativar o produto (<code>active = false</code>) oculta-o do catálogo público mantendo o histórico e preservando a URL amigável.
-            </p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: '8px' }}>
-              <button className="nav-btn" onClick={() => setDeleteConfirmProduct(null)}>
-                Cancelar
-              </button>
-              {deleteConfirmProduct.active !== false && (
-                <button
-                  className="nav-btn"
-                  style={{ borderColor: '#D97706', color: '#D97706' }}
-                  onClick={async () => {
-                    setPersistenceError('');
-                    try {
-                      await toggleProductActive(deleteConfirmProduct);
-                      await refreshProducts();
-                      showToast(`"${deleteConfirmProduct.name}" foi desativado no Supabase.`);
-                      setDeleteConfirmProduct(null);
-                    } catch (err) {
-                      const msg = err?.message || 'Erro ao desativar produto no Supabase.';
-                      setPersistenceError(msg);
-                      showToast(`Erro: ${msg}`);
-                    }
-                  }}
-                >
-                  <EyeOff size={14} /> Apenas Desativar
-                </button>
-              )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+              <button className="nav-btn" onClick={() => setDeleteConfirmProduct(null)}>Cancelar</button>
               <button
                 className="nav-btn"
                 style={{ background: '#DC2626', color: '#FFF', border: 'none' }}
                 onClick={async () => {
-                  setPersistenceError('');
+                  const prod = deleteConfirmProduct;
+                  setDeleteConfirmProduct(null);
                   try {
-                    const name = deleteConfirmProduct.name;
-                    await deleteProduct(deleteConfirmProduct.id);
+                    await deleteProduct(prod.id);
                     await refreshProducts();
-                    showToast(`Produto "${name}" excluído permanentemente do Supabase.`);
-                    setDeleteConfirmProduct(null);
+                    showToast(`Produto "${prod.name}" excluído.`);
                   } catch (err) {
-                    const msg = err?.message || 'Erro ao excluir produto no Supabase.';
-                    setPersistenceError(msg);
-                    showToast(`Erro ao excluir: ${msg}`);
+                    showToast(`Erro ao excluir: ${err.message}`);
                   }
                 }}
               >
-                <Trash2 size={14} /> Excluir Permanentemente
+                <Trash2 size={15} /> Excluir
               </button>
             </div>
           </div>

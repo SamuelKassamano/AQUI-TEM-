@@ -1,13 +1,18 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
-  getStoredLeads,
-  captureLead as captureLeadUtil,
-  updateLeadStatus as updateLeadStatusUtil,
+  fetchLeadsFromSupabase,
+  captureLeadInSupabase,
+  updateLeadStatusInSupabase,
+  deleteLeadFromSupabase,
+  getWebhookUrl as getWebhookUrlService,
+  saveWebhookUrl as saveWebhookUrlService
+} from '../lib/crmService';
+import {
+  initSessionTracker,
   getAnalyticsData,
-  getWebhookUrl as getWebhookUrlUtil,
-  setWebhookUrl as setWebhookUrlUtil,
-  initSessionTracker
+  incrementAnalyticsCounter
 } from '../utils/crmTracker';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
 
 const CRMContext = createContext();
 
@@ -16,34 +21,121 @@ export function CRMProvider({ children }) {
   const [analytics, setAnalytics] = useState({ totalVisits: 1, totalLeads: 0, productViews: {}, sources: {} });
   const [webhookUrl, setWebhookUrlState] = useState('');
   const [isCrmOpen, setIsCrmOpen] = useState(false);
+  const [isLoadingLeads, setIsLoadingLeads] = useState(false);
+  const [leadsError, setLeadsError] = useState(null);
+  const [tableMissingWarning, setTableMissingWarning] = useState(false);
 
+  // Initialize session tracking on mount for visitor metrics
   useEffect(() => {
-    // Initialize session tracker on app mount
     initSessionTracker();
-    refreshCRMData();
+    setAnalytics(getAnalyticsData());
+
+    // Carrega a URL do webhook
+    getWebhookUrlService().then(url => {
+      if (url) setWebhookUrlState(url);
+    });
   }, []);
 
-  const refreshCRMData = () => {
-    setLeads(getStoredLeads());
-    setAnalytics(getAnalyticsData());
-    setWebhookUrlState(getWebhookUrlUtil());
+  // Recarrega os dados do CRM do Supabase quando solicitado por um administrador
+  const refreshCRMData = useCallback(async () => {
+    setIsLoadingLeads(true);
+    setLeadsError(null);
+
+    try {
+      const { leads: remoteLeads, tableMissing, error } = await fetchLeadsFromSupabase();
+
+      if (tableMissing) {
+        setTableMissingWarning(true);
+      } else {
+        setTableMissingWarning(false);
+      }
+
+      if (error) {
+        setLeadsError(error);
+      }
+
+      setLeads(remoteLeads || []);
+    } catch (err) {
+      console.warn('Erro ao carregar dados do CRM:', err.message);
+      setLeadsError(err.message || 'Falha na autenticação do CRM.');
+    } finally {
+      setIsLoadingLeads(false);
+    }
+  }, []);
+
+  // Captura de lead (Chamada pelo checkout do cliente ou formulário da loja)
+  // O lead é gravado com segurança no Supabase sem expor nenhum dado de outros clientes
+  const captureLead = async (leadData) => {
+    try {
+      const savedLead = await captureLeadInSupabase(leadData);
+
+      // Incrementa contadores analíticos locais
+      incrementAnalyticsCounter('totalLeads');
+      setAnalytics(getAnalyticsData());
+
+      // Se houver uma sessão administrativa ativa com leads carregados, atualiza a lista
+      setLeads(prev => {
+        if (!prev || prev.length === 0) return [savedLead];
+        return [savedLead, ...prev.filter(l => l.id !== savedLead.id)];
+      });
+
+      return savedLead;
+    } catch (err) {
+      console.error('Erro na captura do lead:', err);
+      return null;
+    }
   };
 
-  const captureLead = (leadData) => {
-    const created = captureLeadUtil(leadData);
-    refreshCRMData();
-    return created;
+  // Atualização de status do lead pelo administrador
+  const updateLeadStatus = async (leadId, newStatus, note = '') => {
+    try {
+      await updateLeadStatusInSupabase(leadId, newStatus, note);
+
+      // Atualiza o estado em memória imediatamente
+      setLeads(prev =>
+        prev.map(lead => {
+          if (lead.id === leadId) {
+            const newHistoryItem = {
+              date: new Date().toISOString(),
+              action: `Estado alterado para ${newStatus}`,
+              details: note || 'Estado atualizado no CRM.'
+            };
+            return {
+              ...lead,
+              status: newStatus,
+              history: [newHistoryItem, ...(lead.history || [])]
+            };
+          }
+          return lead;
+        })
+      );
+    } catch (err) {
+      console.error('Erro ao atualizar status do lead:', err);
+      throw err;
+    }
   };
 
-  const updateLeadStatus = (leadId, newStatus, note = '') => {
-    const updatedLeads = updateLeadStatusUtil(leadId, newStatus, note);
-    setLeads(updatedLeads);
-    refreshCRMData();
+  // Exclusão de lead pelo administrador
+  const deleteLead = async (leadId) => {
+    try {
+      await deleteLeadFromSupabase(leadId);
+      setLeads(prev => prev.filter(l => l.id !== leadId));
+    } catch (err) {
+      console.error('Erro ao excluir lead:', err);
+      throw err;
+    }
   };
 
-  const saveWebhookUrl = (url) => {
-    setWebhookUrlUtil(url);
-    setWebhookUrlState(url);
+  // Salvar Webhook no Supabase
+  const saveWebhookUrl = async (url) => {
+    try {
+      const saved = await saveWebhookUrlService(url);
+      setWebhookUrlState(saved);
+      return saved;
+    } catch (err) {
+      console.error('Erro ao salvar Webhook:', err);
+      throw err;
+    }
   };
 
   const openCRM = () => setIsCrmOpen(true);
@@ -56,10 +148,14 @@ export function CRMProvider({ children }) {
         analytics,
         webhookUrl,
         isCrmOpen,
+        isLoadingLeads,
+        leadsError,
+        tableMissingWarning,
         openCRM,
         closeCRM,
         captureLead,
         updateLeadStatus,
+        deleteLead,
         saveWebhookUrl,
         refreshCRMData
       }}

@@ -22,9 +22,7 @@ import { createSlug } from '../utils/slug';
 import { getTranslatedProduct, getProductTestimonials, getTranslatedCategory } from '../utils/productTranslations';
 import { useStore } from '../context/StoreContext';
 import { useLanguage } from '../context/LanguageContext';
-import OriginalLogoImage from '../components/OriginalLogoImage';
-import LanguageSelector from '../components/LanguageSelector';
-import StoreDrawers from '../components/StoreDrawers';
+import Layout from '../components/Layout';
 import { trackProductView, trackWhatsAppLead } from '../utils/pixelRetargeting';
 
 export default function ProductPage() {
@@ -128,18 +126,8 @@ export default function ProductPage() {
 
   if (!product) {
     return (
-      <div className="app-container">
-        <header className="header-nav">
-          <div className="header-container">
-            <Link to="/" className="logo-brand">
-              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={40} className="header-logo-img" />
-            </Link>
-            <Link to="/" className="nav-btn nav-btn-orange" style={{ textDecoration: 'none' }}>
-              <ArrowLeft size={16} /> {lang === 'en' ? 'Back to Store' : 'Voltar para a Loja'}
-            </Link>
-          </div>
-        </header>
-        <main style={{ padding: '80px 20px', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
+      <Layout>
+        <div style={{ padding: '80px 20px', textAlign: 'center', maxWidth: '600px', margin: '0 auto' }}>
           <Package size={56} color="var(--primary-orange)" style={{ marginBottom: '16px' }} />
           <h1 style={{ fontSize: '1.6rem', fontWeight: 900, marginBottom: '8px' }}>
             {lang === 'en' ? 'Product Not Found' : 'Produto não encontrado'}
@@ -149,12 +137,11 @@ export default function ProductPage() {
               ? 'The product you are looking for is not available right now.'
               : 'O produto que você procura não está disponível no momento.'}
           </p>
-          <Link to="/" className="nav-btn nav-btn-orange" style={{ textDecoration: 'none', display: 'inline-flex' }}>
+          <Link to="/produtos" className="nav-btn nav-btn-orange" style={{ textDecoration: 'none', display: 'inline-flex' }}>
             <ArrowLeft size={16} /> {lang === 'en' ? 'View All Products at AQUI TEM' : 'Ver Todos os Produtos na AQUI TEM'}
           </Link>
-        </main>
-        <StoreDrawers />
-      </div>
+        </div>
+      </Layout>
     );
   }
 
@@ -177,7 +164,7 @@ export default function ProductPage() {
   }, [product]);
 
   return (
-    <div className="app-container">
+    <Layout>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -192,63 +179,16 @@ export default function ProductPage() {
         }}
       />
 
-      {/* Top Bar */}
-      <div className="top-bar">
-        <span className="top-bar-main">{t('topBarMsg')}</span>
-        <span className="top-bar-sep" style={{ opacity: 0.6 }}>|</span>
-        <span className="top-bar-sub">📱 {t('whatsappSupport')}</span>
-        <span className="top-bar-sep" style={{ opacity: 0.6 }}>|</span>
-        <span className="top-bar-sub">🇦🇴 {t('fastDelivery')}</span>
-      </div>
-
-      {/* Store Header */}
-      <header className="header-nav">
-        <div className="header-container">
-          <div className="header-left">
-            <Link to="/" className="nav-btn" style={{ textDecoration: 'none', padding: '6px 12px' }}>
-              <ArrowLeft size={15} />
-              <span>{lang === 'en' ? 'Store' : 'Loja'}</span>
-            </Link>
-            <Link to="/" className="logo-brand">
-              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={38} className="header-logo-img" />
-            </Link>
-          </div>
-
-          <div className="nav-actions">
-            <LanguageSelector />
-
-            <button className="nav-btn nav-btn-icon" onClick={toggleTheme} title="Alternar Tema">
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-
-            <button
-              className="nav-btn nav-btn-icon"
-              onClick={() => setIsWishlistOpen(true)}
-              title={t('wishlist')}
-            >
-              <Heart size={16} color={wishlist.length > 0 ? '#F37021' : 'currentColor'} fill={wishlist.length > 0 ? '#F37021' : 'none'} />
-              {wishlist.length > 0 && <span className="badge-count">{wishlist.length}</span>}
-            </button>
-
-            <button className="nav-btn nav-btn-orange nav-btn-cart" onClick={() => setIsCartOpen(true)}>
-              <ShoppingBag size={16} />
-              <span className="nav-btn-label">{t('cart')}</span>
-              {cart.length > 0 && (
-                <span className="badge-count" style={{ background: '#FFF', color: '#F37021' }}>
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main style={{ maxWidth: '1120px', margin: '0 auto', padding: '24px 16px 48px' }}>
-        {/* Breadcrumb */}
+      <div style={{ maxWidth: '1120px', margin: '0 auto', padding: '24px 16px 48px' }}>
+        {/* Breadcrumb Trail */}
         <nav style={{ marginBottom: '18px', fontSize: '0.85rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-          <Link to="/" style={{ color: 'var(--primary-orange)', fontWeight: 700, textDecoration: 'none' }}>AQUI TEM</Link>
+          <Link to="/" style={{ color: 'var(--primary-orange)', fontWeight: 700, textDecoration: 'none' }}>Início</Link>
           <span>/</span>
-          <span>{getTranslatedCategory(product.category, lang)}</span>
+          <Link to="/produtos" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Produtos</Link>
+          <span>/</span>
+          <Link to={`/produtos?cat=${encodeURIComponent(product.category)}`} style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>
+            {getTranslatedCategory(product.category, lang)}
+          </Link>
           <span>/</span>
           <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{product.name}</span>
         </nav>
@@ -602,9 +542,7 @@ export default function ProductPage() {
             </div>
           </section>
         )}
-      </main>
-
-      <StoreDrawers />
-    </div>
+      </div>
+    </Layout>
   );
 }

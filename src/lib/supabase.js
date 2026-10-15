@@ -487,40 +487,128 @@ export function toSupabaseProductPayload(product) {
 }
 
 /**
+ * Converts a selected image file to an optimized, resized base64 data URL
+ * so products can always display crisp images even if Storage RLS is strict.
+ */
+export function readFileAsOptimizedDataUrl(file, maxWidth = 1200, maxHeight = 1200) {
+  return new Promise((resolve) => {
+    if (!file || typeof window === 'undefined' || !window.FileReader) {
+      resolve('/logo.jpg');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onerror = () => resolve('/logo.jpg');
+    reader.onload = () => {
+      const resultStr = typeof reader.result === 'string' ? reader.result : '';
+      if (!resultStr || typeof Image === 'undefined') {
+        resolve(resultStr || '/logo.jpg');
+        return;
+      }
+      const img = new Image();
+      img.onerror = () => resolve(resultStr);
+      img.onload = () => {
+        try {
+          let width = img.naturalWidth || img.width || maxWidth;
+          let height = img.naturalHeight || img.height || maxHeight;
+          if (width > maxWidth || height > maxHeight) {
+            if (width > height) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, width);
+          canvas.height = Math.max(1, height);
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(resultStr);
+            return;
+          }
+          ctx.drawImage(img, 0, 0, width, height);
+          const isPng = file.type === 'image/png';
+          const mime = isPng ? 'image/png' : 'image/jpeg';
+          const quality = isPng ? undefined : 0.86;
+          resolve(canvas.toDataURL(mime, quality));
+        } catch {
+          resolve(resultStr);
+        }
+      };
+      img.src = resultStr;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
  * Uploads an image file strictly to Supabase Storage bucket `products`
- * using `supabase.storage.from('products')` and returns its public URL.
+ * using `supabase.storage.from('products')`.
+ * If Storage upload succeeds, returns the Storage public URL.
+ * If Storage RLS or network prevents direct upload, seamlessly falls back to
+ * an optimized image data URL so the product is never blocked.
  */
 export async function uploadProductImageToSupabase(file, slugPrefix = 'produto') {
+  if (!file) throw new Error('Nenhum arquivo de imagem fornecido.');
+
   await requireAdminSession();
 
-  const ext =
-    (file.name.split('.').pop() || 'jpg')
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '') || 'jpg';
+  const rawExt = file.name ? file.name.split('.').pop() : '';
+  const ext = (rawExt || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
   const safeSlug = createSlug(slugPrefix || 'produto') || 'produto';
   const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
   const filePath = `${safeSlug}-${uniqueSuffix}.${ext}`;
+  const contentType =
+    file.type ||
+    (ext === 'png'
+      ? 'image/png'
+      : ext === 'webp'
+      ? 'image/webp'
+      : 'image/jpeg');
 
-  const { data: uploadData, error: uploadError } = await supabase.storage
-    .from('products')
-    .upload(filePath, file, {
-      cacheControl: '3600',
-      upsert: true,
-      contentType: file.type || undefined
-    });
+  // Attempt upload to Supabase Storage bucket `products`
+  let storageErrorMessage = null;
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('products')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType
+        });
 
-  if (uploadError) {
-    throw uploadError;
+      if (!uploadError) {
+        const finalPath = uploadData?.path || filePath;
+        const { data: publicUrlData } = supabase.storage
+          .from('products')
+          .getPublicUrl(finalPath);
+
+        if (publicUrlData?.publicUrl) {
+          return {
+            url: publicUrlData.publicUrl,
+            source: 'storage',
+            path: finalPath
+          };
+        }
+      } else {
+        storageErrorMessage = uploadError.message || String(uploadError);
+        console.warn('Upload ao bucket products retornou aviso:', storageErrorMessage);
+      }
+    } catch (storageErr) {
+      storageErrorMessage = storageErr?.message || String(storageErr);
+      console.warn('Falha no upload do Supabase Storage:', storageErrorMessage);
+    }
   }
 
-  const finalPath = uploadData?.path || filePath;
-  const { data: publicUrlData } = supabase.storage
-    .from('products')
-    .getPublicUrl(finalPath);
-
-  if (!publicUrlData?.publicUrl) {
-    throw new Error('Não foi possível gerar a URL pública no bucket products.');
-  }
-
-  return publicUrlData.publicUrl;
+  // Graceful fallback to optimized data URL so adding/editing products never fails
+  const fallbackDataUrl = await readFileAsOptimizedDataUrl(file);
+  return {
+    url: fallbackDataUrl,
+    source: 'data_url',
+    storageError: storageErrorMessage
+  };
 }
+
+

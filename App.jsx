@@ -223,15 +223,6 @@ export default function App() {
           <div className="nav-actions">
             <LanguageSelector className="desktop-only-lang" />
 
-            <button
-              className="nav-btn nav-btn-crm desktop-only-action"
-              onClick={openCRM}
-              title="Painel CRM & Gestão de Leads"
-            >
-              <BarChart3 size={15} />
-              <span className="nav-btn-label">CRM</span>
-            </button>
-
             <button className="nav-btn nav-btn-icon" onClick={toggleTheme} title="Alternar Tema">
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
@@ -279,24 +270,68 @@ export default function App() {
                 <LanguageSelector />
               </div>
 
-              <button
-                className={`category-chip ${selectedCategory === 'Todos' || selectedCategory === 'All' ? 'active' : ''}`}
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
-                onClick={() => { setSelectedCategory('Todos'); setIsSideMenuOpen(false); }}
-              >
-                <Grid size={15} /> {t('catAll')}
-              </button>
-
-              <button
+              <Link
+                to="/"
                 className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
-                onClick={() => {
-                  setIsSideMenuOpen(false);
-                  document.getElementById('sobre')?.scrollIntoView({ behavior: 'smooth' });
-                }}
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
               >
-                <Store size={15} /> {t('aboutUs')}
-              </button>
+                <Store size={15} /> Início
+              </Link>
+
+              <Link
+                to="/produtos"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <Grid size={15} /> Produtos
+              </Link>
+
+              <Link
+                to="/sobre-nos"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <Store size={15} /> Sobre Nós
+              </Link>
+
+              <Link
+                to="/solucoes"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <Award size={15} /> Soluções
+              </Link>
+
+              <Link
+                to="/como-funciona"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <Truck size={15} /> Como Funciona
+              </Link>
+
+              <Link
+                to="/contactos"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <MapPin size={15} /> Contactos
+              </Link>
+
+              <Link
+                to="/perguntas-frequentes"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <ShieldCheck size={15} /> Perguntas Frequentes
+              </Link>
 
               <button
                 className="category-chip"
@@ -306,29 +341,14 @@ export default function App() {
                 <Video size={15} /> {t('videos')}
               </button>
 
-              <button
+              <Link
+                to="/admin?tab=crm"
                 className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
-                onClick={() => { setActiveInfoModal('stores'); setIsSideMenuOpen(false); }}
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', background: 'rgba(30, 92, 158, 0.08)', color: '#1E5C9E', borderColor: '#1E5C9E' }}
+                onClick={() => setIsSideMenuOpen(false)}
               >
-                <MapPin size={15} /> {t('storesAndSupport')}
-              </button>
-
-              <button
-                className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px' }}
-                onClick={() => { setActiveInfoModal('warranty'); setIsSideMenuOpen(false); }}
-              >
-                <ShieldCheck size={15} /> {t('warrantyAndExchanges')}
-              </button>
-
-              <button
-                className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255, 101, 0, 0.08)', color: 'var(--primary-orange)', borderColor: 'var(--primary-orange)' }}
-                onClick={() => { openCRM(); setIsSideMenuOpen(false); }}
-              >
-                <BarChart3 size={15} /> Painel CRM
-              </button>
+                <Lock size={15} /> CRM & Leads (Restrito)
+              </Link>
 
               <Link
                 to="/admin"
@@ -1303,21 +1323,33 @@ export default function App() {
 
           {/* Line 2: Essential Navigation Links */}
           <div className="footer-line-links">
-            <a href="#catalogo" className="footer-link-item" onClick={() => setSelectedCategory('Todos')}>
-              {t('catAll')}
-            </a>
+            <Link to="/" className="footer-link-item">
+              Início
+            </Link>
             <span className="footer-dot">•</span>
-            <button type="button" className="footer-link-item" onClick={() => setIsVideosOpen(true)}>
-              {t('videos')}
-            </button>
+            <Link to="/produtos" className="footer-link-item">
+              Produtos
+            </Link>
             <span className="footer-dot">•</span>
-            <button type="button" className="footer-link-item" onClick={() => setActiveInfoModal('stores')}>
-              {t('storesSupport')}
-            </button>
+            <Link to="/sobre-nos" className="footer-link-item">
+              Sobre Nós
+            </Link>
             <span className="footer-dot">•</span>
-            <button type="button" className="footer-link-item" onClick={() => setActiveInfoModal('warranty')}>
-              {t('warrantyAndExchanges')}
-            </button>
+            <Link to="/solucoes" className="footer-link-item">
+              Soluções
+            </Link>
+            <span className="footer-dot">•</span>
+            <Link to="/como-funciona" className="footer-link-item">
+              Como Funciona
+            </Link>
+            <span className="footer-dot">•</span>
+            <Link to="/contactos" className="footer-link-item">
+              Contactos
+            </Link>
+            <span className="footer-dot">•</span>
+            <Link to="/perguntas-frequentes" className="footer-link-item">
+              Perguntas Frequentes
+            </Link>
             <span className="footer-dot">•</span>
             <Link to="/admin" className="footer-link-item" style={{ textDecoration: 'none' }}>
               {t('adminPanel')}

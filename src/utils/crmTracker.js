@@ -77,15 +77,13 @@ export function incrementAnalyticsCounter(key, subKey = null) {
   localStorage.setItem(STORAGE_KEY_ANALYTICS, JSON.stringify(data));
 }
 
-// Lead Management API
+// Lead Management API (Protegido: dados confidenciais nunca são salvos em texto claro no localStorage de visitantes)
 export function getStoredLeads() {
+  // Limpa registros legados do localStorage por segurança
   try {
-    const raw = localStorage.getItem(STORAGE_KEY_LEADS);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (e) {
-    return [];
-  }
+    localStorage.removeItem(STORAGE_KEY_LEADS);
+  } catch {}
+  return [];
 }
 
 export function captureLead(leadPayload) {
@@ -101,7 +99,7 @@ export function captureLead(leadPayload) {
     productName: leadPayload.productName || 'Consulta Geral',
     productPrice: leadPayload.productPrice || 0,
     totalValue: leadPayload.totalValue || leadPayload.productPrice || 0,
-    status: 'Novo Lead', // States: 'Novo Lead', 'Em Atendimento', 'Venda Realizada', 'Perdido', 'Nutrição'
+    status: 'Novo Lead',
     trafficSource: `${source.name} (${source.type})`,
     timeOnSite: timeSpent,
     pagesViewed: Number(sessionStorage.getItem('session_page_views') || '1'),
@@ -115,10 +113,6 @@ export function captureLead(leadPayload) {
       }
     ]
   };
-
-  const existingLeads = getStoredLeads();
-  const updatedLeads = [newLead, ...existingLeads];
-  localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(updatedLeads));
 
   // Increment metrics
   incrementAnalyticsCounter('totalLeads');
