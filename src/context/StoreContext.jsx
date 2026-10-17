@@ -375,10 +375,27 @@ export function StoreProvider({ children }) {
       await requireAdminSession();
       const payload = toSupabaseProductPayload(productData);
 
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('products')
         .insert([payload])
         .select('*');
+
+      if (error && (error.message?.includes('seo_title') || error.message?.includes('seo_description'))) {
+        console.warn('Coluna seo_title/seo_description pendente de migração no Supabase. Salvando sem campos SEO adicionais.');
+        const fallbackPayload = { ...payload };
+        delete fallbackPayload.seo_title;
+        delete fallbackPayload.seo_description;
+        const retryResult = await supabase
+          .from('products')
+          .insert([fallbackPayload])
+          .select('*');
+        if (!retryResult.error) {
+          data = retryResult.data;
+          error = null;
+        } else {
+          error = retryResult.error;
+        }
+      }
 
       if (error) {
         throw error;
@@ -490,11 +507,29 @@ export function StoreProvider({ children }) {
       }
 
       // Execute UPDATE in Supabase public.products
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('products')
         .update(payloadToSave)
         .eq('id', targetId)
         .select('*');
+
+      if (error && (error.message?.includes('seo_title') || error.message?.includes('seo_description'))) {
+        console.warn('Coluna seo_title/seo_description pendente de migração no Supabase. Atualizando sem campos SEO adicionais.');
+        const fallbackPayload = { ...payloadToSave };
+        delete fallbackPayload.seo_title;
+        delete fallbackPayload.seo_description;
+        const retryResult = await supabase
+          .from('products')
+          .update(fallbackPayload)
+          .eq('id', targetId)
+          .select('*');
+        if (!retryResult.error) {
+          data = retryResult.data;
+          error = null;
+        } else {
+          error = retryResult.error;
+        }
+      }
 
       if (error) {
         throw error;

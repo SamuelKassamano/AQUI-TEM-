@@ -54,21 +54,23 @@ import OriginalLogoImage from '../components/OriginalLogoImage';
 
 const EMPTY_FORM = {
   name: '',
+  brand: 'Oraimo',
+  category: 'Acessórios & Tech',
+  sku: '',
   slug: '',
-  description: '',
   price: '',
   old_price: '',
   sale_price: '',
-  category: 'Acessórios & Tech',
-  brand: 'Oraimo',
-  sku: '',
   stock: 15,
+  description: '',
   image_url: '',
+  active: true,
+  seo_title: '',
+  seo_description: '',
   badge: 'NOVIDADE',
   rating: 4.9,
   reviews_count: 25,
-  specsText: '',
-  active: true
+  specsText: ''
 };
 
 const EMPTY_LEAD_FORM = {
@@ -438,25 +440,28 @@ export default function AdminPage({ defaultTab = 'products' }) {
     setSlugManuallyEdited(true);
     setFormData({
       name: product.name ?? '',
+      brand: product.brand ?? 'Oraimo',
+      category: product.category || 'Acessórios & Tech',
+      sku: product.sku ?? '',
       slug: product.slug || createSlug(product.name || ''),
-      description: product.description ?? '',
       price: product.price ?? '',
-      old_price:
-        product.old_price !== null && product.old_price !== undefined
-          ? product.old_price
-          : '',
       sale_price:
         product.sale_price !== null && product.sale_price !== undefined
           ? product.sale_price
           : '',
-      category: product.category || 'Acessórios & Tech',
-      brand: product.brand ?? 'Oraimo',
-      sku: product.sku ?? '',
+      old_price:
+        product.old_price !== null && product.old_price !== undefined
+          ? product.old_price
+          : '',
       stock:
         product.stock !== null && product.stock !== undefined
           ? Number(product.stock)
           : 0,
+      description: product.description ?? '',
       image_url: product.raw_image_url || product.image_url || product.image || '',
+      active: product.active !== false,
+      seo_title: product.seo_title ?? '',
+      seo_description: product.seo_description ?? '',
       badge: product.badge ?? '',
       rating:
         product.rating !== null && product.rating !== undefined
@@ -466,8 +471,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
         product.reviews_count !== null && product.reviews_count !== undefined
           ? product.reviews_count
           : 0,
-      specsText: Array.isArray(product.specs) ? product.specs.join('\n') : '',
-      active: product.active !== false
+      specsText: Array.isArray(product.specs) ? product.specs.join('\n') : ''
     });
     setIsProductModalOpen(true);
   };
@@ -530,10 +534,12 @@ export default function AdminPage({ defaultTab = 'products' }) {
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     setPersistenceError('');
+
     if (!formData.name.trim()) {
       showToast('Informe o nome do produto.');
       return;
     }
+
     const numericPrice = Number(formData.price);
     if (!Number.isFinite(numericPrice) || numericPrice <= 0) {
       showToast('O preço deve ser um número maior que 0 Kz.');
@@ -544,34 +550,60 @@ export default function AdminPage({ defaultTab = 'products' }) {
     const parsedReviews = parseInt(formData.reviews_count, 10);
     const parsedRating = Number(formData.rating);
 
+    // Formatar e validar slug
+    const cleanSlug = createSlug(formData.slug || formData.name);
+    if (!cleanSlug) {
+      showToast('Por favor, informe um slug ou nome válido.');
+      return;
+    }
+
+    // Verificar se outro produto já possui esse mesmo slug
+    const duplicateSlugProduct = products.find(
+      p =>
+        createSlug(p.slug || p.name) === cleanSlug &&
+        String(p.id) !== String(editingProduct?.id) &&
+        String(p.supabaseId) !== String(editingProduct?.id)
+    );
+
+    if (duplicateSlugProduct) {
+      const errSlugMsg = `O slug "${cleanSlug}" já está sendo usado pelo produto "${duplicateSlugProduct.name}". Defina um slug diferente.`;
+      setPersistenceError(errSlugMsg);
+      showToast(errSlugMsg);
+      return;
+    }
+
     setSavingProduct(true);
     try {
       const payload = {
         name: formData.name.trim(),
-        slug: (formData.slug || createSlug(formData.name)).trim(),
+        brand: formData.brand.trim() || 'Oraimo',
+        category: formData.category,
+        sku: formData.sku.trim() || null,
+        slug: cleanSlug,
         description: formData.description.trim(),
         price: numericPrice,
-        old_price:
-          formData.old_price !== '' &&
-          formData.old_price !== null &&
-          Number(formData.old_price) > 0
-            ? Number(formData.old_price)
-            : null,
         sale_price:
           formData.sale_price !== '' &&
           formData.sale_price !== null &&
           Number(formData.sale_price) > 0
             ? Number(formData.sale_price)
             : null,
-        category: formData.category,
-        brand: formData.brand.trim() || 'Oraimo',
-        sku: formData.sku.trim() || null,
+        old_price:
+          formData.old_price !== '' &&
+          formData.old_price !== null &&
+          Number(formData.old_price) > 0
+            ? Number(formData.old_price)
+            : null,
         stock: Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : 0,
         image_url:
           formData.image_url.trim() ||
           editingProduct?.raw_image_url ||
           editingProduct?.image_url ||
+          editingProduct?.image ||
           '/logo.jpg',
+        active: Boolean(formData.active),
+        seo_title: formData.seo_title.trim() || null,
+        seo_description: formData.seo_description.trim() || null,
         badge: formData.badge.trim() || null,
         rating:
           Number.isFinite(parsedRating) && parsedRating > 0
@@ -582,8 +614,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
         specs: formData.specsText
           .split('\n')
           .map(s => s.trim())
-          .filter(Boolean),
-        active: Boolean(formData.active)
+          .filter(Boolean)
       };
 
       if (editingProduct) {
@@ -2316,191 +2347,383 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
         <div className="modal-overlay" onClick={() => setIsProductModalOpen(false)}>
           <div
             className="modal-content"
-            style={{ maxWidth: '640px', maxHeight: '90vh', overflowY: 'auto' }}
+            style={{ maxWidth: '780px', maxHeight: '92vh', overflowY: 'auto', padding: '24px 28px' }}
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 900 }}>
-                {editingProduct ? 'Editar Produto' : 'Novo Produto'}
-              </h2>
-              <button onClick={() => setIsProductModalOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}>
-                <X size={20} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', paddingBottom: '14px', borderBottom: '1px solid var(--border-light)' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.35rem', fontWeight: 900, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Package size={22} color="var(--primary-orange)" />
+                  {editingProduct ? 'Editar Produto' : 'Cadastrar Novo Produto'}
+                </h2>
+                <p style={{ margin: '4px 0 0', fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                  {editingProduct
+                    ? `Atualize as informações comerciais, estoque e SEO do produto "${editingProduct.name}".`
+                    : 'Preencha os dados completos do produto para publicação no catálogo e mecanismos de busca.'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProductModalOpen(false)}
+                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '6px', borderRadius: '8px', color: 'var(--text-muted)' }}
+              >
+                <X size={22} />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct}>
-              <div className="form-group">
-                <label className="form-label">Nome do Produto *</label>
-                <input
-                  type="text"
-                  required
-                  className="form-input"
-                  value={formData.name}
-                  onChange={e => {
-                    const nextName = e.target.value;
-                    setFormData(prev => ({
-                      ...prev,
-                      name: nextName,
-                      slug: slugManuallyEdited ? prev.slug : createSlug(nextName)
-                    }));
-                  }}
-                />
-              </div>
+            <form onSubmit={handleSaveProduct} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
-              <div className="form-group">
-                <label className="form-label">URL Amigável (Slug) *</label>
-                <input
-                  type="text"
-                  required
-                  className="form-input"
-                  value={formData.slug}
-                  onChange={e => {
-                    setSlugManuallyEdited(true);
-                    setFormData(prev => ({ ...prev, slug: createSlug(e.target.value) }));
-                  }}
-                />
-              </div>
+              {/* SEÇÃO 1: INFORMAÇÕES DO PRODUTO */}
+              <div style={{ background: 'var(--bg-body)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <Package size={16} /> 1. Informações do Produto
+                </div>
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Preço Regular (Kz) *</label>
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label">Nome do Produto *</label>
                   <input
-                    type="number"
+                    type="text"
                     required
-                    min="1"
+                    placeholder="Ex: WATCH NOVA 2 - Smartwatch Inteligente Oraimo"
                     className="form-input"
-                    value={formData.price}
-                    onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    value={formData.name}
+                    onChange={e => {
+                      const nextName = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        name: nextName,
+                        slug: slugManuallyEdited ? prev.slug : createSlug(nextName)
+                      }));
+                    }}
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Preço Promocional (Opcional)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    placeholder="Ex: 29000"
-                    className="form-input"
-                    value={formData.sale_price}
-                    onChange={e => setFormData(prev => ({ ...prev, sale_price: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Categoria *</label>
-                  <select
-                    className="form-input"
-                    value={formData.category}
-                    onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                  >
-                    {CATEGORIES.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">Estoque (Unidades)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    className="form-input"
-                    value={formData.stock}
-                    onChange={e => setFormData(prev => ({ ...prev, stock: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="form-row">
-                <div className="form-group">
-                  <label className="form-label">Marca</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.brand}
-                    onChange={e => setFormData(prev => ({ ...prev, brand: e.target.value }))}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label className="form-label">SKU (Código)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={formData.sku}
-                    onChange={e => setFormData(prev => ({ ...prev, sku: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Imagem do Produto (URL ou Envio para Supabase Storage)</label>
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
-                  <input
-                    type="text"
-                    placeholder="https://... ou caminho local"
-                    className="form-input"
-                    style={{ flex: 1 }}
-                    value={formData.image_url}
-                    onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                  />
-                  <label
-                    className="nav-btn"
-                    style={{ cursor: uploadingImage ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
-                  >
-                    <Upload size={15} />
-                    <span>{uploadingImage ? 'Enviando...' : 'Carregar'}</span>
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Marca</label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      style={{ display: 'none' }}
-                      disabled={uploadingImage}
-                      onChange={handleImageFileUpload}
+                      type="text"
+                      placeholder="Ex: Oraimo"
+                      className="form-input"
+                      value={formData.brand}
+                      onChange={e => setFormData(prev => ({ ...prev, brand: e.target.value }))}
                     />
-                  </label>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Categoria *</label>
+                    <select
+                      className="form-input"
+                      value={formData.category}
+                      onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                    >
+                      {CATEGORIES.map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">SKU (Código Único)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: AT-WN2-002"
+                      className="form-input"
+                      value={formData.sku}
+                      onChange={e => setFormData(prev => ({ ...prev, sku: e.target.value }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>URL Amigável (Slug) *</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSlugManuallyEdited(false);
+                        setFormData(prev => ({ ...prev, slug: createSlug(prev.name) }));
+                      }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--primary-orange)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Auto-gerar do Nome
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    placeholder="watch-nova-2-smartwatch-inteligente-oraimo"
+                    className="form-input"
+                    value={formData.slug}
+                    onChange={e => {
+                      setSlugManuallyEdited(true);
+                      setFormData(prev => ({ ...prev, slug: createSlug(e.target.value) }));
+                    }}
+                  />
+                  <div style={{ fontSize: '0.76rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Link público do produto: <code>/produto/{formData.slug || 'slug-do-produto'}</code>
+                  </div>
                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Descrição do Produto</label>
+              {/* SEÇÃO 2: PREÇO E ESTOQUE */}
+              <div style={{ background: 'var(--bg-body)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: '#10B981', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <DollarSign size={16} /> 2. Preço e Estoque
+                </div>
+
+                <div className="form-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Preço Regular (Kz) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      placeholder="Ex: 48900"
+                      className="form-input"
+                      value={formData.price}
+                      onChange={e => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Preço Promocional (Kz)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="Ex: 41500 (Opcional)"
+                      className="form-input"
+                      value={formData.sale_price}
+                      onChange={e => setFormData(prev => ({ ...prev, sale_price: e.target.value }))}
+                    />
+                    {Number(formData.sale_price) > 0 && Number(formData.price) > Number(formData.sale_price) && (
+                      <span style={{ fontSize: '0.74rem', color: '#10B981', fontWeight: 700, marginTop: '2px', display: 'block' }}>
+                        Desconto de {Math.round(((formData.price - formData.sale_price) / formData.price) * 100)}% aplicado!
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Estoque (Unidades) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      placeholder="Ex: 15"
+                      className="form-input"
+                      value={formData.stock}
+                      onChange={e => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                    />
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, marginTop: '2px', display: 'block', color: Number(formData.stock) > 0 ? '#10B981' : '#DC2626' }}>
+                      {Number(formData.stock) > 0 ? `Disponível (${formData.stock} un)` : 'Esgotado'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SEÇÃO 3: DESCRIÇÃO COMPLETA */}
+              <div style={{ background: 'var(--bg-body)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#1E5C9E', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <FileText size={16} /> 3. Descrição Completa do Produto
+                </div>
+                <p style={{ margin: '0 0 10px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  Insira o texto completo, parágrafos, destaques e especificações com bullet points (•). Aparecerá de forma organizada na página pública.
+                </p>
                 <textarea
-                  rows={3}
+                  rows={8}
                   className="form-input"
+                  style={{ fontFamily: 'inherit', fontSize: '0.88rem', lineHeight: 1.6 }}
+                  placeholder={"Mais tecnologia no seu pulso.\n\nO Oraimo Watch Nova 2 combina um design moderno com uma tela AMOLED curva de 2,01\", proporcionando uma experiência visual confortável e envolvente.\n\nPrincipais recursos:\n• Tela AMOLED curva de 2,01\"\n• Bluetooth 5.3\n• Monitoramento de frequência cardíaca\n• Bateria de longa duração\n• Resistência IP68"}
                   value={formData.description}
                   onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Especificações Técnicas (uma por linha)</label>
-                <textarea
-                  rows={3}
-                  placeholder="Ex: Autonomia: 40 horas\nBluetooth: 5.3"
-                  className="form-input"
-                  value={formData.specsText}
-                  onChange={e => setFormData(prev => ({ ...prev, specsText: e.target.value }))}
-                />
+              {/* SEÇÃO 4: IMAGEM DO PRODUTO */}
+              <div style={{ background: 'var(--bg-body)', padding: '18px 20px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  <Upload size={16} /> 4. Imagem do Produto
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '16px', alignItems: 'center' }}>
+                  {/* Pré-visualização da imagem */}
+                  <div
+                    style={{
+                      width: '120px',
+                      height: '120px',
+                      borderRadius: '12px',
+                      border: '2px dashed var(--border-light)',
+                      background: '#FFF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      position: 'relative'
+                    }}
+                  >
+                    {formData.image_url ? (
+                      <img
+                        src={formData.image_url}
+                        alt="Pré-visualização"
+                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        onError={(e) => { e.currentTarget.src = '/logo.jpg'; }}
+                      />
+                    ) : (
+                      <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.72rem', padding: '6px' }}>
+                        Sem imagem selecionada
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Ações e URL da Imagem */}
+                  <div>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '8px', flexWrap: 'wrap' }}>
+                      <label
+                        className="nav-btn nav-btn-orange"
+                        style={{
+                          cursor: uploadingImage ? 'wait' : 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '8px 16px',
+                          fontSize: '0.84rem'
+                        }}
+                      >
+                        <Upload size={15} />
+                        <span>{uploadingImage ? 'Enviando ao Storage...' : (formData.image_url ? 'Alterar Imagem' : 'Carregar Imagem (Storage)')}</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          style={{ display: 'none' }}
+                          disabled={uploadingImage}
+                          onChange={handleImageFileUpload}
+                        />
+                      </label>
+
+                      {formData.image_url && (
+                        <button
+                          type="button"
+                          className="nav-btn"
+                          onClick={() => setFormData(prev => ({ ...prev, image_url: '' }))}
+                          style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+                        >
+                          Limpar
+                        </button>
+                      )}
+                    </div>
+
+                    <input
+                      type="text"
+                      placeholder="Ou cole aqui o link da imagem (URL pública ou Storage)..."
+                      className="form-input"
+                      value={formData.image_url}
+                      onChange={e => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
+                    />
+
+                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                      Bucket de destino: <code>products</code> no Supabase Storage. Se você não selecionar uma nova imagem ao editar, a imagem anterior será mantida automaticamente.
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '14px 0' }}>
-                <input
-                  type="checkbox"
-                  id="prod-active"
-                  checked={formData.active}
-                  onChange={e => setFormData(prev => ({ ...prev, active: e.target.checked }))}
-                />
-                <label htmlFor="prod-active" style={{ fontSize: '0.88rem', fontWeight: 700, cursor: 'pointer' }}>
-                  Produto ativo e visível na loja pública
-                </label>
+              {/* SEÇÃO 5: PUBLICAÇÃO */}
+              <div style={{ background: 'var(--bg-body)', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Globe size={16} color="var(--primary-orange)" /> 5. Publicação no Site
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Controle a visibilidade pública deste produto no catálogo da loja online.
+                    </div>
+                  </div>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', background: 'var(--bg-card)', padding: '6px 14px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                    <input
+                      type="checkbox"
+                      id="prod-active-toggle"
+                      checked={formData.active}
+                      onChange={e => setFormData(prev => ({ ...prev, active: e.target.checked }))}
+                    />
+                    <span style={{ fontSize: '0.88rem', fontWeight: 800, color: formData.active ? '#10B981' : '#DC2626' }}>
+                      {formData.active ? 'Produto Ativo (Visível na loja)' : 'Produto Inativo (Oculto)'}
+                    </span>
+                  </label>
+                </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '16px' }}>
-                <button type="button" className="nav-btn" onClick={() => setIsProductModalOpen(false)}>Cancelar</button>
-                <button type="submit" disabled={savingProduct} className="nav-btn nav-btn-orange">
-                  {savingProduct ? 'Gravando no Supabase...' : 'Salvar Produto'}
+              {/* SEÇÃO 6: SEO — OTIMIZAÇÃO PARA MECANISMOS DE BUSCA */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(30, 92, 158, 0.05) 0%, rgba(255, 101, 0, 0.05) 100%)', padding: '20px', borderRadius: '14px', border: '1px solid rgba(30, 92, 158, 0.25)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#1E5C9E', fontWeight: 900, fontSize: '0.92rem' }}>
+                  <Search size={18} /> 🔎 SEO — Otimização para mecanismos de busca
+                </div>
+
+                {/* Nota explicativa oficial */}
+                <div style={{ background: 'rgba(30, 92, 158, 0.08)', padding: '10px 14px', borderRadius: '8px', borderLeft: '4px solid #1E5C9E', fontSize: '0.82rem', color: 'var(--text-main)', marginBottom: '16px', lineHeight: 1.5 }}>
+                  <strong>Aviso Importante:</strong> Esses campos são utilizados para ajudar o Google e outros mecanismos de busca a encontrar e compreender melhor este produto. Eles <strong>não são exibidos como conteúdo da página</strong> para os visitantes.
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>Título SEO (Meta Title)</label>
+                    <span style={{ fontSize: '0.74rem', color: formData.seo_title?.length > 60 ? '#DC2626' : 'var(--text-muted)' }}>
+                      {formData.seo_title?.length || 0} / 60 caracteres recomendados
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder='Ex: Oraimo Watch Nova 2 2.01" AMOLED | AQUI TEM Angola'
+                    className="form-input"
+                    value={formData.seo_title}
+                    onChange={e => setFormData(prev => ({ ...prev, seo_title: e.target.value }))}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Aplicado na tag <code>&lt;title&gt;</code> do navegador e no título do resultado de busca do Google.
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                    <label className="form-label" style={{ marginBottom: 0 }}>Descrição SEO (Meta Description)</label>
+                    <span style={{ fontSize: '0.74rem', color: formData.seo_description?.length > 160 ? '#DC2626' : 'var(--text-muted)' }}>
+                      {formData.seo_description?.length || 0} / 160 caracteres recomendados
+                    </span>
+                  </div>
+                  <textarea
+                    rows={3}
+                    placeholder={'Ex: Compre o Oraimo Watch Nova 2 na AQUI TEM Angola. Smartwatch com tela AMOLED de 2,01", Bluetooth 5.3, monitoramento de saúde, IP68 e bateria de longa duração.'}
+                    className="form-input"
+                    value={formData.seo_description}
+                    onChange={e => setFormData(prev => ({ ...prev, seo_description: e.target.value }))}
+                  />
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                    Aplicado na tag <code>&lt;meta name="description"&gt;</code> e na prévia do link no WhatsApp e Facebook.
+                  </div>
+                </div>
+              </div>
+
+              {/* RODAPÉ DO FORMULÁRIO */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--border-light)' }}>
+                <button
+                  type="button"
+                  className="nav-btn"
+                  onClick={() => setIsProductModalOpen(false)}
+                >
+                  Cancelar
                 </button>
+
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button
+                    type="submit"
+                    disabled={savingProduct}
+                    className="nav-btn nav-btn-orange"
+                    style={{ padding: '10px 24px', fontSize: '0.92rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+                  >
+                    <Save size={16} />
+                    {savingProduct ? 'Gravando no Supabase...' : (editingProduct ? 'Salvar Alterações' : 'Salvar Produto')}
+                  </button>
+                </div>
               </div>
             </form>
           </div>

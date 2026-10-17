@@ -71,8 +71,19 @@ export default function ProductPage() {
 
     const effectivePrice = getEffectivePrice(product);
     const canonicalSlug = product.slug || createSlug(product.name);
-    const title = `${product.name} | AQUI TEM Angola`;
-    const description = `${product.description} Compre na AQUI TEM (${formatPriceKz(effectivePrice, lang)}) com entrega em Luanda e províncias de Angola. WhatsApp: +244 950 752 933.`;
+
+    // SEO Title: Usado estritamente no <title> e tags sociais para o Google/mecanismos de busca
+    const title =
+      typeof product.seo_title === 'string' && product.seo_title.trim() !== ''
+        ? product.seo_title.trim()
+        : `${product.name} | AQUI TEM Angola`;
+
+    // SEO Description: Usado estritamente no <meta name="description"> e OpenGraph (não exibido no corpo)
+    const description =
+      typeof product.seo_description === 'string' && product.seo_description.trim() !== ''
+        ? product.seo_description.trim()
+        : `${product.description?.slice(0, 140) || product.name} Compre na AQUI TEM (${formatPriceKz(effectivePrice, lang)}) com entrega em Luanda e províncias de Angola. WhatsApp: +244 950 752 933.`;
+
     const productUrl = `https://aqui-tem29.vercel.app/produto/${canonicalSlug}`;
 
     document.title = title;
@@ -91,6 +102,12 @@ export default function ProductPage() {
 
     let ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc) ogDesc.setAttribute('content', description);
+
+    let twitterTitle = document.querySelector('meta[name="twitter:title"]');
+    if (twitterTitle) twitterTitle.setAttribute('content', title);
+
+    let twitterDesc = document.querySelector('meta[name="twitter:description"]');
+    if (twitterDesc) twitterDesc.setAttribute('content', description);
 
     let ogUrl = document.querySelector('meta[property="og:url"]');
     if (ogUrl) ogUrl.setAttribute('content', productUrl);
@@ -402,7 +419,9 @@ export default function ProductPage() {
                 <Info size={16} color="var(--primary-orange)" />
                 <span>{t('description')} & {t('technicalSpecs')}</span>
               </div>
-              <p className="modal-desc-text">{product.description}</p>
+              <div className="modal-desc-text" style={{ whiteSpace: 'pre-line', lineHeight: 1.7, fontSize: '0.96rem' }}>
+                {product.description}
+              </div>
               {product.specs?.length > 0 && (
                 <div className="modal-specs-pills">
                   {product.specs.map((spec, index) => (

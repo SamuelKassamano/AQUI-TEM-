@@ -356,7 +356,9 @@ export function normalizeProduct(raw, index = 0) {
     reviews_count,
     reviewsCount: reviews_count,
     badge,
-    specs
+    specs,
+    seo_title: raw.seo_title || null,
+    seo_description: raw.seo_description || null
   };
 }
 
@@ -378,6 +380,8 @@ export function normalizeProduct(raw, index = 0) {
  * - reviews_count
  * - badge
  * - specs
+ * - seo_title (text)
+ * - seo_description (text)
  */
 export function toSupabaseProductPayload(product) {
   const baseMatch = findBaseCatalogMatch(product);
@@ -466,6 +470,16 @@ export function toSupabaseProductPayload(product) {
         .filter(Boolean)
     : [];
 
+  const seo_title =
+    typeof product.seo_title === 'string' && product.seo_title.trim() !== ''
+      ? product.seo_title.trim()
+      : null;
+
+  const seo_description =
+    typeof product.seo_description === 'string' && product.seo_description.trim() !== ''
+      ? product.seo_description.trim()
+      : null;
+
   return {
     name,
     slug,
@@ -482,7 +496,9 @@ export function toSupabaseProductPayload(product) {
     rating,
     reviews_count,
     badge,
-    specs
+    specs,
+    seo_title,
+    seo_description
   };
 }
 
