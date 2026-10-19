@@ -21,7 +21,9 @@ import {
   Video,
   ShieldCheck,
   MapPin,
-  MessageCircle
+  MessageCircle,
+  Users,
+  BarChart3
 } from 'lucide-react';
 import OriginalLogoImage from './OriginalLogoImage';
 import LanguageSelector from './LanguageSelector';
@@ -162,6 +164,17 @@ export default function Navbar() {
                 </span>
               )}
             </button>
+
+            <Link
+              to="/admin"
+              className="nav-btn nav-btn-crm"
+              title="Painel Administrativo & CRM"
+              aria-label="Painel Administrativo & CRM"
+              style={{ textDecoration: 'none' }}
+            >
+              <Lock size={15} />
+              <span className="nav-btn-label">Admin & CRM</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -259,6 +272,10 @@ export default function Navbar() {
 
               <div style={{ borderTop: '1px solid var(--border-light)', margin: '10px 0' }}></div>
 
+              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                Gestão & Administração:
+              </span>
+
               <Link
                 to="/admin"
                 className="category-chip"
@@ -274,7 +291,26 @@ export default function Navbar() {
                 }}
                 onClick={() => setIsSideMenuOpen(false)}
               >
-                <Lock size={15} /> Painel Administrativo & CRM
+                <Lock size={15} /> Painel Administrativo (Produtos)
+              </Link>
+
+              <Link
+                to="/admin?tab=crm"
+                className="category-chip"
+                style={{
+                  width: '100%',
+                  textAlign: 'left',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  textDecoration: 'none',
+                  background: 'rgba(255, 101, 0, 0.08)',
+                  color: 'var(--primary-orange)',
+                  borderColor: 'rgba(255, 101, 0, 0.25)'
+                }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <BarChart3 size={15} /> CRM & Gestão de Leads
               </Link>
 
               <a

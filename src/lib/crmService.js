@@ -167,32 +167,31 @@ export async function captureLeadInSupabase(leadPayload) {
 
   if (isSupabaseConfigured && supabase) {
     try {
-      const { data, error } = await supabase
+      // Inserção compatível com RLS anônimo (não executa .select() para evitar violação de RLS em visitantes)
+      const { error } = await supabase
         .from('crm_leads')
-        .insert(leadRow)
-        .select()
-        .single();
+        .insert([leadRow]);
 
-      if (!error && data) {
+      if (!error) {
         savedLead = {
-          id: data.id,
-          leadCode: data.lead_code,
-          name: data.name,
-          phone: data.phone,
-          city: data.city,
-          address: data.address,
-          productName: data.product_name,
-          productPrice: Number(data.product_price) || 0,
-          totalValue: Number(data.total_value) || 0,
-          status: data.status,
-          trafficSource: data.traffic_source,
-          timeOnSite: data.time_on_site,
-          pagesViewed: data.pages_viewed,
-          notes: data.notes,
-          history: data.history,
-          createdAt: data.created_at
+          id: `lead-${Date.now()}`,
+          leadCode: leadRow.lead_code,
+          name: leadRow.name,
+          phone: leadRow.phone,
+          city: leadRow.city,
+          address: leadRow.address,
+          productName: leadRow.product_name,
+          productPrice: Number(leadRow.product_price) || 0,
+          totalValue: Number(leadRow.total_value) || 0,
+          status: leadRow.status,
+          trafficSource: leadRow.traffic_source,
+          timeOnSite: leadRow.time_on_site,
+          pagesViewed: leadRow.pages_viewed,
+          notes: leadRow.notes,
+          history: leadRow.history,
+          createdAt: new Date().toISOString()
         };
-      } else if (error) {
+      } else {
         console.warn('Erro ao inserir lead no Supabase (será enviado via Webhook):', error.message);
       }
     } catch (e) {

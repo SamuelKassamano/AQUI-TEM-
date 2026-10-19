@@ -245,6 +245,17 @@ export default function App() {
                 </span>
               )}
             </button>
+
+            <Link
+              to="/admin"
+              className="nav-btn nav-btn-crm"
+              title="Painel Administrativo & CRM"
+              aria-label="Painel Administrativo & CRM"
+              style={{ textDecoration: 'none' }}
+            >
+              <Lock size={15} />
+              <span className="nav-btn-label">Admin & CRM</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -341,22 +352,27 @@ export default function App() {
                 <Video size={15} /> {t('videos')}
               </button>
 
-              <Link
-                to="/admin?tab=crm"
-                className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', background: 'rgba(30, 92, 158, 0.08)', color: '#1E5C9E', borderColor: '#1E5C9E' }}
-                onClick={() => setIsSideMenuOpen(false)}
-              >
-                <Lock size={15} /> CRM & Leads (Restrito)
-              </Link>
+              <div style={{ borderTop: '1px solid var(--border-light)', margin: '6px 0' }}></div>
+              <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase' }}>
+                Gestão & Administração:
+              </span>
 
               <Link
                 to="/admin"
                 className="category-chip"
-                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none' }}
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', background: 'rgba(30, 92, 158, 0.08)', color: '#1E5C9E' }}
                 onClick={() => setIsSideMenuOpen(false)}
               >
-                <Lock size={15} /> {t('adminPanel')}
+                <Lock size={15} /> Painel Administrativo (Produtos)
+              </Link>
+
+              <Link
+                to="/admin?tab=crm"
+                className="category-chip"
+                style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', background: 'rgba(255, 101, 0, 0.08)', color: 'var(--primary-orange)', borderColor: 'rgba(255, 101, 0, 0.25)' }}
+                onClick={() => setIsSideMenuOpen(false)}
+              >
+                <BarChart3 size={15} /> CRM & Gestão de Leads
               </Link>
 
               <div style={{ borderTop: '1px solid var(--border-light)', margin: '6px 0' }}></div>

@@ -213,6 +213,37 @@ export function getProductMainImage(product, baseMatch = null) {
   return fallbackLocal;
 }
 
+const SEO_STORAGE_KEY = 'aquitem_products_seo_v1';
+
+export function getLocalSeoMetadata(productIdOrSlug) {
+  if (typeof window === 'undefined' || !productIdOrSlug) return null;
+  try {
+    const raw = localStorage.getItem(SEO_STORAGE_KEY);
+    if (!raw) return null;
+    const map = JSON.parse(raw);
+    return map[String(productIdOrSlug).trim()] || null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveLocalSeoMetadata(productIdOrSlug, seoTitle, seoDescription) {
+  if (typeof window === 'undefined' || !productIdOrSlug) return;
+  try {
+    const raw = localStorage.getItem(SEO_STORAGE_KEY);
+    const map = raw ? JSON.parse(raw) : {};
+    const key = String(productIdOrSlug).trim();
+    map[key] = {
+      seo_title: seoTitle || null,
+      seo_description: seoDescription || null,
+      updated_at: new Date().toISOString()
+    };
+    localStorage.setItem(SEO_STORAGE_KEY, JSON.stringify(map));
+  } catch {
+    // ignore
+  }
+}
+
 /**
  * Normalizes a product record from Supabase (`products` table) or local catalog
  * so both schemas work seamlessly across the entire app.
@@ -357,8 +388,16 @@ export function normalizeProduct(raw, index = 0) {
     reviewsCount: reviews_count,
     badge,
     specs,
-    seo_title: raw.seo_title || null,
-    seo_description: raw.seo_description || null
+    seo_title:
+      raw.seo_title ||
+      getLocalSeoMetadata(raw.id)?.seo_title ||
+      getLocalSeoMetadata(slug)?.seo_title ||
+      null,
+    seo_description:
+      raw.seo_description ||
+      getLocalSeoMetadata(raw.id)?.seo_description ||
+      getLocalSeoMetadata(slug)?.seo_description ||
+      null
   };
 }
 

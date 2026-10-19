@@ -8,6 +8,7 @@ import {
   requireAdminSession,
   normalizeProduct,
   toSupabaseProductPayload,
+  saveLocalSeoMetadata,
   getEffectivePrice,
   getPreviousPrice,
   formatPriceKz
@@ -402,6 +403,10 @@ export function StoreProvider({ children }) {
       }
 
       const insertedRow = Array.isArray(data) && data[0] ? data[0] : payload;
+      if (payload.seo_title || payload.seo_description) {
+        if (insertedRow.id) saveLocalSeoMetadata(insertedRow.id, payload.seo_title, payload.seo_description);
+        if (insertedRow.slug) saveLocalSeoMetadata(insertedRow.slug, payload.seo_title, payload.seo_description);
+      }
       const normalizedRow = normalizeProduct(insertedRow, products.length);
 
       // Immediately add to products state
@@ -533,6 +538,12 @@ export function StoreProvider({ children }) {
 
       if (error) {
         throw error;
+      }
+
+      if (payloadToSave?.seo_title || payloadToSave?.seo_description) {
+        if (targetId) saveLocalSeoMetadata(targetId, payloadToSave.seo_title, payloadToSave.seo_description);
+        if (existing?.slug) saveLocalSeoMetadata(existing.slug, payloadToSave.seo_title, payloadToSave.seo_description);
+        if (id) saveLocalSeoMetadata(id, payloadToSave.seo_title, payloadToSave.seo_description);
       }
 
       // Update local React state immediately so UI updates with zero latency
