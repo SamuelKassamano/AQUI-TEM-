@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { createSlug } from '../utils/slug';
 import { PRODUCTS, PRODUCT_FALLBACK_IMAGES } from '../../data/products';
+import { getOfficialPricing } from '../data/productPricing.js';
 
 export const SUPABASE_PROJECT_ID = 'essjwjbtzytefycjodgh';
 
@@ -65,6 +66,12 @@ export async function requireAdminSession() {
  */
 export function getEffectivePrice(product) {
   if (!product) return 0;
+  // If official catalog pricing applies, always enforce the verified formula (Cost + 25% + 4000 Kz)
+  const official = getOfficialPricing(product);
+  if (official && Number(official.calculatedSalePrice) > 0) {
+    return Number(official.calculatedSalePrice);
+  }
+
   const salePrice = Number(product.sale_price ?? product.salePrice);
   const regularPrice = Number(product.price);
 
@@ -91,6 +98,12 @@ export function getEffectivePrice(product) {
 export function getPreviousPrice(product) {
   if (!product) return null;
   const effective = getEffectivePrice(product);
+  const official = getOfficialPricing(product);
+
+  if (official && Number(official.regularPrice) > effective && effective > 0) {
+    return Number(official.regularPrice);
+  }
+
   const oldPrice = Number(product.old_price ?? product.oldPrice);
   const regularPrice = Number(product.price);
 
@@ -252,12 +265,13 @@ export function normalizeProduct(raw, index = 0) {
   if (!raw) return null;
 
   const baseMatch = findBaseCatalogMatch(raw);
+  const official = getOfficialPricing(raw) || (baseMatch ? getOfficialPricing(baseMatch) : null);
   const isSupabaseRow = Boolean(
     raw.id && typeof raw.id === 'string' && raw.id.length > 10
   );
 
-  const name = String(raw.name ?? baseMatch?.name ?? 'Produto AQUI TEM').trim();
-  const slug = String(raw.slug || baseMatch?.slug || createSlug(name)).trim();
+  const name = String(raw.name ?? official?.name ?? baseMatch?.name ?? 'Produto AQUI TEM').trim();
+  const slug = String(raw.slug || official?.slug || baseMatch?.slug || createSlug(name)).trim();
   const price = Number(raw.price ?? baseMatch?.price ?? 0);
 
   const salePriceRaw = isSupabaseRow
@@ -281,6 +295,20 @@ export function normalizeProduct(raw, index = 0) {
     Number(oldPriceRaw) > 0
       ? Number(oldPriceRaw)
       : null;
+
+  const resolvedPrice = official?.regularPrice
+    ? official.regularPrice
+    : Number.isFinite(price) && price > 0
+    ? price
+    : (baseMatch?.price || 10000);
+
+  const resolvedSalePrice = official?.calculatedSalePrice
+    ? official.calculatedSalePrice
+    : sale_price;
+
+  const resolvedOldPrice = official?.regularPrice
+    ? official.regularPrice
+    : old_price;
 
   const stockRaw = isSupabaseRow ? raw.stock : (raw.stock ?? baseMatch?.stock);
   const parsedStock = parseInt(stockRaw, 10);
@@ -328,16 +356,16 @@ export function normalizeProduct(raw, index = 0) {
   const active =
     raw.active !== undefined && raw.active !== null ? Boolean(raw.active) : true;
   const category = String(
-    raw.category || baseMatch?.category || 'Acessórios & Tech'
+    raw.category || official?.category || baseMatch?.category || 'Acessórios & Tech'
   ).trim();
   const brand =
     raw.brand !== undefined && raw.brand !== null && String(raw.brand).trim() !== ''
       ? String(raw.brand).trim()
-      : inferBrand(baseMatch || raw);
+      : (official?.brand || inferBrand(baseMatch || raw));
   const sku =
     raw.sku !== undefined && raw.sku !== null && String(raw.sku).trim() !== ''
       ? String(raw.sku).trim()
-      : String(baseMatch?.sku || `AT-${String(index + 1).padStart(3, '0')}`).trim();
+      : String(official?.sku || baseMatch?.sku || `AT-${String(index + 1).padStart(3, '0')}`).trim();
   const badge = isSupabaseRow
     ? (raw.badge !== undefined && raw.badge !== null ? String(raw.badge).trim() : '')
     : (raw.badge !== undefined && raw.badge !== null && String(raw.badge).trim() !== ''
@@ -349,7 +377,8 @@ export function normalizeProduct(raw, index = 0) {
       ...(Array.isArray(baseMatch?.slugAliases) ? baseMatch.slugAliases : []),
       ...(Array.isArray(raw.slugAliases) ? raw.slugAliases : []),
       ...(baseMatch?.slug ? [baseMatch.slug] : []),
-      ...(slug ? [slug] : [])
+      ...(slug ? [slug] : []),
+      ...(official?.slug ? [official.slug] : [])
     ])
   );
 
@@ -366,11 +395,11 @@ export function normalizeProduct(raw, index = 0) {
         ? (raw.description ?? '')
         : (raw.description || baseMatch?.description || '')
     ).trim(),
-    price: Number.isFinite(price) && price > 0 ? price : (baseMatch?.price || 10000),
-    sale_price,
-    salePrice: sale_price,
-    old_price,
-    oldPrice: old_price,
+    price: resolvedPrice,
+    sale_price: resolvedSalePrice,
+    salePrice: resolvedSalePrice,
+    old_price: resolvedOldPrice,
+    oldPrice: resolvedOldPrice,
     category,
     brand,
     stock,
@@ -390,11 +419,13 @@ export function normalizeProduct(raw, index = 0) {
     specs,
     seo_title:
       raw.seo_title ||
+      official?.seoTitle ||
       getLocalSeoMetadata(raw.id)?.seo_title ||
       getLocalSeoMetadata(slug)?.seo_title ||
       null,
     seo_description:
       raw.seo_description ||
+      official?.seoDescription ||
       getLocalSeoMetadata(raw.id)?.seo_description ||
       getLocalSeoMetadata(slug)?.seo_description ||
       null
@@ -424,33 +455,40 @@ export function normalizeProduct(raw, index = 0) {
  */
 export function toSupabaseProductPayload(product) {
   const baseMatch = findBaseCatalogMatch(product);
+  const official = getOfficialPricing(product) || (baseMatch ? getOfficialPricing(baseMatch) : null);
 
-  const name = String(product.name ?? baseMatch?.name ?? '').trim();
-  const slug = String(product.slug || baseMatch?.slug || createSlug(name)).trim();
+  const name = String(product.name ?? official?.name ?? baseMatch?.name ?? '').trim();
+  const slug = String(product.slug || official?.slug || baseMatch?.slug || createSlug(name)).trim();
   const description = String(product.description ?? '').trim();
 
   const priceNum = Number(product.price);
-  const price = Number.isFinite(priceNum) && priceNum > 0 ? priceNum : (baseMatch?.price || 1000);
+  const price = official?.regularPrice
+    ? official.regularPrice
+    : Number.isFinite(priceNum) && priceNum > 0
+    ? priceNum
+    : (baseMatch?.price || 1000);
 
   const rawSalePrice = 'sale_price' in product ? product.sale_price : product.salePrice;
   const salePriceNum =
     rawSalePrice !== null && rawSalePrice !== undefined && rawSalePrice !== ''
       ? Number(rawSalePrice)
       : null;
-  const sale_price =
-    salePriceNum !== null && Number.isFinite(salePriceNum) && salePriceNum > 0
-      ? salePriceNum
-      : null;
+  const sale_price = official?.calculatedSalePrice
+    ? official.calculatedSalePrice
+    : salePriceNum !== null && Number.isFinite(salePriceNum) && salePriceNum > 0
+    ? salePriceNum
+    : null;
 
   const rawOldPrice = 'old_price' in product ? product.old_price : product.oldPrice;
   const oldPriceNum =
     rawOldPrice !== null && rawOldPrice !== undefined && rawOldPrice !== ''
       ? Number(rawOldPrice)
       : null;
-  const old_price =
-    oldPriceNum !== null && Number.isFinite(oldPriceNum) && oldPriceNum > 0
-      ? oldPriceNum
-      : null;
+  const old_price = official?.regularPrice
+    ? official.regularPrice
+    : oldPriceNum !== null && Number.isFinite(oldPriceNum) && oldPriceNum > 0
+    ? oldPriceNum
+    : null;
 
   const category = String(
     product.category || baseMatch?.category || 'Acessórios & Tech'

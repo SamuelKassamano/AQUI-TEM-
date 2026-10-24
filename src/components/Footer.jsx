@@ -56,10 +56,6 @@ export default function Footer() {
           <Link to="/perguntas-frequentes" className="footer-link-item">
             Perguntas Frequentes
           </Link>
-          <span className="footer-dot">•</span>
-          <Link to="/admin" className="footer-link-item" style={{ color: '#F37021', fontWeight: 700 }}>
-            Painel Admin & CRM
-          </Link>
         </div>
 
         {/* Line 3: Informações operacionais, localização e pagamento */}
