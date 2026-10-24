@@ -125,13 +125,17 @@ export default function App() {
           if (canonicalSelected === 'Smartwatches') {
             matchesCategory = prodName.includes('watch') || prodName.includes('smartwatch') || prodCat.includes('watch');
           } else if (canonicalSelected === 'Energia') {
-            matchesCategory = prodName.includes('powerbank') || prodName.includes('magpower') || prodName.includes('carregador') || prodCat.includes('energia');
+            matchesCategory = prodName.includes('powerbank') || prodName.includes('power bank') || prodName.includes('bateria') || prodName.includes('magpower') || prodCat.includes('energia');
           } else if (canonicalSelected === 'Celular') {
             matchesCategory = prodName.includes('celular') || prodName.includes('telemóvel') || prodName.includes('smartphone') || prodName.includes('cabo') || prodName.includes('carregador') || prodName.includes('magpower');
           } else if (canonicalSelected === 'Áudio & Som') {
-            matchesCategory = prodCat.includes('áudio') || prodCat.includes('audio') || prodName.includes('headphone') || prodName.includes('fones');
+            matchesCategory = prodCat.includes('áudio') || prodCat.includes('audio') || prodName.includes('headphone') || prodName.includes('fones') || prodName.includes('coluna') || prodName.includes('tws');
           } else if (canonicalSelected === 'Acessórios & Casa') {
-            matchesCategory = prodCat.includes('casa') || prodName.includes('copo') || prodName.includes('garrafa');
+            matchesCategory = prodCat.includes('casa') || prodName.includes('camera') || prodName.includes('câmera') || prodName.includes('plug') || prodName.includes('tomada') || prodName.includes('copo') || prodName.includes('garrafa');
+          } else if (canonicalSelected === 'TV & Vídeo') {
+            matchesCategory = prodCat.includes('vídeo') || prodCat.includes('video') || prodCat.includes('tv') || prodName.includes('projetor') || prodName.includes('projector') || prodName.includes('tv');
+          } else if (canonicalSelected === 'Acessórios & Tech') {
+            matchesCategory = prodCat.includes('tech') || prodCat.includes('acessórios') || prodName.includes('carregador') || prodName.includes('gan') || prodName.includes('impressora') || prodName.includes('rastreador') || prodName.includes('gps');
           }
         }
 
@@ -245,17 +249,6 @@ export default function App() {
                 </span>
               )}
             </button>
-
-            <Link
-              to="/admin"
-              className="nav-btn nav-btn-crm"
-              title="Painel Administrativo & CRM"
-              aria-label="Painel Administrativo & CRM"
-              style={{ textDecoration: 'none' }}
-            >
-              <Lock size={15} />
-              <span className="nav-btn-label">Admin & CRM</span>
-            </Link>
           </div>
         </div>
       </header>

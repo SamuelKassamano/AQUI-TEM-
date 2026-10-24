@@ -153,12 +153,22 @@ export function StoreProvider({ children }) {
           .filter(Boolean);
 
         if (normalized.length > 0) {
-          setProducts(normalized);
+          // Merge Supabase rows with local catalog PRODUCTS so all 10 products are always present and up-to-date
+          const allMap = new Map();
+          PRODUCTS.forEach((p, idx) => {
+            const norm = normalizeProduct(p, idx);
+            if (norm) allMap.set(String(norm.id), norm);
+          });
+          normalized.forEach(p => {
+            allMap.set(String(p.id), p);
+          });
+          const mergedList = Array.from(allMap.values());
+          setProducts(mergedList);
 
-          // Sync any cart items with the latest product data (including image_url, price, stock) from Supabase
+          // Sync any cart items with the latest product data (including image_url, price, stock)
           setCart(prevCart =>
             prevCart.map(item => {
-              const liveMatch = normalized.find(
+              const liveMatch = mergedList.find(
                 p =>
                   String(p.id) === String(item.id) ||
                   (item.slug && p.slug === item.slug) ||

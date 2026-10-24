@@ -1,6 +1,6 @@
-import { PRODUCTS } from '../../data/products';
-import { PRODUCT_VIDEOS } from '../data/videos';
-import { TESTIMONIALS } from '../data/testimonials';
+import { PRODUCTS } from '../../data/products.js';
+import { PRODUCT_VIDEOS } from '../data/videos.js';
+import { TESTIMONIALS } from '../data/testimonials.js';
 
 export function getTranslatedProduct(product, lang) {
   if (!product) return product;
@@ -333,15 +333,69 @@ export function getTranslatedTestimonial(testimonial, lang) {
 
 export function getProductTestimonials(product, lang = 'pt') {
   if (!product) return [];
-  const baseProduct = PRODUCTS.find(
-    p =>
-      String(p.supabaseId) === String(product.id) ||
-      String(p.id) === String(product.id) ||
-      (product.slug && p.slug === product.slug) ||
-      (product.name && p.name.toLowerCase() === product.name.toLowerCase())
-  );
-  const targetId = baseProduct ? baseProduct.id : product.id;
-  const matched = TESTIMONIALS.filter(t => String(t.productId) === String(targetId));
-  const list = matched.length > 0 ? matched : TESTIMONIALS.slice(0, 2);
-  return list.map(item => getTranslatedTestimonial(item, lang));
+
+  const rawId = String(product.id || product.supabaseId || '').toLowerCase().trim();
+  const rawSlug = String(product.slug || '').toLowerCase().trim();
+  const rawName = String(product.name || '').toLowerCase().trim();
+
+  // 1. Direct match by productId or productSlug
+  let matched = TESTIMONIALS.filter(t => {
+    const tPid = String(t.productId || '').toLowerCase().trim();
+    const tSlug = String(t.productSlug || '').toLowerCase().trim();
+    if (rawId && tPid === rawId) return true;
+    if (rawSlug && tSlug === rawSlug) return true;
+    return false;
+  });
+
+  // 2. Keyword matching by product name or slug
+  if (matched.length === 0) {
+    if (rawName.includes('nova 2') || rawSlug.includes('nova-2') || rawName.includes('osw-814')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '250bfc74-fc6b-4c1a-867e-984b33a0ab06');
+    } else if (rawName.includes('prisma') || rawSlug.includes('prisma')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '46e7034d-6a7f-41de-a4d8-e883040645a4');
+    } else if (rawName.includes('1.8') || rawSlug.includes('18-bluetooth')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'd8f54944-7134-4d66-907e-4b134a091afc');
+    } else if (rawName.includes('boompop') || rawName.includes('boom pop') || rawSlug.includes('auscultadores-bluetooth')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'b1665cb5-f5fc-4ff4-8dbf-379aacc9794b');
+    } else if (rawName.includes('opensnap') || rawSlug.includes('opensnap') || rawName.includes('opn-371')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'ce68593d-3752-4dff-99a3-d28b4237d6a2');
+    } else if (rawName.includes('spacebuds') || rawSlug.includes('spacebuds') || rawName.includes('otw-324')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '9f9c71ca-5614-4385-8175-5e2e303a8709');
+    } else if (rawName.includes('necklace') || rawSlug.includes('necklace') || rawName.includes('oeb-e311')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '8cfe6239-ef53-47d2-bd1d-8a849ab9e38d');
+    } else if (rawName.includes('70w') || rawName.includes('bmx') || rawSlug.includes('bmx-70w')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '54afed87-d9a4-492c-922e-07819e34f07e');
+    } else if (rawName.includes('power bank') || rawName.includes('10000mah') || rawSlug.includes('power-bank')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '28ce7427-2e08-4ad4-a568-c9558641d5c7');
+    } else if (rawName.includes('tws') || rawSlug.includes('fones-de-ouvido-tws')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '3a1373b1-f09f-491e-ae85-8695398ac32a');
+    } else if (rawName.includes('wiwu') || rawName.includes('45w') || rawSlug.includes('wiwu')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'f18e3d33-95bf-4bfe-90bf-87969b094e32');
+    } else if (rawName.includes('smart plug') || rawName.includes('tomada') || rawSlug.includes('smart-plug') || rawSlug.includes('tomada-inteligente')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '6be401b8-4dc3-4564-9818-6593bc764422');
+    } else if (rawName.includes('defender') || rawName.includes('camera') || rawName.includes('câmera') || rawSlug.includes('camera')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '9961e2e9-98c6-462b-8b6c-fd584f9b7a6d');
+    } else if (rawName.includes('projetor') || rawName.includes('projector') || rawSlug.includes('projetor')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '7c8a4192-3110-4f25-88de-8ef7a1599a01');
+    } else if (rawName.includes('coluna') || rawSlug.includes('coluna-bluetooth')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '84f18b32-9cb4-482a-a9e3-2e78dc2361b2');
+    } else if (rawName.includes('impressora') || rawSlug.includes('impressora')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '91dc572e-84a1-4322-9df7-e61a2578c909');
+    } else if (rawName.includes('rastreador') || rawName.includes('gps') || rawSlug.includes('rastreador')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'a083d917-7e23-4581-be99-0e7f7b321a10');
+    }
+  }
+
+  // 3. Fallback: hash product name so every product gets distinct reviews
+  if (matched.length === 0) {
+    let hash = 0;
+    for (let i = 0; i < rawName.length; i++) {
+      hash = (hash << 5) - hash + rawName.charCodeAt(i);
+      hash |= 0;
+    }
+    const startIndex = Math.abs(hash) % Math.max(1, TESTIMONIALS.length - 2);
+    matched = TESTIMONIALS.slice(startIndex, startIndex + 2);
+  }
+
+  return matched.map(item => getTranslatedTestimonial(item, lang));
 }

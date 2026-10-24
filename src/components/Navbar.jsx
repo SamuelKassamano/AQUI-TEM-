@@ -164,17 +164,6 @@ export default function Navbar() {
                 </span>
               )}
             </button>
-
-            <Link
-              to="/admin"
-              className="nav-btn nav-btn-crm"
-              title="Painel Administrativo & CRM"
-              aria-label="Painel Administrativo & CRM"
-              style={{ textDecoration: 'none' }}
-            >
-              <Lock size={15} />
-              <span className="nav-btn-label">Admin & CRM</span>
-            </Link>
           </div>
         </div>
       </header>
