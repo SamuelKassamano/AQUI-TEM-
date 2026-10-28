@@ -43,12 +43,15 @@ const rawEnvUrl =
 export const SUPABASE_URL =
   rawEnvUrl || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
+export const DEFAULT_SUPABASE_PUBLISHABLE_KEY =
+  'sb_publishable_jVht5KNDZPLBWR_NZ1lrvw_pNSyuv0B';
+
 const rawEnvKey =
   cleanEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) ||
   cleanEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY) ||
   cleanEnvValue(import.meta.env.SUPABASE_PUBLISHABLE_KEY) ||
   cleanEnvValue(import.meta.env.SUPABASE_ANON_KEY) ||
-  '';
+  DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
 // Segurança rigorosa: NUNCA permitir service_role ou secret key no frontend
 const isForbiddenSecretKey =
@@ -61,7 +64,9 @@ if (isForbiddenSecretKey) {
   );
 }
 
-export const SUPABASE_PUBLISHABLE_KEY = isForbiddenSecretKey ? '' : rawEnvKey;
+export const SUPABASE_PUBLISHABLE_KEY = isForbiddenSecretKey
+  ? DEFAULT_SUPABASE_PUBLISHABLE_KEY
+  : rawEnvKey;
 
 export const isSupabaseConfigured = Boolean(
   SUPABASE_URL &&
