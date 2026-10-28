@@ -13,17 +13,23 @@ export const SUPABASE_PROJECT_ID = 'essjwjbtzytefycjodgh';
 function cleanEnvValue(val) {
   if (!val || typeof val !== 'string') return '';
   let cleaned = val.trim();
-  // Se o utilizador colou "KEY=VALOR", extrai apenas o valor após o '='
-  if (cleaned.includes('=')) {
-    const parts = cleaned.split('=');
-    cleaned = parts.slice(1).join('=').trim();
-  }
   // Remove aspas simples ou duplas ao redor do valor
   if (
     (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
     (cleaned.startsWith("'") && cleaned.endsWith("'"))
   ) {
     cleaned = cleaned.slice(1, -1).trim();
+  }
+  // Se o utilizador colou "NOME_VARIAVEL=VALOR", extrai com segurança apenas o valor
+  const envPrefixMatch = cleaned.match(/^[A-Za-z0-9_]{3,40}=\s*(.+)$/s);
+  if (envPrefixMatch) {
+    cleaned = envPrefixMatch[1].trim();
+    if (
+      (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+      (cleaned.startsWith("'") && cleaned.endsWith("'"))
+    ) {
+      cleaned = cleaned.slice(1, -1).trim();
+    }
   }
   return cleaned;
 }

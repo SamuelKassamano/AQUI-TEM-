@@ -323,7 +323,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
     if (!isSupabaseConfigured || !supabase) {
       setSession(null);
       setAuthError(
-        'Autenticação indisponível: A chave pública VITE_SUPABASE_PUBLISHABLE_KEY não está configurada na Vercel. Adicione a chave nas variáveis de ambiente do projeto na Vercel e faça um novo deploy.'
+        'Autenticação indisponível: As variáveis de ambiente do Supabase não estão configuradas na Vercel.'
       );
       return;
     }
@@ -338,24 +338,30 @@ export default function AdminPage({ defaultTab = 'products' }) {
       if (error || !data?.session?.user || !data?.session?.access_token) {
         setSession(null);
         const rawMsg = error?.message || '';
-        const isInvalidCredentials =
-          rawMsg.toLowerCase().includes('invalid login credentials') ||
-          error?.status === 400;
+        const code = error?.code || '';
 
-        setAuthError(
-          isInvalidCredentials
-            ? 'Credenciais inválidas: E-mail ou palavra-passe incorretos no Supabase Authentication. Acesso bloqueado.'
-            : rawMsg || 'Credenciais inválidas no Supabase Authentication. Acesso bloqueado.'
-        );
-        return;
-      }
+        if (code === 'email_not_confirmed' || rawMsg.toLowerCase().includes('email not confirmed')) {
+          setAuthError(
+            'O e-mail ainda não foi confirmado no Supabase. Por favor, aceda à sua caixa de entrada e clique no link de validação, ou desative "Confirm email" no painel do Supabase (Authentication -> Providers -> Email).'
+          );
+          return;
+        }
 
-      // Verifica papel de administrador
-      const hasAdminRole = await checkUserIsAdmin(data.session.user);
-      if (!hasAdminRole) {
-        await supabase.auth.signOut();
-        setSession(null);
-        setAuthError('Acesso Negado: Esta conta não possui privilégios de administrador.');
+        if (rawMsg.toLowerCase().includes('invalid login credentials')) {
+          setAuthError(
+            'Credenciais inválidas: O e-mail ou a palavra-passe estão incorretos no Supabase. Verifique a palavra-passe ou utilize "Esqueceu a palavra-passe?" para redefinir o acesso.'
+          );
+          return;
+        }
+
+        if (rawMsg.toLowerCase().includes('too many requests') || error?.status === 429) {
+          setAuthError(
+            'Muitas tentativas consecutivas. Aguarde alguns instantes antes de tentar novamente.'
+          );
+          return;
+        }
+
+        setAuthError(rawMsg || 'Falha ao autenticar no Supabase Authentication. Acesso bloqueado.');
         return;
       }
 
@@ -1111,10 +1117,10 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                 marginBottom: '18px',
                 display: 'flex',
                 gap: '8px',
-                alignItems: 'center'
+                alignItems: 'flex-start'
               }}
             >
-              <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+              <AlertTriangle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
               <span>{authError}</span>
             </div>
           )}

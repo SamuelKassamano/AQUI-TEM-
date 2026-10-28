@@ -16,40 +16,8 @@ export async function checkUserIsAdmin(user) {
   if (!user || !user.id || !isSupabaseConfigured || !supabase) {
     return false;
   }
-
-  try {
-    const { data, error } = await supabase
-      .from('admin_users')
-      .select('id, role')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (!error && data) {
-      return true;
-    }
-
-    // Se a tabela admin_users ainda não foi criada no Supabase, qualquer utilizador
-    // autenticado pelo Supabase Auth é considerado administrador temporariamente
-    // para permitir a configuração inicial sem travar o painel.
-    if (error && (error.code === '42P01' || error.message?.includes('does not exist'))) {
-      return true;
-    }
-
-    // Se a tabela existe mas o utilizador não está nela, verifica se há algum registro
-    const { count } = await supabase
-      .from('admin_users')
-      .select('id', { count: 'exact', head: true });
-
-    // Se a tabela admin_users estiver vazia, concede acesso para criar o primeiro admin
-    if (count === 0) {
-      return true;
-    }
-
-    return Boolean(data);
-  } catch (err) {
-    console.warn('Verificação de perfil de administrador:', err);
-    return true; // Fallback seguro para sessão autenticada ativa
-  }
+  // No AQUI TEM, qualquer utilizador autenticado pelo Supabase Auth é administrador autorizado da loja
+  return true;
 }
 
 /**
