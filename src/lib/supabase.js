@@ -5,29 +5,62 @@ import { getOfficialPricing } from '../data/productPricing.js';
 
 export const SUPABASE_PROJECT_ID = 'essjwjbtzytefycjodgh';
 
-const rawEnvUrl = import.meta.env.VITE_SUPABASE_URL || '';
-export const SUPABASE_URL =
-  (rawEnvUrl.split('VITE_SUPABASE_')[0] || '').trim() ||
-  `https://${SUPABASE_PROJECT_ID}.supabase.co`;
+/**
+ * Normaliza e limpa valores de variáveis de ambiente.
+ * Suporta remoção de aspas, espaços e prefixos acidentais caso o utilizador
+ * tenha colado a linha inteira "KEY=VALOR" no campo de valor da Vercel.
+ */
+function cleanEnvValue(val) {
+  if (!val || typeof val !== 'string') return '';
+  let cleaned = val.trim();
+  // Se o utilizador colou "KEY=VALOR", extrai apenas o valor após o '='
+  if (cleaned.includes('=')) {
+    const parts = cleaned.split('=');
+    cleaned = parts.slice(1).join('=').trim();
+  }
+  // Remove aspas simples ou duplas ao redor do valor
+  if (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'"))
+  ) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  return cleaned;
+}
 
-const rawEnvKey =
-  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+const rawEnvUrl =
+  cleanEnvValue(import.meta.env.VITE_SUPABASE_URL) ||
+  cleanEnvValue(import.meta.env.SUPABASE_URL) ||
+  cleanEnvValue(import.meta.env.VITE_SUPABASE_PROJECT_URL) ||
   '';
 
-const sanitizedKey = rawEnvKey
-  .split('VITE_SUPABASE_')[0]
-  .trim();
+export const SUPABASE_URL =
+  rawEnvUrl || `https://${SUPABASE_PROJECT_ID}.supabase.co`;
 
-// Never allow a Supabase Secret Key / service_role key in the frontend client
+const rawEnvKey =
+  cleanEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) ||
+  cleanEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY) ||
+  cleanEnvValue(import.meta.env.SUPABASE_PUBLISHABLE_KEY) ||
+  cleanEnvValue(import.meta.env.SUPABASE_ANON_KEY) ||
+  '';
+
+// Segurança rigorosa: NUNCA permitir service_role ou secret key no frontend
 const isForbiddenSecretKey =
-  sanitizedKey.startsWith('sb_secret_') ||
-  sanitizedKey.includes('service_role');
+  rawEnvKey.startsWith('sb_secret_') ||
+  rawEnvKey.includes('service_role');
 
-export const SUPABASE_PUBLISHABLE_KEY = isForbiddenSecretKey ? '' : sanitizedKey;
+if (isForbiddenSecretKey) {
+  console.error(
+    'AVISO DE SEGURANÇA: Chave privada do Supabase (service_role ou secret key) detetada no frontend! O uso desta chave foi bloqueado. Utilize apenas a VITE_SUPABASE_PUBLISHABLE_KEY ou VITE_SUPABASE_ANON_KEY.'
+  );
+}
+
+export const SUPABASE_PUBLISHABLE_KEY = isForbiddenSecretKey ? '' : rawEnvKey;
 
 export const isSupabaseConfigured = Boolean(
-  SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY && SUPABASE_PUBLISHABLE_KEY.length > 10
+  SUPABASE_URL &&
+    SUPABASE_PUBLISHABLE_KEY &&
+    SUPABASE_PUBLISHABLE_KEY.length > 10
 );
 
 export const supabase = isSupabaseConfigured

@@ -57,11 +57,19 @@ export async function checkUserIsAdmin(user) {
  */
 export async function sendAdminPasswordReset(email) {
   if (!isSupabaseConfigured || !supabase) {
-    throw new Error('Supabase não está configurado.');
+    throw new Error(
+      'Supabase não está configurado. Verifique se a variável VITE_SUPABASE_PUBLISHABLE_KEY está definida na Vercel.'
+    );
   }
 
+  const origin =
+    typeof window !== 'undefined' && window.location?.origin
+      ? window.location.origin
+      : 'https://loja.aqui-tem.vercel.app';
+  const redirectTo = `${origin}/admin`;
+
   const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-    redirectTo: `${window.location.origin}/admin`
+    redirectTo
   });
 
   if (error) {

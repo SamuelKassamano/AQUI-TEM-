@@ -139,6 +139,14 @@ export default function AdminPage({ defaultTab = 'products' }) {
   const [forgotSuccess, setForgotSuccess] = useState('');
   const [forgotError, setForgotError] = useState('');
 
+  // Password Recovery Return Mode (when user lands via email reset link)
+  const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryError, setRecoveryError] = useState('');
+  const [recoverySuccess, setRecoverySuccess] = useState('');
+
   // Products UI Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('Todos');
@@ -194,6 +202,15 @@ export default function AdminPage({ defaultTab = 'products' }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Detect if landing from password reset link (#type=recovery or ?type=recovery)
+    if (
+      typeof window !== 'undefined' &&
+      (window.location.hash.includes('type=recovery') ||
+        window.location.search.includes('type=recovery'))
+    ) {
+      setIsRecoveryMode(true);
+    }
+
     if (!isSupabaseConfigured || !supabase) {
       setSession(null);
       setAuthChecking(false);
@@ -223,8 +240,11 @@ export default function AdminPage({ defaultTab = 'products' }) {
 
     const {
       data: { subscription }
-    } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
       if (!isMounted) return;
+      if (event === 'PASSWORD_RECOVERY') {
+        setIsRecoveryMode(true);
+      }
       if (nextSession?.user && nextSession?.access_token) {
         setSession(nextSession);
         const hasRole = await checkUserIsAdmin(nextSession.user);
@@ -242,6 +262,53 @@ export default function AdminPage({ defaultTab = 'products' }) {
     };
   }, [refreshCRMData]);
 
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    setRecoveryError('');
+    setRecoverySuccess('');
+
+    if (!newPassword || newPassword.length < 6) {
+      setRecoveryError('A nova palavra-passe deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setRecoveryError('As palavras-passe não coincidem. Digite novamente.');
+      return;
+    }
+    if (!isSupabaseConfigured || !supabase) {
+      setRecoveryError('Supabase não está configurado. Verifique as variáveis de ambiente na Vercel.');
+      return;
+    }
+
+    setRecoveryLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      setRecoverySuccess('Palavra-passe atualizada com sucesso!');
+      showToast('Palavra-passe alterada com sucesso! Acesso concedido.');
+
+      if (typeof window !== 'undefined' && window.history?.replaceState) {
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+
+      setTimeout(() => {
+        setIsRecoveryMode(false);
+        setNewPassword('');
+        setConfirmNewPassword('');
+      }, 1500);
+    } catch (err) {
+      setRecoveryError(err?.message || 'Erro ao redefinir a palavra-passe.');
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError('');
@@ -256,7 +323,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
     if (!isSupabaseConfigured || !supabase) {
       setSession(null);
       setAuthError(
-        'Autenticação indisponível: A chave pública VITE_SUPABASE_PUBLISHABLE_KEY não está configurada. O acesso ao painel administrativo está bloqueado.'
+        'Autenticação indisponível: A chave pública VITE_SUPABASE_PUBLISHABLE_KEY não está configurada na Vercel. Adicione a chave nas variáveis de ambiente do projeto na Vercel e faça um novo deploy.'
       );
       return;
     }
@@ -820,6 +887,150 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
     );
   }
 
+  // Se está em modo de recuperação de senha (clicou no link do email de recuperação)
+  if (isRecoveryMode) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          background: 'var(--bg-body)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}
+      >
+        <div
+          style={{
+            width: '100%',
+            maxWidth: '450px',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-light)',
+            borderRadius: '20px',
+            padding: '34px',
+            boxShadow: 'var(--shadow-md)'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
+            <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={40} />
+            <button
+              type="button"
+              onClick={() => {
+                setIsRecoveryMode(false);
+                if (typeof window !== 'undefined' && window.history?.replaceState) {
+                  window.history.replaceState(null, '', window.location.pathname);
+                }
+              }}
+              className="nav-btn"
+              style={{ fontSize: '0.82rem' }}
+            >
+              <ArrowLeft size={15} /> Voltar ao Login
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', marginBottom: '6px' }}>
+            <Key size={15} /> Recuperação de Palavra-passe
+          </div>
+          <h1 style={{ fontSize: '1.45rem', fontWeight: 900, marginBottom: '6px', color: 'var(--text-main)' }}>
+            Definir Nova Palavra-passe
+          </h1>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '22px', lineHeight: 1.5 }}>
+            Defina uma nova palavra-passe para a sua conta de administrador no Supabase Auth.
+          </p>
+
+          {recoverySuccess && (
+            <div
+              style={{
+                background: '#e6f4ea',
+                border: '1px solid #ceead6',
+                color: '#137333',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                marginBottom: '18px',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center'
+              }}
+            >
+              <CheckCircle size={18} style={{ flexShrink: 0 }} />
+              <span>{recoverySuccess}</span>
+            </div>
+          )}
+
+          {recoveryError && (
+            <div
+              style={{
+                background: 'rgba(220, 38, 38, 0.1)',
+                border: '1px solid rgba(220, 38, 38, 0.3)',
+                color: '#DC2626',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                marginBottom: '18px',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'center'
+              }}
+            >
+              <AlertTriangle size={18} style={{ flexShrink: 0 }} />
+              <span>{recoveryError}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleUpdatePassword}>
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', display: 'block' }}>
+                Nova Palavra-passe (mínimo 6 caracteres) *
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Key size={16} style={{ position: 'absolute', left: 12, top: 13, color: 'var(--text-muted)' }} />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="form-input"
+                  style={{ paddingLeft: '38px', width: '100%', boxSizing: 'border-box' }}
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: '22px' }}>
+              <label className="form-label" style={{ fontSize: '0.85rem', fontWeight: 700, marginBottom: '6px', display: 'block' }}>
+                Confirmar Nova Palavra-passe *
+              </label>
+              <div style={{ position: 'relative' }}>
+                <Key size={16} style={{ position: 'absolute', left: 12, top: 13, color: 'var(--text-muted)' }} />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  className="form-input"
+                  style={{ paddingLeft: '38px', width: '100%', boxSizing: 'border-box' }}
+                  value={confirmNewPassword}
+                  onChange={e => setConfirmNewPassword(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={recoveryLoading}
+              className="nav-btn nav-btn-orange"
+              style={{ width: '100%', justifyContent: 'center', padding: '13px', fontSize: '0.95rem' }}
+            >
+              <Lock size={17} /> {recoveryLoading ? 'Atualizando Palavra-passe...' : 'Salvar Nova Palavra-passe'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   // Se NÃO autenticado -> Exibe Tela de Login Profissional
   if (!isAuthenticated) {
     return (
@@ -860,6 +1071,32 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
           <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', marginBottom: '22px', lineHeight: 1.5 }}>
             Entre com a sua conta de administrador no Supabase Auth para aceder ao CRM, catálogo, preços e estoque.
           </p>
+
+          {!isSupabaseConfigured && (
+            <div
+              style={{
+                background: 'rgba(234, 88, 12, 0.1)',
+                border: '1px solid rgba(234, 88, 12, 0.3)',
+                color: '#EA580C',
+                padding: '12px 14px',
+                borderRadius: '10px',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                marginBottom: '18px',
+                display: 'flex',
+                gap: '8px',
+                alignItems: 'flex-start'
+              }}
+            >
+              <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <div><strong>Atenção:</strong> Variáveis de ambiente do Supabase não detetadas.</div>
+                <div style={{ fontSize: '0.78rem', marginTop: '4px', opacity: 0.9 }}>
+                  Defina <code>VITE_SUPABASE_URL</code> e <code>VITE_SUPABASE_PUBLISHABLE_KEY</code> nas configurações de ambiente da Vercel e faça um novo deploy.
+                </div>
+              </div>
+            </div>
+          )}
 
           {authError && (
             <div
