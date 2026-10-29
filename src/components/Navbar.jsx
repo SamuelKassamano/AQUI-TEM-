@@ -25,7 +25,7 @@ import {
   Users,
   BarChart3
 } from 'lucide-react';
-import OriginalLogoImage from './OriginalLogoImage';
+
 import LanguageSelector from './LanguageSelector';
 import { useLanguage } from '../context/LanguageContext';
 import { useStore } from '../context/StoreContext';
@@ -99,7 +99,7 @@ export default function Navbar() {
             </button>
 
             <Link to="/" className="logo-brand">
-              <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM Angola" height={40} className="header-logo-img" />
+              <img src="/logo.jpg" alt="AQUI TEM Angola" height={40} className="header-logo-img" />
             </Link>
           </div>
 
@@ -196,7 +196,7 @@ export default function Navbar() {
                 borderBottom: '1px solid var(--border-light)'
               }}
             >
-              <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={38} />
+              <img src="/logo.jpg" alt="AQUI TEM" height={38} />
               <button
                 onClick={() => setIsSideMenuOpen(false)}
                 style={{ background: 'transparent', border: 0, cursor: 'pointer', padding: '4px' }}

@@ -17,6 +17,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useStore } from '../context/StoreContext';
 import { createSlug } from '../utils/slug';
 import { getProductTestimonials } from '../utils/productTranslations';
+import { getAssetUrl } from '../utils/assets';
 
 export default function ProductQuickViewModal({ product, onClose }) {
   const { lang, t } = useLanguage();
@@ -70,9 +71,9 @@ export default function ProductQuickViewModal({ product, onClose }) {
               </span>
             )}
             <img
-              src={product.image_url || product.image || '/logo.jpg'}
+              src={getAssetUrl(product.image_url || product.image || '/logo.jpg')}
               alt={product.name}
-              onError={(e) => { e.currentTarget.src = '/logo.jpg'; }}
+              onError={(e) => { e.currentTarget.src = getAssetUrl('/logo.jpg'); }}
             />
           </div>
 

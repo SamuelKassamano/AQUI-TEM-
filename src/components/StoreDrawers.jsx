@@ -18,6 +18,7 @@ import { useCRM } from '../context/CRMContext';
 import { getTranslatedProduct } from '../utils/productTranslations';
 import { createSlug } from '../utils/slug';
 
+
 export default function StoreDrawers() {
   const { lang, t } = useLanguage();
   const { captureLead } = useCRM();
@@ -55,7 +56,7 @@ export default function StoreDrawers() {
     phone: '',
     address: '',
     city: 'Luanda',
-    paymentMethod: 'Pagamento na entrega',
+    paymentMethod: 'Transferência Bancária',
     notes: ''
   });
 
@@ -567,9 +568,8 @@ export default function StoreDrawers() {
                   value={checkoutForm.paymentMethod}
                   onChange={e => setCheckoutForm({ ...checkoutForm, paymentMethod: e.target.value })}
                 >
-                  <option value="Pagamento na entrega">{t('payOnDelivery')}</option>
-                  <option value="Multicaixa">{t('multicaixaOpt')}</option>
-                  <option value="Dinheiro/Cash">{t('cashOpt')}</option>
+                  <option value="Transferência Bancária">{t('bankTransfer')}</option>
+                  <option value="Multicaixa Express">{t('multicaixaExpress')}</option>
                 </select>
               </div>
 

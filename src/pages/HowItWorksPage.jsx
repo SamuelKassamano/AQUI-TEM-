@@ -44,7 +44,7 @@ export default function HowItWorksPage() {
     {
       num: 4,
       title: '4. Pagamento Seguro e Sem Complicação',
-      desc: 'Oferecemos total flexibilidade: pague por Multicaixa Express, transferência bancária prévia, TPA ou em dinheiro diretamente no ato da entrega.',
+      desc: 'Oferecemos flexibilidade de pagamento: pague por Multicaixa Express ou transferência bancária.',
       icon: CreditCard,
       highlight: '10% de desconto adicional para pagamentos a pronto.'
     },

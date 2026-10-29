@@ -18,14 +18,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Oraimo',
     category: 'Áudio & Som',
     sourceName: 'Fornecedor Oficial Oraimo Direct (Modelo FreePods Lite OTW-330)',
-    referenceCostKz: 12000,
+    referenceCostKz: 15000,
     shippingKz: 4000,
-    totalCostKz: 16000,
+    totalCostKz: 19000,
     marginPercent: 25,
-    marginKz: 4000,
-    calculatedSalePrice: 20000,
-    regularPrice: 24000,
+    marginKz: 4750,
+    calculatedSalePrice: 23750,
+    regularPrice: 28000,
     stock: 20,
+    rating: 4.9,
+    reviews_count: 87,
     image: '/products/fones-tws-bluetooth.jpg',
     seoTitle: 'Fones TWS Bluetooth Oraimo FreePods Som HD e Graves Potentes | AQUI TEM ANGOLA',
     seoDescription: 'Compre Fones TWS Bluetooth Oraimo FreePods originais com cancelamento de ruído, 40h de bateria e entrega rápida na AQUI TEM Angola. Pague na entrega em Luanda.'
@@ -43,14 +45,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Oraimo',
     category: 'Smartwatches',
     sourceName: 'Fornecedor Oficial Oraimo (Modelo Watch Nova 2 OSW-814)',
-    referenceCostKz: 19900,
+    referenceCostKz: 25000,
     shippingKz: 4000,
-    totalCostKz: 23900,
-    marginPercent: 23.4,
-    marginKz: 5600,
-    calculatedSalePrice: 29500,
-    regularPrice: 34000,
+    totalCostKz: 29000,
+    marginPercent: 25,
+    marginKz: 7250,
+    calculatedSalePrice: 36250,
+    regularPrice: 42000,
     stock: 15,
+    rating: 4.8,
+    reviews_count: 64,
     image: '/products/smartwatch.jpg',
     seoTitle: 'Smartwatch Inteligente Ecrã AMOLED e Chamadas Bluetooth | AQUI TEM ANGOLA',
     seoDescription: 'Compre o Smartwatch Oraimo Watch Nova 2 com ecrã AMOLED curvo de 2.01", chamadas Bluetooth e monitor de saúde na AQUI TEM Angola. Garantia e entrega rápida em Luanda.'
@@ -68,14 +72,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Defender / Tuya Smart',
     category: 'Acessórios & Casa',
     sourceName: 'Fornecedor Oficial Tuya / Defender Smart Security (Câmara IP 360 PTZ)',
-    referenceCostKz: 16000,
+    referenceCostKz: 20000,
     shippingKz: 4000,
-    totalCostKz: 20000,
+    totalCostKz: 24000,
     marginPercent: 25,
-    marginKz: 5000,
-    calculatedSalePrice: 25000,
-    regularPrice: 29500,
+    marginKz: 6000,
+    calculatedSalePrice: 30000,
+    regularPrice: 35000,
     stock: 12,
+    rating: 4.6,
+    reviews_count: 42,
     image: '/products/camera-wifi-seguranca.jpg',
     seoTitle: 'Câmara Wi-Fi de Segurança 360 Graus com Visão Noturna e Áudio | AQUI TEM ANGOLA',
     seoDescription: 'Proteja a sua família e negócio com a Câmara Wi-Fi de Segurança 360° Full HD na AQUI TEM Angola. Alertas no telemóvel, visão noturna e entrega rápida em Luanda.'
@@ -93,14 +99,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Tuya / Smart Life',
     category: 'Acessórios & Casa',
     sourceName: 'Fornecedor Oficial Tuya / Smart Life (Smart Plug 16A EU Plug)',
-    referenceCostKz: 7000,
+    referenceCostKz: 10000,
     shippingKz: 4000,
-    totalCostKz: 11000,
+    totalCostKz: 14000,
     marginPercent: 25,
-    marginKz: 2750,
-    calculatedSalePrice: 13750,
-    regularPrice: 16500,
+    marginKz: 3500,
+    calculatedSalePrice: 17500,
+    regularPrice: 22000,
     stock: 25,
+    rating: 4.4,
+    reviews_count: 18,
     image: '/products/smart-plug-wifi.jpg',
     seoTitle: 'Smart Plug Wi-Fi Tomada Inteligente 16A com Controlo no Telemóvel | AQUI TEM ANGOLA',
     seoDescription: 'Automatize a sua casa com o Smart Plug Wi-Fi Tomada Inteligente 16A na AQUI TEM Angola. Temporizador, economia de energia e entrega expressa em Luanda.'
@@ -118,14 +126,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'BMX / GaN Tech',
     category: 'Acessórios & Tech',
     sourceName: 'Fornecedor Oficial BMX GaN Fast Charger (Modelo GaN III 65W/70W LCD)',
-    referenceCostKz: 16000,
+    referenceCostKz: 18000,
     shippingKz: 4000,
-    totalCostKz: 20000,
+    totalCostKz: 22000,
     marginPercent: 25,
-    marginKz: 5000,
-    calculatedSalePrice: 25000,
-    regularPrice: 30000,
+    marginKz: 5500,
+    calculatedSalePrice: 27500,
+    regularPrice: 32000,
     stock: 18,
+    rating: 4.9,
+    reviews_count: 53,
     image: '/products/carregador-gan.jpg',
     seoTitle: 'Carregador GaN 65W Rápido Multiportas USB-C e USB-A com Visor | AQUI TEM ANGOLA',
     seoDescription: 'Carregador GaN 65W com visor digital para portáteis e telemóveis na AQUI TEM Angola. Carregamento ultra rápido, compacto e seguro com entrega em Luanda.'
@@ -143,14 +153,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Oraimo',
     category: 'Energia',
     sourceName: 'Fornecedor Oficial Oraimo (Toast 10 OPB-P118D 10000mAh)',
-    referenceCostKz: 11000,
+    referenceCostKz: 12000,
     shippingKz: 4000,
-    totalCostKz: 15000,
+    totalCostKz: 16000,
     marginPercent: 25,
-    marginKz: 3750,
-    calculatedSalePrice: 18750,
-    regularPrice: 22000,
+    marginKz: 4000,
+    calculatedSalePrice: 20000,
+    regularPrice: 25000,
     stock: 24,
+    rating: 4.7,
+    reviews_count: 120,
     image: '/products/power-bank.jpg',
     seoTitle: 'Power Bank 10000mAh Bateria Externa Portátil com Saída Dupla | AQUI TEM ANGOLA',
     seoDescription: 'Compre o Power Bank Oraimo 10000mAh original com tecnologia AniFast e saída dupla USB na AQUI TEM Angola. Garantia e entrega ao domicílio em Luanda.'
@@ -168,14 +180,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Magcubic / Smart Cinema',
     category: 'TV & Vídeo',
     sourceName: 'Fornecedor Importador Smart Cinema (Modelo HY300 Freestyle HD Android)',
-    referenceCostKz: 36000,
+    referenceCostKz: 35000,
     shippingKz: 4000,
-    totalCostKz: 40000,
+    totalCostKz: 39000,
     marginPercent: 25,
-    marginKz: 10000,
-    calculatedSalePrice: 50000,
-    regularPrice: 58000,
+    marginKz: 9750,
+    calculatedSalePrice: 48750,
+    regularPrice: 55000,
     stock: 10,
+    rating: 4.8,
+    reviews_count: 95,
     image: '/products/mini-projetor.jpg',
     seoTitle: 'Mini Projetor Portátil Smart LED com Wi-Fi e Android Integrado | AQUI TEM ANGOLA',
     seoDescription: 'Tenha um cinema em casa com o Mini Projetor Portátil Smart LED até 130 polegadas na AQUI TEM Angola. Wi-Fi, Android e entrega rápida em Luanda.'
@@ -193,14 +207,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Oraimo / SoundPro',
     category: 'Áudio & Som',
     sourceName: 'Fornecedor Oficial Oraimo / SoundPro (SoundPro 2 OBS-02S / OBS-53D)',
-    referenceCostKz: 14000,
+    referenceCostKz: 16000,
     shippingKz: 4000,
-    totalCostKz: 18000,
+    totalCostKz: 20000,
     marginPercent: 25,
-    marginKz: 4500,
-    calculatedSalePrice: 22500,
-    regularPrice: 26500,
+    marginKz: 5000,
+    calculatedSalePrice: 25000,
+    regularPrice: 30000,
     stock: 16,
+    rating: 4.5,
+    reviews_count: 31,
     image: '/products/coluna-bluetooth.jpg',
     seoTitle: 'Coluna Bluetooth Portátil com Graves Potentes e Bateria Longa | AQUI TEM ANGOLA',
     seoDescription: 'Compre a Coluna Bluetooth Portátil com graves HavyBass, 12h de autonomia e proteção IPX5 na AQUI TEM Angola. Som de alta qualidade com entrega expressa em Luanda.'
@@ -218,14 +234,16 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'PeriPage / Phomemo',
     category: 'Acessórios & Tech',
     sourceName: 'Fornecedor Oficial Pocket Thermal Printer (Modelo 58mm Bluetooth 203DPI)',
-    referenceCostKz: 16000,
+    referenceCostKz: 18000,
     shippingKz: 4000,
-    totalCostKz: 20000,
+    totalCostKz: 22000,
     marginPercent: 25,
-    marginKz: 5000,
-    calculatedSalePrice: 25000,
-    regularPrice: 29500,
+    marginKz: 5500,
+    calculatedSalePrice: 27500,
+    regularPrice: 32000,
     stock: 14,
+    rating: 4.3,
+    reviews_count: 14,
     image: '/products/mini-impressora-termica.jpg',
     seoTitle: 'Mini Impressora Térmica Portátil Bluetooth Sem Tinta para Telemóvel | AQUI TEM ANGOLA',
     seoDescription: 'Imprima recibos e etiquetas onde estiver com a Mini Impressora Térmica Bluetooth na AQUI TEM Angola. Sem uso de tinta, econômica e com entrega rápida em Luanda.'
@@ -243,161 +261,316 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     brand: 'Smart Tracker / GF-07',
     category: 'Acessórios & Tech',
     sourceName: 'Fornecedor Especializado em Segurança e Rastreamento (Modelo GF-07 GPS Magnetic)',
-    referenceCostKz: 12000,
+    referenceCostKz: 14000,
     shippingKz: 4000,
-    totalCostKz: 16000,
+    totalCostKz: 18000,
     marginPercent: 25,
-    marginKz: 4000,
-    calculatedSalePrice: 20000,
-    regularPrice: 24500,
+    marginKz: 4500,
+    calculatedSalePrice: 22500,
+    regularPrice: 28000,
     stock: 22,
+    rating: 4.6,
+    reviews_count: 26,
     image: '/products/rastreador-gps.jpg',
     seoTitle: 'Mini Rastreador GPS Magnético em Tempo Real para Viaturas e Objetos | AQUI TEM ANGOLA',
     seoDescription: 'Monitore o seu carro ou motorizada em tempo real com o Mini Rastreador GPS Magnético na AQUI TEM Angola. Alertas no telemóvel, botão SOS e entrega em Luanda.'
   },
 
   // --------------------------------------------------------------------------
-  // Outros produtos ativos complementares (mantidos intactos)
+  // [11] Rato Gaming Glorious Model O
   // --------------------------------------------------------------------------
   {
-    id: 'b1665cb5-f5fc-4ff4-8dbf-379aacc9794b',
-    sku: 'BOOM-BLK',
-    slug: 'auscultadores-bluetooth',
-    name: 'Auscultadores Bluetooth Oraimo BoomPop',
-    brand: 'Oraimo',
-    category: 'Áudio & Som',
-    sourceName: 'Loja Oficial Oraimo (BoomPop Series OEB-H89D)',
-    referenceCostKz: 27600,
-    shippingKz: 4000,
-    totalCostKz: 31600,
-    marginPercent: 21.8,
-    marginKz: 6900,
-    calculatedSalePrice: 38500,
-    regularPrice: 44000,
-    stock: 10,
-    image: '/product_boompop.jpg',
-    seoTitle: 'Auscultadores Bluetooth Oraimo BoomPop com Graves Potentes | AQUI TEM ANGOLA',
-    seoDescription: 'Auscultadores Bluetooth Oraimo BoomPop over-ear com cancelamento de ruído e até 40h de música na AQUI TEM Angola. Garantia oficial e entrega em Luanda.'
-  },
-  {
-    id: 'f18e3d33-95bf-4bfe-90bf-87969b094e32',
-    sku: 'WIWU-CH-45W-BLK',
-    slug: 'carregador-de-parede-wiwu-fast-charger-45w',
-    name: 'Carregador de Parede WiWU Fast Charger 45W',
-    brand: 'WIWU',
+    id: '8a1e3b1c-7d6e-4f9a-8c2d-1b3a5f7e9d2b',
+    sku: 'AT-GAM-011',
+    slug: 'rato-gaming-glorious-model-o-wireless',
+    slugAliases: ['rato-gaming-sem-fios-glorious-model-o-wireless-rgb', 'glorious-model-o'],
+    name: 'Rato Gaming Sem Fios Glorious Model O Wireless RGB',
+    brand: 'Glorious',
     category: 'Acessórios & Tech',
-    sourceName: 'Loja Oficial WiWU / Fornecedores WiWU',
-    referenceCostKz: 12900,
+    sourceName: 'Fornecedor Oficial Glorious PC Gaming',
+    referenceCostKz: 28000,
     shippingKz: 4000,
-    totalCostKz: 16900,
+    totalCostKz: 32000,
     marginPercent: 25,
-    marginKz: 3225,
-    calculatedSalePrice: 20125,
-    regularPrice: 23000,
-    stock: 15,
-    image: '/products/carregador-gan.jpg',
-    seoTitle: 'Carregador de Parede WiWU Fast Charger 45W GaN Dual Port | AQUI TEM ANGOLA',
-    seoDescription: 'Carregador rápido WiWU 45W com portas USB-C e USB-A na AQUI TEM Angola. Potência ideal para iPhone, Samsung e tablets com entrega rápida em Luanda.'
-  },
-  {
-    id: '9f9c71ca-5614-4385-8175-5e2e303a8709',
-    sku: 'OTW324-BLK',
-    slug: 'oraimo-spacebuds-lite-otw-324',
-    name: 'Oraimo SpaceBuds Lite OTW-324',
-    brand: 'Oraimo',
-    category: 'Áudio & Som',
-    sourceName: 'Loja Oficial Oraimo (ng.oraimo.com / SpaceBuds Lite OTW-324)',
-    referenceCostKz: 11000,
-    shippingKz: 4000,
-    totalCostKz: 15000,
-    marginPercent: 25,
-    marginKz: 2750,
-    calculatedSalePrice: 17750,
-    regularPrice: 20000,
-    stock: 12,
-    image: '/products/fones-tws-bluetooth.jpg',
-    seoTitle: 'Fones Bluetooth Oraimo SpaceBuds Lite OTW-324 | AQUI TEM ANGOLA',
-    seoDescription: 'Oraimo SpaceBuds Lite OTW-324 com design moderno, graves envolventes e bateria de longa duração na AQUI TEM Angola. 100% original com garantia e entrega rápida.'
-  },
-  {
-    id: 'ce68593d-3752-4dff-99a3-d28b4237d6a2',
-    sku: 'OPN371-BLK',
-    slug: 'oraimo-opensnap-air-opn-371',
-    name: 'Oraimo OpenSnap Air OPN-371',
-    brand: 'Oraimo',
-    category: 'Áudio & Som',
-    sourceName: 'Loja Oficial Oraimo (ng.oraimo.com / OpenSnap Air OPN-371)',
-    referenceCostKz: 17500,
-    shippingKz: 4000,
-    totalCostKz: 21500,
-    marginPercent: 25,
-    marginKz: 4375,
-    calculatedSalePrice: 25875,
-    regularPrice: 29500,
+    marginKz: 8000,
+    calculatedSalePrice: 40000,
+    regularPrice: 48000,
     stock: 10,
-    image: '/product_opensnap.jpg',
-    seoTitle: 'Fones de Ouvido Abertos Oraimo OpenSnap Air OPN-371 | AQUI TEM ANGOLA',
-    seoDescription: 'Fones de ouvido abertos Oraimo OpenSnap Air OPN-371 com som panorâmico e máximo conforto na AQUI TEM Angola. Ideal para desporto e dia a dia em Luanda.'
+    rating: 4.9,
+    reviews_count: 38,
+    image: 'https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Rato Gaming Sem Fios Glorious Model O Wireless RGB | AQUI TEM ANGOLA',
+    seoDescription: 'Compre o Rato Gaming Sem Fios Glorious Model O Wireless RGB na AQUI TEM Angola. Sensor BAMF, ultra leve 69g e entrega rápida em Luanda.'
   },
+
+  // --------------------------------------------------------------------------
+  // [12] Teclado Kapbom
+  // --------------------------------------------------------------------------
   {
-    id: '8cfe6239-ef53-47d2-bd1d-8a849ab9e38d',
-    sku: 'ORAIMO-OEB311-GOLD',
-    slug: 'oraimo-necklace-lite',
-    name: 'Oraimo Necklace Lite',
+    id: '2c4e6f8a-0b2d-4f6a-8c0e-2d4f6a8c0e2d',
+    sku: 'AT-ACC-012',
+    slug: 'teclado-bluetooth-kapbom',
+    slugAliases: ['teclado-bluetooth-sem-fios-kapbom'],
+    name: 'Teclado Bluetooth Sem Fios Kapbom',
+    brand: 'Kapbom',
+    category: 'Acessórios & Tech',
+    sourceName: 'Fornecedor Kapbom Tech',
+    referenceCostKz: 10000,
+    shippingKz: 4000,
+    totalCostKz: 14000,
+    marginPercent: 25,
+    marginKz: 3500,
+    calculatedSalePrice: 17500,
+    regularPrice: 22000,
+    stock: 18,
+    rating: 4.4,
+    reviews_count: 22,
+    image: 'https://images.unsplash.com/photo-1587829741301-dc798b83dadc?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Teclado Bluetooth Sem Fios Kapbom | AQUI TEM ANGOLA',
+    seoDescription: 'Teclado Bluetooth Sem Fios Kapbom ultra fino e silencioso para tablets e portáteis na AQUI TEM Angola. Entrega rápida em Luanda.'
+  },
+
+  // --------------------------------------------------------------------------
+  // [13] Oraimo Smart Mouse P
+  // --------------------------------------------------------------------------
+  {
+    id: 'f4a6e8c0-2d4f-6a8c-0e2d-4f6a8c0e2d4f',
+    sku: 'AT-ACC-013',
+    slug: 'oraimo-smart-mouse-p',
+    slugAliases: ['oraimo-smart-mouse-p-sem-fios'],
+    name: 'Oraimo Smart Mouse P Sem Fios',
     brand: 'Oraimo',
-    category: 'Áudio & Som',
-    sourceName: 'Loja Oficial Oraimo (Necklace Lite OEB-E311)',
+    category: 'Acessórios & Tech',
+    sourceName: 'Fornecedor Oficial Oraimo Direct',
+    referenceCostKz: 8000,
+    shippingKz: 4000,
+    totalCostKz: 12000,
+    marginPercent: 25,
+    marginKz: 3000,
+    calculatedSalePrice: 15000,
+    regularPrice: 19000,
+    stock: 22,
+    rating: 4.7,
+    reviews_count: 41,
+    image: 'https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Oraimo Smart Mouse P Sem Fios Silencioso | AQUI TEM ANGOLA',
+    seoDescription: 'Compre o Rato Sem Fios Oraimo Smart Mouse P com cliques silenciosos na AQUI TEM Angola. Entrega rápida em Luanda.'
+  },
+
+  // --------------------------------------------------------------------------
+  // [14] Webcam Kapbom 1080p
+  // --------------------------------------------------------------------------
+  {
+    id: 'a8c0e2d4-f6a8-c0e2-d4f6-a8c0e2d4f6a8',
+    sku: 'AT-ACC-014',
+    slug: 'webcam-full-hd-kapbom-1080p',
+    slugAliases: ['webcam-full-hd-kapbom-1080p-usb'],
+    name: 'Webcam Full HD Kapbom 1080p USB com Microfone',
+    brand: 'Kapbom',
+    category: 'Acessórios & Tech',
+    sourceName: 'Fornecedor Kapbom Digital',
     referenceCostKz: 12000,
     shippingKz: 4000,
     totalCostKz: 16000,
     marginPercent: 25,
-    marginKz: 3000,
-    calculatedSalePrice: 19000,
-    regularPrice: 22000,
+    marginKz: 4000,
+    calculatedSalePrice: 20000,
+    regularPrice: 25000,
     stock: 14,
-    image: '/products/fones-tws-bluetooth.jpg',
-    seoTitle: 'Auscultadores de Pescoço Oraimo Necklace Lite OEB-E311 | AQUI TEM ANGOLA',
-    seoDescription: 'Oraimo Necklace Lite OEB-E311 com autonomia até 30 horas, vibração de chamadas e graves profundos na AQUI TEM Angola. Compre com entrega rápida em Luanda.'
+    rating: 4.5,
+    reviews_count: 19,
+    image: 'https://images.unsplash.com/photo-1588600102111-73602492160d?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Webcam Full HD Kapbom 1080p USB | AQUI TEM ANGOLA',
+    seoDescription: 'Webcam Full HD Kapbom 1080p com microfone integrado para videochamadas e aulas online na AQUI TEM Angola.'
   },
+
+  // --------------------------------------------------------------------------
+  // [15] Kit Microfones Sem Fio Duplo
+  // --------------------------------------------------------------------------
   {
-    id: '46e7034d-6a7f-41de-a4d8-e883040645a4',
-    sku: 'AT-XW-PRISMA',
-    slug: 'x-watch-prisma-smartwatch-1',
-    name: 'X-WATCH PRISMA — Smartwatch 1.4"',
-    brand: 'X-Watch',
-    category: 'Acessórios & Tech',
-    sourceName: 'Preço Base Loja Fornecedor Luanda',
-    referenceCostKz: 15000,
+    id: 'e2d4f6a8-c0e2-d4f6-a8c0-e2d4f6a8c0e2',
+    sku: 'AT-ACC-015',
+    slug: 'kit-microfones-sem-fio-duplo',
+    slugAliases: ['kit-de-microfones-sem-fio-duplo'],
+    name: 'Kit de Microfones Sem Fio Lapela — Duplo',
+    brand: 'K8 / Kapbom',
+    category: 'Áudio & Som',
+    sourceName: 'Fornecedor Audio Tech',
+    referenceCostKz: 16000,
     shippingKz: 4000,
-    totalCostKz: 19000,
+    totalCostKz: 20000,
     marginPercent: 25,
-    marginKz: 3750,
-    calculatedSalePrice: 22750,
-    regularPrice: 26500,
-    stock: 8,
-    image: '/products/smartwatch.jpg',
-    seoTitle: 'Smartwatch X-Watch Prisma com Chamadas Bluetooth | AQUI TEM ANGOLA',
-    seoDescription: 'Compre o relógio inteligente X-Watch Prisma com preço super competitivo em Angola na AQUI TEM. Chamadas Bluetooth, monitor de saúde e entrega rápida em Luanda.'
+    marginKz: 5000,
+    calculatedSalePrice: 25000,
+    regularPrice: 31000,
+    stock: 15,
+    rating: 4.8,
+    reviews_count: 49,
+    image: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Kit de Microfones Sem Fio Lapela Duplo | AQUI TEM ANGOLA',
+    seoDescription: 'Kit de Microfones Sem Fio Duplo para entrevistas e gravações no telemóvel na AQUI TEM Angola. Entrega rápida.'
   },
+
+  // --------------------------------------------------------------------------
+  // [16] Cabo Oraimo MagCable USB-C Lightning
+  // --------------------------------------------------------------------------
   {
-    id: 'd8f54944-7134-4d66-907e-4b134a091afc',
-    sku: 'AT-XW-18',
-    slug: 'x-watch-smartwatch-18-bluetooth',
-    name: 'X-WATCH SMARTWATCH — 1.8" Bluetooth',
-    brand: 'X-Watch',
+    id: '6a8c0e2d-4f6a-8c0e-2d4f-6a8c0e2d4f6a',
+    sku: 'AT-ACC-016',
+    slug: 'cabo-oraimo-magcable-usb-c-lightning',
+    slugAliases: ['cabo-oraimo-magcable-usb-c-para-lightning-1m'],
+    name: 'Cabo Oraimo MagCable USB-C para Lightning — 1m',
+    brand: 'Oraimo',
     category: 'Acessórios & Tech',
-    sourceName: 'Preço Base Loja Fornecedor Luanda',
-    referenceCostKz: 13500,
+    sourceName: 'Fornecedor Oficial Oraimo Direct',
+    referenceCostKz: 6000,
     shippingKz: 4000,
-    totalCostKz: 17500,
+    totalCostKz: 10000,
     marginPercent: 25,
-    marginKz: 3375,
-    calculatedSalePrice: 20875,
-    regularPrice: 24500,
-    stock: 8,
-    image: '/products/smartwatch.jpg',
-    seoTitle: 'Smartwatch X-Watch 1.8" com Bluetooth e Notificações | AQUI TEM ANGOLA',
-    seoDescription: 'Smartwatch X-Watch 1.8 polegadas com excelente relação qualidade-preço na AQUI TEM Angola. Faz chamadas Bluetooth e monitoriza desporto com entrega em Luanda.'
+    marginKz: 2500,
+    calculatedSalePrice: 12500,
+    regularPrice: 16000,
+    stock: 30,
+    rating: 4.9,
+    reviews_count: 58,
+    image: 'https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Cabo Oraimo MagCable USB-C para Lightning 1m | AQUI TEM ANGOLA',
+    seoDescription: 'Cabo magnético rápido Oraimo MagCable USB-C para Lightning 1m para iPhone na AQUI TEM Angola.'
+  },
+
+  // --------------------------------------------------------------------------
+  // [17] Cabo DuraLine 3 USB-A para USB-C Oraimo
+  // --------------------------------------------------------------------------
+  {
+    id: '0e2d4f6a-8c0e-2d4f-6a8c-0e2d4f6a8c0e',
+    sku: 'AT-ACC-017',
+    slug: 'cabo-oraimo-duraline-3-usb-a-c',
+    slugAliases: ['cabo-usb-a-para-usb-c-oraimo-duraline-3-1m'],
+    name: 'Cabo USB-A para USB-C Oraimo DuraLine 3 — 1m',
+    brand: 'Oraimo',
+    category: 'Acessórios & Tech',
+    sourceName: 'Fornecedor Oficial Oraimo Direct',
+    referenceCostKz: 5000,
+    shippingKz: 4000,
+    totalCostKz: 9000,
+    marginPercent: 25,
+    marginKz: 2250,
+    calculatedSalePrice: 11250,
+    regularPrice: 15000,
+    stock: 35,
+    rating: 4.6,
+    reviews_count: 73,
+    image: 'https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Cabo USB-A para USB-C Oraimo DuraLine 3 1m | AQUI TEM ANGOLA',
+    seoDescription: 'Cabo ultra resistente Oraimo DuraLine 3 USB-A para USB-C 1m na AQUI TEM Angola.'
+  },
+
+  // --------------------------------------------------------------------------
+  // [18] Oraimo Smart Mouse F
+  // --------------------------------------------------------------------------
+  {
+    id: '4f6a8c0e-2d4f-6a8c-0e2d-4f6a8c0e2d4f',
+    sku: 'AT-ACC-018',
+    slug: 'oraimo-smart-mouse-f-wireless',
+    slugAliases: ['rato-sem-fios-oraimo-smart-mouse-f-1200-dpi'],
+    name: 'Rato Sem Fios Oraimo Smart Mouse F 1200 DPI',
+    brand: 'Oraimo',
+    category: 'Acessórios & Tech',
+    sourceName: 'Fornecedor Oficial Oraimo Direct',
+    referenceCostKz: 7000,
+    shippingKz: 4000,
+    totalCostKz: 11000,
+    marginPercent: 25,
+    marginKz: 2750,
+    calculatedSalePrice: 13750,
+    regularPrice: 18000,
+    stock: 25,
+    rating: 4.3,
+    reviews_count: 16,
+    image: 'https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Rato Sem Fios Oraimo Smart Mouse F 1200 DPI | AQUI TEM ANGOLA',
+    seoDescription: 'Rato sem fios Oraimo Smart Mouse F 1200 DPI na AQUI TEM Angola. Confortável e econômico.'
+  },
+
+  // --------------------------------------------------------------------------
+  // [19] Hub USB-C Oraimo Smart 7 em 1
+  // --------------------------------------------------------------------------
+  {
+    id: '8c0e2d4f-6a8c-0e2d-4f6a-8c0e2d4f6a8c',
+    sku: 'AT-ACC-019',
+    slug: 'hub-usb-c-oraimo-smart-7-1',
+    slugAliases: ['hub-usb-c-oraimo-smart-7-em-1'],
+    name: 'Hub USB-C Oraimo Smart 7 em 1 Multiportas HDMI e SD',
+    brand: 'Oraimo',
+    category: 'Acessórios & Tech',
+    sourceName: 'Fornecedor Oficial Oraimo Direct',
+    referenceCostKz: 18000,
+    shippingKz: 4000,
+    totalCostKz: 22000,
+    marginPercent: 25,
+    marginKz: 5500,
+    calculatedSalePrice: 27500,
+    regularPrice: 34000,
+    stock: 16,
+    rating: 4.8,
+    reviews_count: 35,
+    image: 'https://images.unsplash.com/photo-1591405351990-4726e331f141?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Hub USB-C Oraimo Smart 7 em 1 Multiportas | AQUI TEM ANGOLA',
+    seoDescription: 'Hub USB-C Oraimo Smart 7 em 1 com saída HDMI 4K, leitor SD e portas USB 3.0 na AQUI TEM Angola.'
+  },
+
+  // --------------------------------------------------------------------------
+  // [20] Suporte Alumínio Notebook
+  // --------------------------------------------------------------------------
+  {
+    id: 'd4f6a8c0-e2d4-f6a8-c0e2-d4f6a8c0e2d4',
+    sku: 'AT-ACC-020',
+    slug: 'suporte-aluminio-notebook-dobravel',
+    slugAliases: ['suporte-de-aluminio-articulado-e-dobravel-para-notebook'],
+    name: 'Suporte de Alumínio Articulado e Dobrável para Notebook',
+    brand: 'ErgoTech',
+    category: 'Acessórios & Tech',
+    sourceName: 'Fornecedor Ergonomic Office',
+    referenceCostKz: 14000,
+    shippingKz: 4000,
+    totalCostKz: 18000,
+    marginPercent: 25,
+    marginKz: 4500,
+    calculatedSalePrice: 22500,
+    regularPrice: 28000,
+    stock: 20,
+    rating: 4.7,
+    reviews_count: 44,
+    image: 'https://images.unsplash.com/photo-1616353075d60-01d7e0966a33?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Suporte de Alumínio Articulado e Dobrável para Notebook | AQUI TEM ANGOLA',
+    seoDescription: 'Suporte ergonómico de alumínio dobrável para portátil na AQUI TEM Angola. Alivia dores no pescoço.'
+  },
+
+  // --------------------------------------------------------------------------
+  // [21] Aparelho Tigre TV Box 4K
+  // --------------------------------------------------------------------------
+  {
+    id: '1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f',
+    sku: 'AT-TV-021',
+    slug: 'aparelho-tigre-tv-box-4k',
+    slugAliases: ['aparelho-tigre-tv'],
+    name: 'Aparelho Tigre TV Box 4K Ultra HD Android',
+    brand: 'Tigre TV',
+    category: 'TV & Vídeo',
+    sourceName: 'Fornecedor Oficial Tigre Box Digital',
+    referenceCostKz: 32000,
+    shippingKz: 4000,
+    totalCostKz: 36000,
+    marginPercent: 25,
+    marginKz: 9000,
+    calculatedSalePrice: 45000,
+    regularPrice: 55000,
+    stock: 12,
+    rating: 4.9,
+    reviews_count: 82,
+    image: 'https://images.unsplash.com/photo-1593359677771-48288b3941a3?auto=format&fit=crop&w=800&q=80',
+    seoTitle: 'Aparelho Tigre TV Box 4K Ultra HD Android | AQUI TEM ANGOLA',
+    seoDescription: 'Compre o Aparelho Tigre TV Box 4K Ultra HD com Android na AQUI TEM Angola. Canais e filmes em alta definição.'
   }
 ];
 
@@ -482,6 +655,39 @@ export function getOfficialPricing(identifierOrProduct) {
   }
   if (clean.includes('wiwu') || clean.includes('45w')) {
     return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'WIWU-CH-45W-BLK') || null;
+  }
+  if (clean.includes('glorious') || clean.includes('model o')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-GAM-011') || null;
+  }
+  if (clean.includes('teclado') && clean.includes('kapbom')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-012') || null;
+  }
+  if (clean.includes('mouse p') || clean.includes('mouse-p')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-013') || null;
+  }
+  if (clean.includes('webcam') && clean.includes('kapbom')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-014') || null;
+  }
+  if (clean.includes('microfone')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-015') || null;
+  }
+  if (clean.includes('magcable')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-016') || null;
+  }
+  if (clean.includes('duraline')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-017') || null;
+  }
+  if (clean.includes('mouse f') || clean.includes('mouse-f')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-018') || null;
+  }
+  if (clean.includes('hub')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-019') || null;
+  }
+  if (clean.includes('suporte')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-ACC-020') || null;
+  }
+  if (clean.includes('tigre')) {
+    return OFFICIAL_NEW_PRODUCTS_PRICING.find(p => p.sku === 'AT-TV-021') || null;
   }
 
   return null;

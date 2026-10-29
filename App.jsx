@@ -37,8 +37,7 @@ import {
 } from 'lucide-react';
 import { CATEGORIES, ADVANTAGES, HERO_BANNER_FALLBACK, HERO_COVER_IMAGES } from './data/products';
 import { PRODUCT_VIDEOS } from './src/data/videos';
-import { getAssetUrl } from './src/utils/assets';
-import OriginalLogoImage from './src/components/OriginalLogoImage';
+
 import SocialProofModal from './src/components/SocialProofModal';
 import VideosModal from './src/components/VideosModal';
 import CRMDashboardModal from './src/components/CRMDashboardModal';
@@ -54,6 +53,7 @@ import {
   createProductStructuredData,
   createBreadcrumbStructuredData
 } from './src/seo/structuredData';
+import Chatbot from './src/components/Chatbot';
 
 export default function App() {
   const { lang, t } = useLanguage();
@@ -97,7 +97,7 @@ export default function App() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setHeroImageIndex(prev => (prev + 1) % HERO_COVER_IMAGES.length);
+      setHeroImageIndex(prev => (prev + 1) % (HERO_COVER_IMAGES.length || 1));
     }, 15000);
     return () => clearInterval(timer);
   }, []);
@@ -175,9 +175,11 @@ export default function App() {
   ];
 
   return (
-    <div className="app-container">
-
-      {/* Top Announcement Bar */}
+    <>
+      <Chatbot />
+      <div className="app-container">
+        
+        {/* Top Announcement Bar */}
       <div className="top-bar">
         <span className="top-bar-main">{t('topBarMsg')}</span>
         <span className="top-bar-sep" style={{ opacity: 0.6 }}>|</span>
@@ -200,7 +202,7 @@ export default function App() {
             </button>
 
             <a href="#" className="logo-brand">
-              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={40} className="header-logo-img" />
+              <img src="/logo.jpg" alt="Aqui Tem" height={40} className="header-logo-img" />
             </a>
           </div>
 
@@ -262,7 +264,7 @@ export default function App() {
             onClick={e => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', paddingBottom: '10px', borderBottom: '1px solid var(--border-light)' }}>
-              <OriginalLogoImage src="/logo.jpg" alt="Aqui Tem" height={40} />
+              <img src="/logo.jpg" alt="Aqui Tem" height={40} />
               <button onClick={() => setIsSideMenuOpen(false)}>
                 <X size={20} />
               </button>
@@ -516,7 +518,7 @@ export default function App() {
             <img
               key={HERO_COVER_IMAGES[heroImageIndex]?.id || heroImageIndex}
               src={HERO_COVER_IMAGES[heroImageIndex]?.url || HERO_COVER_IMAGES[heroImageIndex]?.remoteUrl || HERO_BANNER_FALLBACK}
-              alt="Promoções Aqui Tem Angola"
+              alt={HERO_COVER_IMAGES[heroImageIndex]?.title || "Promoções Aqui Tem Angola"}
               referrerPolicy="no-referrer"
               onError={(e) => {
                 if (HERO_COVER_IMAGES[heroImageIndex]?.remoteUrl && e.currentTarget.src !== HERO_COVER_IMAGES[heroImageIndex]?.remoteUrl) {
@@ -527,38 +529,6 @@ export default function App() {
                 }
               }}
             />
-            {/* Carousel Dots */}
-            <div style={{
-              position: 'absolute',
-              bottom: '12px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              gap: '6px',
-              background: 'rgba(0,0,0,0.5)',
-              padding: '4px 10px',
-              borderRadius: '20px',
-              backdropFilter: 'blur(4px)',
-              maxWidth: '92%',
-              flexWrap: 'wrap',
-              justifyContent: 'center'
-            }}>
-              {HERO_COVER_IMAGES.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => setHeroImageIndex(idx)}
-                  style={{
-                    width: heroImageIndex === idx ? '18px' : '7px',
-                    height: '7px',
-                    borderRadius: '4px',
-                    background: heroImageIndex === idx ? 'var(--primary-orange)' : 'rgba(255,255,255,0.6)',
-                    border: 'none',
-                    cursor: 'pointer',
-                    transition: 'all 0.3s ease'
-                  }}
-                />
-              ))}
-            </div>
           </div>
         </div>
       </section>
@@ -1018,7 +988,7 @@ export default function App() {
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={(e) => {
                   e.currentTarget.onerror = null;
-                  e.currentTarget.src = getAssetUrl('/hero_banner_attendant.jpg');
+                  e.currentTarget.src = "/hero_banner_attendant.jpg";
                 }}
               />
               <span style={{ position: 'absolute', bottom: '8px', left: '8px', background: 'rgba(0,0,0,0.8)', color: '#FFF', fontSize: '0.7rem', fontWeight: 700, padding: '4px 8px', borderRadius: '6px', backdropFilter: 'blur(4px)' }}>
@@ -1028,7 +998,7 @@ export default function App() {
 
             <div style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', height: '160px' }}>
               <img
-                src={getAssetUrl('/flyer_appliances.jpg')}
+                src="/flyer_appliances.jpg"
                 alt="Estoque e Atendimento AQUI TEM"
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 onError={(e) => {
@@ -1316,7 +1286,7 @@ export default function App() {
           {/* Line 1: Small White Transparent PNG Logo + Slogan + WhatsApp */}
           <div className="footer-line-main">
             <a href="#" className="footer-logo-link">
-              <OriginalLogoImage src="/logo.jpg" alt="Logo" height={24} white={true} className="footer-logo-png" />
+              <img src="/logo.jpg" alt="Logo" height={24} className="footer-logo-png" style={{ filter: 'brightness(0) invert(1)' }} />
             </a>
             <span className="footer-slogan-text">{t('siteSlogan')}</span>
             <span className="footer-dot">•</span>
@@ -1386,6 +1356,7 @@ export default function App() {
 
       {/* CRM Dashboard & Lead Automation Modal */}
       <CRMDashboardModal />
-    </div>
+      </div>
+    </>
   );
 }

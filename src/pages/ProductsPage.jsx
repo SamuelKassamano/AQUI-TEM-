@@ -356,7 +356,7 @@ export default function ProductsPage() {
             </div>
             <div>
               <strong style={{ display: 'block', fontSize: '0.92rem' }}>Desconto Pronto Pagamento</strong>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>10% de desconto em dinheiro ou Multicaixa</span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>10% de desconto a pronto pagamento</span>
             </div>
           </div>
         </div>

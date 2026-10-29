@@ -25,6 +25,7 @@ import { useLanguage } from '../context/LanguageContext';
 import Layout from '../components/Layout';
 import { trackProductView, trackWhatsAppLead } from '../utils/pixelRetargeting';
 
+
 export default function ProductPage() {
   const { slug } = useParams();
   const { lang, t } = useLanguage();

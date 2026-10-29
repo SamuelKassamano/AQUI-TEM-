@@ -42,15 +42,15 @@ const FAQ_DATA = [
     items: [
       {
         q: 'Quais são as formas de pagamento aceites?',
-        a: 'Aceitamos Multicaixa Express, Transferência Bancária prévia por IBAN, TPA (Terminal de Pagamento Automático) na entrega e Dinheiro/Cash.'
+        a: 'Aceitamos Multicaixa Express e Transferência Bancária.'
       },
       {
         q: 'Posso pagar apenas no momento da entrega?',
-        a: 'Sim! Para Luanda, oferecemos a modalidade de Pagamento na Entrega (após inspecionar o produto selado entregue pelo nosso estafeta).'
+        a: 'Todos os pedidos devem ser pagos via Multicaixa Express ou Transferência Bancária.'
       },
       {
         q: 'Há desconto para pagamento a pronto?',
-        a: 'Sim, concedemos até 10% de desconto adicional para pagamentos a pronto em dinheiro ou Multicaixa Express direto.'
+        a: 'Sim, concedemos até 10% de desconto adicional para pagamentos a pronto.'
       },
       {
         q: 'Emitem Factura Pró-forma e Factura-Recibo com NIF?',

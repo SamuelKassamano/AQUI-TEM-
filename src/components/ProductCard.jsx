@@ -6,6 +6,7 @@ import { useStore } from '../context/StoreContext';
 import { createSlug } from '../utils/slug';
 import { trackProductView } from '../utils/pixelRetargeting';
 
+
 export default function ProductCard({ product, onQuickView }) {
   const { lang, t } = useLanguage();
   const {

@@ -1,9 +1,8 @@
-import { getAssetUrl } from '../src/utils/assets.js';
 import { createSlug } from '../src/utils/slug.js';
 
 // Helper function to create clean SVG data URIs for embedded HTML image fallback
 const createSvgDataUri = (svgString) => {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svgString)}`;
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svgString);
 };
 
 export const PRODUCT_FALLBACK_IMAGES = {
@@ -14,75 +13,70 @@ export const PRODUCT_FALLBACK_IMAGES = {
   thermogo: '/product_thermogo.jpg',
   magpower: '/product_magpower.jpg',
   opensnap: '/product_opensnap.jpg',
-  tv: '/flyer_appliances.jpg',
+  tv: 'https://images.unsplash.com/photo-1593359677771-48288b3941a3?auto=format&fit=crop&w=800&q=80',
   fridge: '/flyer_appliances.jpg',
-  charger: '/products/carregador-gan.jpg'
+  charger: '/products/carregador-gan.jpg',
+  mouse: 'https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80',
+  keyboard: 'https://images.unsplash.com/photo-1587829741301-dc798b83dadc?auto=format&fit=crop&w=800&q=80',
+  webcam: 'https://images.unsplash.com/photo-1588600102111-73602492160d?auto=format&fit=crop&w=800&q=80',
+  mic: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80',
+  cable: 'https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80',
+  hub: 'https://images.unsplash.com/photo-1591405351990-4726e331f141?auto=format&fit=crop&w=800&q=80',
+  stand: 'https://images.unsplash.com/photo-1616353075d60-01d7e0966a33?auto=format&fit=crop&w=800&q=80'
 };
 
-export const HERO_BANNER_FALLBACK = '/flyer_showroom.jpg';
+export const HERO_BANNER_FALLBACK = '/banners/banner_1.jpg';
 
 export const HERO_COVER_IMAGES = [
   {
-    url: '/flyer_showroom.jpg',
-    fallback: '/flyer_showroom.jpg',
+    url: '/banners/banner_1.jpg',
     tag: 'Operação Central Luanda',
     title: 'AQUI TEM ANGOLA',
     subtitle: 'Tecnologia Oficial e Eletrodomésticos com Pronta Entrega'
   },
   {
-    url: '/flyer_oraimo.jpg',
-    fallback: '/flyer_oraimo.jpg',
+    url: '/banners/banner_2.jpg',
     tag: 'Distribuidor Autorizado',
     title: 'Linha Premium Oraimo',
     subtitle: 'Fones TWS, Smartwatches e Carregadores com Garantia Real'
   },
   {
-    url: '/flyer_appliances.jpg',
-    fallback: '/flyer_appliances.jpg',
+    url: '/banners/banner_3.jpg',
     tag: 'Smart Home & Conforto',
     title: 'Casa Inteligente & Tech',
     subtitle: 'Câmaras Wi-Fi, Mini Projetores e Acessórios Selecionados'
   }
 ];
 
-// ==============================================================================
-// CATÁLOGO OFICIAL DE PRODUTOS — AQUI TEM ANGOLA
-// Preços calculados estritamente pela fórmula:
-// CUSTO TOTAL = CUSTO REAL DO PRODUTO + 4.000 Kz (TRANSPORTE)
-// PREÇO DE VENDA = CUSTO TOTAL + 20% A 25% DE MARGEM
-// Fotos principais em fundo branco nítido de estúdio.
-// ==============================================================================
-
 export const PRODUCTS = [
-  // --------------------------------------------------------------------------
-  // 1. Fones TWS Bluetooth
-  // --------------------------------------------------------------------------
   {
-    id: "3a1373b1-f09f-491e-ae85-8695398ac32a",
-    supabaseId: "3a1373b1-f09f-491e-ae85-8695398ac32a",
-    name: "Fones de Ouvido TWS Bluetooth Oraimo FreePods Lite",
-    slug: "fones-tws-bluetooth",
-    slugAliases: [
+    "id": "3a1373b1-f09f-491e-ae85-8695398ac32a",
+    "supabaseId": "3a1373b1-f09f-491e-ae85-8695398ac32a",
+    "name": "Fones de Ouvido TWS Bluetooth Oraimo FreePods Lite",
+    "slug": "fones-tws-bluetooth",
+    "slugAliases": [
       "fones-de-ouvido-tws-oraimo",
       "fones-tws-bluetooth-oraimo",
       "oraimo-freepods-lite"
     ],
-    sku: "AT-TWS-001",
-    brand: "Oraimo",
-    category: "Áudio & Som",
-    stock: 20,
-    active: true,
-    price: 24000,
-    sale_price: 20000,
-    old_price: 24000,
-    rating: 4.9,
-    reviews_count: 32,
-    badge: "MAIS VENDIDO",
-    image_url: "/products/fones-tws-bluetooth.jpg",
-    image: "/products/fones-tws-bluetooth.jpg",
-    images: ["/products/fones-tws-bluetooth.jpg"],
-    description: "Os Fones TWS Bluetooth Oraimo FreePods Lite são a escolha perfeita para quem procura liberdade sem fios, conforto anatómico e qualidade sonora superior em Angola. Desenvolvidos para estudantes, profissionais e desportistas, estes auscultadores oferecem graves potentes através do algoritmo HavyBass e chamadas telefónicas com redução de ruído ambiental (ENC) cristalina, ideais para o dia a dia e trânsito em Luanda. Com autonomia impressionante de até 40 horas somando os fones e o estojo compacto, você passa dias sem se preocupar em procurar uma tomada. O carregamento ultra rápido AniFast garante 2 horas de música com apenas 10 minutos na tomada Tipo-C.",
-    highlights: [
+    "sku": "AT-TWS-001",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 20,
+    "active": true,
+    "price": 24000,
+    "sale_price": 20000,
+    "old_price": 24000,
+    "rating": 4.9,
+    "reviews_count": 32,
+    "badge": "MAIS VENDIDO",
+    "image_url": "/products/fones-tws-bluetooth.jpg",
+    "image": "/products/fones-tws-bluetooth.jpg",
+    "images": [
+      "/products/fones-tws-bluetooth.jpg"
+    ],
+    "description": "Os Fones TWS Bluetooth Oraimo FreePods Lite são a escolha perfeita para quem procura liberdade sem fios, conforto anatómico e qualidade sonora superior em Angola. Desenvolvidos para estudantes, profissionais e desportistas, estes auscultadores oferecem graves potentes através do algoritmo HavyBass e chamadas telefónicas com redução de ruído ambiental (ENC) cristalina, ideais para o dia a dia e trânsito em Luanda. Com autonomia impressionante de até 40 horas somando os fones e o estojo compacto, você passa dias sem se preocupar em procurar uma tomada. O carregamento ultra rápido AniFast garante 2 horas de música com apenas 10 minutos na tomada Tipo-C.",
+    "highlights": [
       "Bluetooth 5.3 com emparelhamento instantâneo e ultra-baixa latência",
       "Autonomia colossal de até 40 horas no total com o estojo portátil",
       "Carregamento ultra rápido AniFast: 10 minutos de carga = 120 minutos de som",
@@ -90,13 +84,13 @@ export const PRODUCTS = [
       "Microfones duplos com cancelamento de ruído ambiental (ENC) para chamadas limpas",
       "Certificação IPX4 resistente a suor, salpicos e chuviscos"
     ],
-    features: [
+    "features": [
       "Tecnologia TWS True Wireless Stereo com controles touch táteis",
       "Design ergonómico ultraleve que não cansa o ouvido",
       "Compatibilidade universal com Android, iPhone iOS, tablets e computadores",
       "Estojo de bolso fosco elegante que não risca facilmente"
     ],
-    specifications: {
+    "specifications": {
       "Versão Bluetooth": "V5.3",
       "Alcance Sem Fio": "Até 10 metros sem barreiras",
       "Autonomia dos Fones": "Até 8 horas contínuas de reprodução",
@@ -106,47 +100,45 @@ export const PRODUCTS = [
       "Proteção contra Água": "IPX4 Resistente a suor e salpicos",
       "Controles": "Toque inteligente (Play/Pause, Avançar, Volume, Chamadas)"
     },
-    packageContent: [
+    "packageContent": [
       "1 Par de fones TWS Oraimo FreePods Lite",
       "1 Estojo de carregamento inteligente",
       "1 Cabo de dados USB Tipo-C",
       "3 Pares de ponteiras auriculares de silicone (P, M, G)",
       "1 Guia do utilizador e certificado de garantia oficial"
     ],
-    seoTitle: "Fones TWS Bluetooth Oraimo FreePods Som HD e Graves Potentes | AQUI TEM ANGOLA",
-    seoDescription: "Compre Fones TWS Bluetooth Oraimo FreePods originais com cancelamento de ruído, 40h de bateria e entrega rápida na AQUI TEM Angola. Pague na entrega em Luanda.",
-    seoKeywords: "fones tws bluetooth, fones oraimo angola, freepods lite luanda, auscultadores sem fio, comprar fones luanda, aqui tem angola"
+    "seoTitle": "Fones TWS Bluetooth Oraimo FreePods Som HD e Graves Potentes | AQUI TEM ANGOLA",
+    "seoDescription": "Compre Fones TWS Bluetooth Oraimo FreePods originais com cancelamento de ruído, 40h de bateria e entrega rápida na AQUI TEM Angola. Pague na entrega em Luanda.",
+    "seoKeywords": "fones tws bluetooth, fones oraimo angola, freepods lite luanda, auscultadores sem fio, comprar fones luanda, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 2. Smartwatch
-  // --------------------------------------------------------------------------
   {
-    id: "250bfc74-fc6b-4c1a-867e-984b33a0ab06",
-    supabaseId: "250bfc74-fc6b-4c1a-867e-984b33a0ab06",
-    name: "Smartwatch Inteligente com Ecrã AMOLED Curvo Oraimo Watch Nova 2",
-    slug: "smartwatch",
-    slugAliases: [
+    "id": "250bfc74-fc6b-4c1a-867e-984b33a0ab06",
+    "supabaseId": "250bfc74-fc6b-4c1a-867e-984b33a0ab06",
+    "name": "Smartwatch Inteligente com Ecrã AMOLED Curvo Oraimo Watch Nova 2",
+    "slug": "smartwatch",
+    "slugAliases": [
       "watch-nova-2-smartwatch-inteligente-oraimo",
       "smartwatch-oraimo-nova-2",
       "osw-814"
     ],
-    sku: "AT-SW-002",
-    brand: "Oraimo",
-    category: "Smartwatches",
-    stock: 15,
-    active: true,
-    price: 34000,
-    sale_price: 29500,
-    old_price: 34000,
-    rating: 4.9,
-    reviews_count: 28,
-    badge: "OFERTA",
-    image_url: "/products/smartwatch.jpg",
-    image: "/products/smartwatch.jpg",
-    images: ["/products/smartwatch.jpg"],
-    description: "O Smartwatch Oraimo Watch Nova 2 é o companheiro tecnológico ideal para quem valoriza elegância, produtividade e saúde no pulso em Angola. Equipado com um deslumbrante ecrã AMOLED curvo de 2.01 polegadas com alta taxa de atualização, ele permite atender e fazer chamadas telefónicas em alta definição via Bluetooth diretamente do relógio, além de ler mensagens do WhatsApp, SMS e e-mails sem tirar o telemóvel do bolso. Para os entusiastas de fitness, monitoriza com precisão batimentos cardíacos 24h, níveis de oxigénio no sangue SpO2, calorias gastas e passos diários em mais de 100 modalidades desportivas. A caixa em acabamento metálico com pulseira de silicone hipoalergénico e bateria com autonomia de até 10 dias garantem uma experiência de uso sem preocupações.",
-    highlights: [
+    "sku": "AT-SW-002",
+    "brand": "Oraimo",
+    "category": "Smartwatches",
+    "stock": 15,
+    "active": true,
+    "price": 34000,
+    "sale_price": 29500,
+    "old_price": 34000,
+    "rating": 4.9,
+    "reviews_count": 28,
+    "badge": "OFERTA",
+    "image_url": "/products/smartwatch.jpg",
+    "image": "/products/smartwatch.jpg",
+    "images": [
+      "/products/smartwatch.jpg"
+    ],
+    "description": "O Smartwatch Oraimo Watch Nova 2 é o companheiro tecnológico ideal para quem valoriza elegância, produtividade e saúde no pulso em Angola. Equipado com um deslumbrante ecrã AMOLED curvo de 2.01 polegadas com alta taxa de atualização, ele permite atender e fazer chamadas telefónicas em alta definição via Bluetooth diretamente do relógio, além de ler mensagens do WhatsApp, SMS e e-mails sem tirar o telemóvel do bolso. Para os entusiastas de fitness, monitoriza com precisão batimentos cardíacos 24h, níveis de oxigénio no sangue SpO2, calorias gastas e passos diários em mais de 100 modalidades desportivas. A caixa em acabamento metálico com pulseira de silicone hipoalergénico e bateria com autonomia de até 10 dias garantem uma experiência de uso sem preocupações.",
+    "highlights": [
       "Ecrã curvo AMOLED de 2.01 polegadas com cores vivas e Always-On Display",
       "Faz e atende chamadas telefónicas via Bluetooth com microfone e altifalante HD",
       "Monitorização contínua de frequência cardíaca 24/7, SpO2 e qualidade de sono",
@@ -154,13 +146,13 @@ export const PRODUCTS = [
       "Bateria de longa duração: até 7 a 10 dias de uso normal sem carregar",
       "Proteção IP68 contra água e poeira para uso em qualquer clima"
     ],
-    features: [
+    "features": [
       "Notificações instantâneas do WhatsApp, chamadas, SMS e redes sociais",
       "Coroa rotativa digital para navegação rápida pelos menus",
       "Centenas de mostradores de relógio (Watch Faces) personalizáveis pela aplicação",
       "Controlo remoto de reprodução de música e obturador da câmara do telemóvel"
     ],
-    specifications: {
+    "specifications": {
       "Ecrã": "2.01 polegadas AMOLED Curvo (Resolução 410x502)",
       "Conectividade": "Bluetooth 5.2 (Chamadas e Dados)",
       "Capacidade da Bateria": "300mAh Li-Po com carregamento magnético",
@@ -170,46 +162,44 @@ export const PRODUCTS = [
       "Compatibilidade": "Android 6.0 ou superior / iOS 11.0 ou superior (App Oraimo Health)",
       "Material": "Liga metálica de zinco + Pulseira de silicone hipoalergénico"
     },
-    packageContent: [
+    "packageContent": [
       "1 Smartwatch Oraimo Watch Nova 2",
       "1 Pulseira de silicone preta ergonómica",
       "1 Cabo de carregamento USB magnético",
       "1 Manual de instruções completo em português",
       "1 Cartão de garantia oficial"
     ],
-    seoTitle: "Smartwatch Inteligente Ecrã AMOLED e Chamadas Bluetooth | AQUI TEM ANGOLA",
-    seoDescription: "Compre o Smartwatch Oraimo Watch Nova 2 com ecrã AMOLED curvo de 2.01\", chamadas Bluetooth e monitor de saúde na AQUI TEM Angola. Garantia e entrega rápida em Luanda.",
-    seoKeywords: "smartwatch angola, oraimo watch nova 2, relogio inteligente luanda, smartwatch amoled, comprar smartwatch angola, aqui tem angola"
+    "seoTitle": "Smartwatch Inteligente Ecrã AMOLED e Chamadas Bluetooth | AQUI TEM ANGOLA",
+    "seoDescription": "Compre o Smartwatch Oraimo Watch Nova 2 com ecrã AMOLED curvo de 2.01\", chamadas Bluetooth e monitor de saúde na AQUI TEM Angola. Garantia e entrega rápida em Luanda.",
+    "seoKeywords": "smartwatch angola, oraimo watch nova 2, relogio inteligente luanda, smartwatch amoled, comprar smartwatch angola, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 3. Câmara Wi-Fi de Segurança
-  // --------------------------------------------------------------------------
   {
-    id: "9961e2e9-98c6-462b-8b6c-fd584f9b7a6d",
-    supabaseId: "9961e2e9-98c6-462b-8b6c-fd584f9b7a6d",
-    name: "Câmara Wi-Fi de Segurança 360° Inteligente Full HD Visão Noturna",
-    slug: "camera-wifi-seguranca",
-    slugAliases: [
+    "id": "9961e2e9-98c6-462b-8b6c-fd584f9b7a6d",
+    "supabaseId": "9961e2e9-98c6-462b-8b6c-fd584f9b7a6d",
+    "name": "Câmara Wi-Fi de Segurança 360° Inteligente Full HD Visão Noturna",
+    "slug": "camera-wifi-seguranca",
+    "slugAliases": [
       "camera-de-seguranca-wi-fi-defender-ip8mcb1-pro",
       "camera-wifi-seguranca-360"
     ],
-    sku: "AT-CAM-003",
-    brand: "Defender / Tuya Smart",
-    category: "Acessórios & Casa",
-    stock: 12,
-    active: true,
-    price: 29500,
-    sale_price: 25000,
-    old_price: 29500,
-    rating: 4.8,
-    reviews_count: 24,
-    badge: "SEGURANÇA",
-    image_url: "/products/camera-wifi-seguranca.jpg",
-    image: "/products/camera-wifi-seguranca.jpg",
-    images: ["/products/camera-wifi-seguranca.jpg"],
-    description: "A Câmara Wi-Fi de Segurança 360° Inteligente é a solução ideal para proteger a sua residência, escritório ou estabelecimento comercial em Luanda e em toda Angola. Com controlo total pelo telemóvel através da aplicação Smart Life ou Tuya, você pode rodar a câmara em qualquer direção remotamente (355° horizontal e 90° vertical), cobrindo todo o ambiente sem pontos cegos. A tecnologia de visão noturna por infravermelhos automáticos garante imagens nítidas mesmo na escuridão absoluta, enquanto o sensor de movimento envia notificações imediatas com foto sempre que detectar qualquer atividade no perímetro. Graças ao sistema de áudio bidirecional, é possível conversar com quem estiver no local ou advertir intrusos remotamente.",
-    highlights: [
+    "sku": "AT-CAM-003",
+    "brand": "Defender / Tuya Smart",
+    "category": "Acessórios & Casa",
+    "stock": 12,
+    "active": true,
+    "price": 29500,
+    "sale_price": 25000,
+    "old_price": 29500,
+    "rating": 4.8,
+    "reviews_count": 24,
+    "badge": "SEGURANÇA",
+    "image_url": "/products/camera-wifi-seguranca.jpg",
+    "image": "/products/camera-wifi-seguranca.jpg",
+    "images": [
+      "/products/camera-wifi-seguranca.jpg"
+    ],
+    "description": "A Câmara Wi-Fi de Segurança 360° Inteligente é a solução ideal para proteger a sua residência, escritório ou estabelecimento comercial em Luanda e em toda Angola. Com controlo total pelo telemóvel através da aplicação Smart Life ou Tuya, você pode rodar a câmara em qualquer direção remotamente (355° horizontal e 90° vertical), cobrindo todo o ambiente sem pontos cegos. A tecnologia de visão noturna por infravermelhos automáticos garante imagens nítidas mesmo na escuridão absoluta, enquanto o sensor de movimento envia notificações imediatas com foto sempre que detectar qualquer atividade no perímetro. Graças ao sistema de áudio bidirecional, é possível conversar com quem estiver no local ou advertir intrusos remotamente.",
+    "highlights": [
       "Rotação panorâmica motorizada PTZ 355° horizontal e 90° vertical",
       "Resolução de imagem Full HD 1080p com lentes ópticas de alta fidelidade",
       "Visão noturna infravermelha automática com alcance de até 15 metros no escuro",
@@ -217,13 +207,13 @@ export const PRODUCTS = [
       "Áudio bidirecional integrado: fale e ouça em tempo real pela aplicação",
       "Armazenamento flexível: suporta cartão MicroSD até 128GB ou gravação em nuvem"
     ],
-    features: [
+    "features": [
       "Acesso simultâneo de múltiplos utilizadores (família ou equipa de segurança)",
       "Suporte para fixação em teto, parede ou sobreposta em bancadas e mesas",
       "Sirene de alarme integrada que pode ser acionada remotamente",
       "Conexão Wi-Fi estável com antenas duplas de alto ganho"
     ],
-    specifications: {
+    "specifications": {
       "Resolução de Vídeo": "Full HD 1080p (1920 x 1080 pixels)",
       "Ângulo de Rotação": "355° Horizontal / 90° Vertical",
       "Conectividade": "Wi-Fi 2.4GHz IEEE 802.11 b/g/n",
@@ -233,45 +223,43 @@ export const PRODUCTS = [
       "Alimentação": "Bivolt 100-240V via adaptador DC 5V/1.5A incluído",
       "Aplicação de Gestão": "Tuya Smart / Smart Life (Android e iOS)"
     },
-    packageContent: [
+    "packageContent": [
       "1 Câmara Wi-Fi de Segurança 360° PTZ",
       "1 Fonte de alimentação Bivolt com cabo USB",
       "1 Suporte de fixação para teto/parede",
       "1 Kit de buchas e parafusos de montagem",
       "1 Manual de instalação rápida em português"
     ],
-    seoTitle: "Câmara Wi-Fi de Segurança 360 Graus com Visão Noturna e Áudio | AQUI TEM ANGOLA",
-    seoDescription: "Proteja a sua família e negócio com a Câmara Wi-Fi de Segurança 360° Full HD na AQUI TEM Angola. Alertas no telemóvel, visão noturna e entrega rápida em Luanda.",
-    seoKeywords: "camera de seguranca luanda, camera wifi 360 angola, camera ip visão noturna, seguranca residencial angola, aqui tem angola"
+    "seoTitle": "Câmara Wi-Fi de Segurança 360 Graus com Visão Noturna e Áudio | AQUI TEM ANGOLA",
+    "seoDescription": "Proteja a sua família e negócio com a Câmara Wi-Fi de Segurança 360° Full HD na AQUI TEM Angola. Alertas no telemóvel, visão noturna e entrega rápida em Luanda.",
+    "seoKeywords": "camera de seguranca luanda, camera wifi 360 angola, camera ip visão noturna, seguranca residencial angola, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 4. Smart Plug Wi-Fi
-  // --------------------------------------------------------------------------
   {
-    id: "6be401b8-4dc3-4564-9818-6593bc764422",
-    supabaseId: "6be401b8-4dc3-4564-9818-6593bc764422",
-    name: "Smart Plug Wi-Fi Tomada Inteligente 16A com Controlo Remoto",
-    slug: "smart-plug-wifi",
-    slugAliases: [
+    "id": "6be401b8-4dc3-4564-9818-6593bc764422",
+    "supabaseId": "6be401b8-4dc3-4564-9818-6593bc764422",
+    "name": "Smart Plug Wi-Fi Tomada Inteligente 16A com Controlo Remoto",
+    "slug": "smart-plug-wifi",
+    "slugAliases": [
       "tomada-inteligente-wi-fi-smart-plug-com-botao-de-controlo"
     ],
-    sku: "AT-SP-004",
-    brand: "Tuya / Smart Life",
-    category: "Acessórios & Casa",
-    stock: 25,
-    active: true,
-    price: 16500,
-    sale_price: 13750,
-    old_price: 16500,
-    rating: 4.9,
-    reviews_count: 26,
-    badge: "ECONOMIA",
-    image_url: "/products/smart-plug-wifi.jpg",
-    image: "/products/smart-plug-wifi.jpg",
-    images: ["/products/smart-plug-wifi.jpg"],
-    description: "O Smart Plug Wi-Fi de 16A transforma qualquer aparelho elétrico comum em tecnologia inteligente conectada à internet. Ideal para poupar energia em Angola, permite programar o termoacumulador, ar condicionado, ventiladores ou luzes para ligarem e desligarem automaticamente nos horários que você definir. Esqueceu o ferro de passar ou aquecedor ligado? Verifique o estado e desligue o aparelho instantaneamente pelo smartphone, mesmo estando no trânsito ou no trabalho. A configuração é extremamente simples: basta espetar na tomada de parede, conectar à sua rede Wi-Fi e começar a controlar sem precisar de centrais complicadas.",
-    highlights: [
+    "sku": "AT-SP-004",
+    "brand": "Tuya / Smart Life",
+    "category": "Acessórios & Casa",
+    "stock": 25,
+    "active": true,
+    "price": 16500,
+    "sale_price": 13750,
+    "old_price": 16500,
+    "rating": 4.9,
+    "reviews_count": 26,
+    "badge": "ECONOMIA",
+    "image_url": "/products/smart-plug-wifi.jpg",
+    "image": "/products/smart-plug-wifi.jpg",
+    "images": [
+      "/products/smart-plug-wifi.jpg"
+    ],
+    "description": "O Smart Plug Wi-Fi de 16A transforma qualquer aparelho elétrico comum em tecnologia inteligente conectada à internet. Ideal para poupar energia em Angola, permite programar o termoacumulador, ar condicionado, ventiladores ou luzes para ligarem e desligarem automaticamente nos horários que você definir. Esqueceu o ferro de passar ou aquecedor ligado? Verifique o estado e desligue o aparelho instantaneamente pelo smartphone, mesmo estando no trânsito ou no trabalho. A configuração é extremamente simples: basta espetar na tomada de parede, conectar à sua rede Wi-Fi e começar a controlar sem precisar de centrais complicadas.",
+    "highlights": [
       "Liga e desliga aparelhos elétricos à distância de qualquer lugar pelo telemóvel",
       "Compatível com comandos de voz através da Amazon Alexa e Google Assistant",
       "Programação de temporizador, contagem regressiva e horários diários automáticos",
@@ -279,13 +267,13 @@ export const PRODUCTS = [
       "Fabricado em material anti-chamas V0 com proteção contra sobrecarga",
       "Botão físico liga/desliga com indicador luminoso LED de status"
     ],
-    features: [
+    "features": [
       "Reduz custos na fatura de eletricidade da ENDE ao evitar desperdícios",
       "Padrão de pinos redondos 100% compatível com as tomadas de Angola",
       "Compartilhamento do controlo com outros membros da família",
       "Manutenção de estado após falhas de energia (liga/desliga conforme memória)"
     ],
-    specifications: {
+    "specifications": {
       "Tensão Elétrica": "AC 100-240V 50/60Hz (Bivolt)",
       "Corrente Máxima": "16A (Carga resistiva até 3500W)",
       "Padrão Sem Fio": "Wi-Fi 2.4GHz 802.11 b/g/n",
@@ -294,43 +282,41 @@ export const PRODUCTS = [
       "Material da Estrutura": "Policarbonato retardador de chama V0",
       "Aplicação de Controlo": "Smart Life / Tuya Smart (iOS e Android)"
     },
-    packageContent: [
+    "packageContent": [
       "1 Smart Plug Wi-Fi Tomada Inteligente 16A",
       "1 Manual do utilizador passo a passo em português"
     ],
-    seoTitle: "Smart Plug Wi-Fi Tomada Inteligente 16A com Controlo no Telemóvel | AQUI TEM ANGOLA",
-    seoDescription: "Automatize a sua casa com o Smart Plug Wi-Fi Tomada Inteligente 16A na AQUI TEM Angola. Temporizador, economia de energia e entrega expressa em Luanda.",
-    seoKeywords: "smart plug wifi angola, tomada inteligente luanda, automacao residencial angola, tuya smart plug, poupar energia angola, aqui tem angola"
+    "seoTitle": "Smart Plug Wi-Fi Tomada Inteligente 16A com Controlo no Telemóvel | AQUI TEM ANGOLA",
+    "seoDescription": "Automatize a sua casa com o Smart Plug Wi-Fi Tomada Inteligente 16A na AQUI TEM Angola. Temporizador, economia de energia e entrega expressa em Luanda.",
+    "seoKeywords": "smart plug wifi angola, tomada inteligente luanda, automacao residencial angola, tuya smart plug, poupar energia angola, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 5. Carregador GaN
-  // --------------------------------------------------------------------------
   {
-    id: "54afed87-d9a4-492c-922e-07819e34f07e",
-    supabaseId: "54afed87-d9a4-492c-922e-07819e34f07e",
-    name: "Carregador GaN 65W Rápido Multiportas USB-C e USB-A com Visor Digital",
-    slug: "carregador-gan",
-    slugAliases: [
+    "id": "54afed87-d9a4-492c-922e-07819e34f07e",
+    "supabaseId": "54afed87-d9a4-492c-922e-07819e34f07e",
+    "name": "Carregador GaN 65W Rápido Multiportas USB-C e USB-A com Visor Digital",
+    "slug": "carregador-gan",
+    "slugAliases": [
       "carregador-rapido-de-parede-bmx-70w-com-visor-lcd",
       "carregador-gan-65w"
     ],
-    sku: "AT-GAN-005",
-    brand: "BMX / GaN Tech",
-    category: "Acessórios & Tech",
-    stock: 18,
-    active: true,
-    price: 30000,
-    sale_price: 25000,
-    old_price: 30000,
-    rating: 4.9,
-    reviews_count: 27,
-    badge: "ULTRA RÁPIDO",
-    image_url: "/products/carregador-gan.jpg",
-    image: "/products/carregador-gan.jpg",
-    images: ["/products/carregador-gan.jpg"],
-    description: "O Carregador GaN 65W Multiportas é a evolução definitiva para quem precisa de velocidade e praticidade no carregamento de múltiplos dispositivos eletrónicos em Angola. Desenvolvido com semicondutores de Nitreto de Gálio (GaN), entrega impressionantes 65W de potência em um corpo ultra compacto que não aquece e cabe no bolso. O visor digital inteligente mostra em tempo real a voltagem e os watts fornecidos ao seu aparelho. Com duas portas USB-C Power Delivery e uma porta USB-A Quick Charge, você pode carregar o seu portátil de trabalho (MacBook, Dell, HP), smartphone e tablet simultaneamente com um único carregador de tomada de alta eficiência.",
-    highlights: [
+    "sku": "AT-GAN-005",
+    "brand": "BMX / GaN Tech",
+    "category": "Acessórios & Tech",
+    "stock": 18,
+    "active": true,
+    "price": 30000,
+    "sale_price": 25000,
+    "old_price": 30000,
+    "rating": 4.9,
+    "reviews_count": 27,
+    "badge": "ULTRA RÁPIDO",
+    "image_url": "/products/carregador-gan.jpg",
+    "image": "/products/carregador-gan.jpg",
+    "images": [
+      "/products/carregador-gan.jpg"
+    ],
+    "description": "O Carregador GaN 65W Multiportas é a evolução definitiva para quem precisa de velocidade e praticidade no carregamento de múltiplos dispositivos eletrónicos em Angola. Desenvolvido com semicondutores de Nitreto de Gálio (GaN), entrega impressionantes 65W de potência em um corpo ultra compacto que não aquece e cabe no bolso. O visor digital inteligente mostra em tempo real a voltagem e os watts fornecidos ao seu aparelho. Com duas portas USB-C Power Delivery e uma porta USB-A Quick Charge, você pode carregar o seu portátil de trabalho (MacBook, Dell, HP), smartphone e tablet simultaneamente com um único carregador de tomada de alta eficiência.",
+    "highlights": [
       "Tecnologia semicondutora GaN: mais potência em corpo 50% menor e mais frio",
       "Potência de 65W: carrega portáteis e telemóveis em velocidade máxima",
       "Visor digital LED integrado com leitura em tempo real da potência de carga",
@@ -338,13 +324,13 @@ export const PRODUCTS = [
       "Alimenta simultaneamente até 3 dispositivos com distribuição dinâmica de energia",
       "Proteção inteligente em 8 níveis contra sobretensão, sobreaquecimento e curto-circuito"
     ],
-    features: [
+    "features": [
       "Compatível com protocolos PD 3.0, QC 4.0+, PPS, SCP e AFC",
       "Carrega iPhone e Samsung Galaxy de 0% a 70% em cerca de 30 minutos",
       "Ficha de tomada compatível com as tomadas de parede de Angola",
       "Design preto fosco elegante resistente a riscos e marcas de dedos"
     ],
-    specifications: {
+    "specifications": {
       "Potência Máxima": "65W RMS",
       "Tecnologia": "GaN III (Gallium Nitride)",
       "Entrada de Corrente": "AC 100-240V ~ 50/60Hz 1.5A",
@@ -354,42 +340,40 @@ export const PRODUCTS = [
       "Visor": "Ecrã digital LED embutido para monitorização",
       "Certificações": "CE, FCC, RoHS de segurança elétrica"
     },
-    packageContent: [
+    "packageContent": [
       "1 Carregador GaN Fast Charger 65W com Visor Digital",
       "1 Manual do utilizador e guia de segurança"
     ],
-    seoTitle: "Carregador GaN 65W Rápido Multiportas USB-C e USB-A com Visor | AQUI TEM ANGOLA",
-    seoDescription: "Carregador GaN 65W com visor digital para portáteis e telemóveis na AQUI TEM Angola. Carregamento ultra rápido, compacto e seguro com entrega em Luanda.",
-    seoKeywords: "carregador gan 65w angola, carregador macbook luanda, carregador rapido tipo c, carregador bmx 70w, acessorios celular luanda, aqui tem angola"
+    "seoTitle": "Carregador GaN 65W Rápido Multiportas USB-C e USB-A com Visor | AQUI TEM ANGOLA",
+    "seoDescription": "Carregador GaN 65W com visor digital para portáteis e telemóveis na AQUI TEM Angola. Carregamento ultra rápido, compacto e seguro com entrega em Luanda.",
+    "seoKeywords": "carregador gan 65w angola, carregador macbook luanda, carregador rapido tipo c, carregador bmx 70w, acessorios celular luanda, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 6. Power Bank
-  // --------------------------------------------------------------------------
   {
-    id: "28ce7427-2e08-4ad4-a568-c9558641d5c7",
-    supabaseId: "28ce7427-2e08-4ad4-a568-c9558641d5c7",
-    name: "Power Bank 10000mAh Bateria Externa Portátil Oraimo Toast 10",
-    slug: "power-bank",
-    slugAliases: [
+    "id": "28ce7427-2e08-4ad4-a568-c9558641d5c7",
+    "supabaseId": "28ce7427-2e08-4ad4-a568-c9558641d5c7",
+    "name": "Power Bank 10000mAh Bateria Externa Portátil Oraimo Toast 10",
+    "slug": "power-bank",
+    "slugAliases": [
       "bateria-externa-power-bank-oraimo-10000mah"
     ],
-    sku: "AT-PB-006",
-    brand: "Oraimo",
-    category: "Energia",
-    stock: 24,
-    active: true,
-    price: 22000,
-    sale_price: 18750,
-    old_price: 22000,
-    rating: 4.9,
-    reviews_count: 36,
-    badge: "INDISPENSÁVEL",
-    image_url: "/products/power-bank.jpg",
-    image: "/products/power-bank.jpg",
-    images: ["/products/power-bank.jpg"],
-    description: "A Bateria Externa Power Bank Oraimo 10000mAh é um acessório indispensável para quem vive a rotina dinâmica de Angola. Seja em longas viagens pelas províncias ou na rotina de trabalho em Luanda, este power bank garante que a sua bateria nunca fique a zero. Com capacidade para recarregar até 3 vezes um smartphone moderno, possui saída dupla USB inteligente AniFast que alimenta dois aparelhos ao mesmo tempo com proteção de voltagem total. O seu acabamento em textura 3D fosca evita quedas e riscos, proporcionando um toque premium e ergonómico na palma da mão.",
-    highlights: [
+    "sku": "AT-PB-006",
+    "brand": "Oraimo",
+    "category": "Energia",
+    "stock": 24,
+    "active": true,
+    "price": 22000,
+    "sale_price": 18750,
+    "old_price": 22000,
+    "rating": 4.9,
+    "reviews_count": 36,
+    "badge": "INDISPENSÁVEL",
+    "image_url": "/products/power-bank.jpg",
+    "image": "/products/power-bank.jpg",
+    "images": [
+      "/products/power-bank.jpg"
+    ],
+    "description": "A Bateria Externa Power Bank Oraimo 10000mAh é um acessório indispensável para quem vive a rotina dinâmica de Angola. Seja em longas viagens pelas províncias ou na rotina de trabalho em Luanda, este power bank garante que a sua bateria nunca fique a zero. Com capacidade para recarregar até 3 vezes um smartphone moderno, possui saída dupla USB inteligente AniFast que alimenta dois aparelhos ao mesmo tempo com proteção de voltagem total. O seu acabamento em textura 3D fosca evita quedas e riscos, proporcionando um toque premium e ergonómico na palma da mão.",
+    "highlights": [
       "Capacidade real de 10.000mAh com células de polímero de lítio de alta densidade",
       "Dupla saída USB 2.4A: carregue dois telemóveis simultaneamente",
       "Tecnologia exclusiva AniFast: detecta o aparelho e optimiza a corrente mais rápida",
@@ -397,13 +381,13 @@ export const PRODUCTS = [
       "Espessura ultrafina de apenas 15.5mm com textura 3D antiderrapante",
       "Sistema de multi-proteção integrado contra sobrecarga, curto-circuito e calor"
     ],
-    features: [
+    "features": [
       "Duas entradas de recarga: porta Micro-USB e porta USB Tipo-C",
       "Aprovado para transporte em bagagem de mão em voos nacionais e internacionais",
       "Compatível com todas as marcas: Samsung, iPhone, Xiaomi, Tecno, Infinix e fones TWS",
       "Construção durável com liga de policarbonato reforçado"
     ],
-    specifications: {
+    "specifications": {
       "Capacidade da Bateria": "10.000mAh (37Wh)",
       "Tipo de Bateria": "Polímero de Lítio Classe A+",
       "Entrada 1 (Micro-USB)": "5V / 2A",
@@ -413,44 +397,42 @@ export const PRODUCTS = [
       "Dimensões": "140 x 67 x 15.5 mm",
       "Peso": "225 gramas"
     },
-    packageContent: [
+    "packageContent": [
       "1 Bateria Externa Power Bank Oraimo 10.000mAh Original",
       "1 Cabo de carregamento USB",
       "1 Manual de instruções oficial com código de autenticidade"
     ],
-    seoTitle: "Power Bank 10000mAh Bateria Externa Portátil com Saída Dupla | AQUI TEM ANGOLA",
-    seoDescription: "Compre o Power Bank Oraimo 10000mAh original com tecnologia AniFast e saída dupla USB na AQUI TEM Angola. Garantia e entrega ao domicílio em Luanda.",
-    seoKeywords: "power bank oraimo angola, bateria externa 10000mah luanda, power bank original angola, comprar power bank luanda, aqui tem angola"
+    "seoTitle": "Power Bank 10000mAh Bateria Externa Portátil com Saída Dupla | AQUI TEM ANGOLA",
+    "seoDescription": "Compre o Power Bank Oraimo 10000mAh original com tecnologia AniFast e saída dupla USB na AQUI TEM Angola. Garantia e entrega ao domicílio em Luanda.",
+    "seoKeywords": "power bank oraimo angola, bateria externa 10000mah luanda, power bank original angola, comprar power bank luanda, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 7. Mini Projetor
-  // --------------------------------------------------------------------------
   {
-    id: "7c8a4192-3110-4f25-88de-8ef7a1599a01",
-    supabaseId: "7c8a4192-3110-4f25-88de-8ef7a1599a01",
-    name: "Mini Projetor Portátil Smart LED HD 1080p Android Wi-Fi",
-    slug: "mini-projetor",
-    slugAliases: [
+    "id": "7c8a4192-3110-4f25-88de-8ef7a1599a01",
+    "supabaseId": "7c8a4192-3110-4f25-88de-8ef7a1599a01",
+    "name": "Mini Projetor Portátil Smart LED HD 1080p Android Wi-Fi",
+    "slug": "mini-projetor",
+    "slugAliases": [
       "mini-projetor-smart-led",
       "projetor-portatil-android"
     ],
-    sku: "AT-MP-007",
-    brand: "Magcubic / Smart Cinema",
-    category: "TV & Vídeo",
-    stock: 10,
-    active: true,
-    price: 58000,
-    sale_price: 50000,
-    old_price: 58000,
-    rating: 4.9,
-    reviews_count: 22,
-    badge: "CINEMA EM CASA",
-    image_url: "/products/mini-projetor.jpg",
-    image: "/products/mini-projetor.jpg",
-    images: ["/products/mini-projetor.jpg"],
-    description: "O Mini Projetor Portátil Smart LED é a revolução do entretenimento doméstico ao seu alcance em Angola. Com sistema operativo Android integrado e ligação Wi-Fi 6 de banda dupla, ele funciona como uma Smart TV portátil gigante: basta ligar à tomada e transmitir séries, futebol, filmes e vídeos sem fios, sem depender de cabos ou computadores. O seu inovador suporte articulado de 180 graus permite apontar a projeção diretamente para o teto do quarto, criando uma experiência de cinema relaxante na cama com imagens de até 130 polegadas. Compacto e leve, pode ser levado facilmente para a casa de amigos, quintal ou escritório para apresentações de negócios.",
-    highlights: [
+    "sku": "AT-MP-007",
+    "brand": "Magcubic / Smart Cinema",
+    "category": "TV & Vídeo",
+    "stock": 10,
+    "active": true,
+    "price": 58000,
+    "sale_price": 50000,
+    "old_price": 58000,
+    "rating": 4.9,
+    "reviews_count": 22,
+    "badge": "CINEMA EM CASA",
+    "image_url": "/products/mini-projetor.jpg",
+    "image": "/products/mini-projetor.jpg",
+    "images": [
+      "/products/mini-projetor.jpg"
+    ],
+    "description": "O Mini Projetor Portátil Smart LED é a revolução do entretenimento doméstico ao seu alcance em Angola. Com sistema operativo Android integrado e ligação Wi-Fi 6 de banda dupla, ele funciona como uma Smart TV portátil gigante: basta ligar à tomada e transmitir séries, futebol, filmes e vídeos sem fios, sem depender de cabos ou computadores. O seu inovador suporte articulado de 180 graus permite apontar a projeção diretamente para o teto do quarto, criando uma experiência de cinema relaxante na cama com imagens de até 130 polegadas. Compacto e leve, pode ser levado facilmente para a casa de amigos, quintal ou escritório para apresentações de negócios.",
+    "highlights": [
       "Sistema operacional Android integrado com suporte a YouTube, Netflix e Prime Video",
       "Resolução óptica HD nativa compatível com conteúdos 1080p e 4K Ultra HD",
       "Suporte giratório em 180°: projete livremente na parede, tela ou direto no teto",
@@ -458,13 +440,13 @@ export const PRODUCTS = [
       "Conexão sem fio Wi-Fi 6 de banda dupla ultrarrápida e Bluetooth 5.0 para colunas",
       "Altifalante estéreo Hi-Fi embutido e portas HDMI, USB e saída de áudio AUX"
     ],
-    features: [
+    "features": [
       "Correção trapezoidal automática (Keystone) para imagem sempre alinhada",
       "Lâmpada LED com vida útil superior a 50.000 horas de entretenimento",
       "Transmissão de ecrã sem fios (Screen Mirroring) a partir do telemóvel Android ou iPhone",
       "Ultra silencioso com sistema de ventilação e arrefecimento eficiente"
     ],
-    specifications: {
+    "specifications": {
       "Tecnologia de Imagem": "LCD LED 3.5 polegadas",
       "Luminosidade": "200 ANSI Lumens (Imagens vívidas em meia luz/escuro)",
       "Resolução Nativa": "1280 x 720p (Decodificação 1080p e 4K)",
@@ -474,45 +456,43 @@ export const PRODUCTS = [
       "Portas de Entrada": "1x HDMI, 1x USB 2.0, 1x Jack 3.5mm de áudio, 1x Entrada AC",
       "Som Integrado": "Altifalante de alta fidelidade 3W RMS"
     },
-    packageContent: [
+    "packageContent": [
       "1 Mini Projetor Portátil Smart LED com Suporte 180°",
       "1 Comando remoto infravermelho ergonómico",
       "1 Cabo de alimentação Bivolt",
       "1 Manual de instruções completo em português"
     ],
-    seoTitle: "Mini Projetor Portátil Smart LED com Wi-Fi e Android Integrado | AQUI TEM ANGOLA",
-    seoDescription: "Tenha um cinema em casa com o Mini Projetor Portátil Smart LED até 130 polegadas na AQUI TEM Angola. Wi-Fi, Android e entrega rápida em Luanda.",
-    seoKeywords: "mini projetor luanda, projetor portatil angola, projetor smart android, cinema em casa angola, comprar projetor luanda, aqui tem angola"
+    "seoTitle": "Mini Projetor Portátil Smart LED com Wi-Fi e Android Integrado | AQUI TEM ANGOLA",
+    "seoDescription": "Tenha um cinema em casa com o Mini Projetor Portátil Smart LED até 130 polegadas na AQUI TEM Angola. Wi-Fi, Android e entrega rápida em Luanda.",
+    "seoKeywords": "mini projetor luanda, projetor portatil angola, projetor smart android, cinema em casa angola, comprar projetor luanda, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 8. Coluna Bluetooth Portátil
-  // --------------------------------------------------------------------------
   {
-    id: "84f18b32-9cb4-482a-a9e3-2e78dc2361b2",
-    supabaseId: "84f18b32-9cb4-482a-a9e3-2e78dc2361b2",
-    name: "Coluna Bluetooth Portátil com Graves HavyBass e Bateria de Longa Duração",
-    slug: "coluna-bluetooth",
-    slugAliases: [
+    "id": "84f18b32-9cb4-482a-a9e3-2e78dc2361b2",
+    "supabaseId": "84f18b32-9cb4-482a-a9e3-2e78dc2361b2",
+    "name": "Coluna Bluetooth Portátil com Graves HavyBass e Bateria de Longa Duração",
+    "slug": "coluna-bluetooth",
+    "slugAliases": [
       "coluna-bluetooth-portatil",
       "caixa-de-som-bluetooth-oraimo"
     ],
-    sku: "AT-CB-008",
-    brand: "Oraimo / SoundPro",
-    category: "Áudio & Som",
-    stock: 16,
-    active: true,
-    price: 26500,
-    sale_price: 22500,
-    old_price: 26500,
-    rating: 4.8,
-    reviews_count: 25,
-    badge: "SOM POTENTE",
-    image_url: "/products/coluna-bluetooth.jpg",
-    image: "/products/coluna-bluetooth.jpg",
-    images: ["/products/coluna-bluetooth.jpg"],
-    description: "A Coluna Bluetooth Portátil foi criada para quem não dispensa música de alta qualidade em lugar nenhum em Angola. Seja num churrasco em família em Benfica ou no Talatona, na praia da Ilha de Luanda ou na tranquilidade de casa, os seus 10W de potência com radiador passivo de graves proporcionam um som surround limpo e encorpado que preenche o ambiente sem distorcer. A estrutura cilíndrica robusta com revestimento em tecido técnico e certificação IPX5 protege contra respingos de água e poeira, enquanto a bateria de longa duração garante mais de 10 a 12 horas contínuas de reprodução das suas músicas favoritas.",
-    highlights: [
+    "sku": "AT-CB-008",
+    "brand": "Oraimo / SoundPro",
+    "category": "Áudio & Som",
+    "stock": 16,
+    "active": true,
+    "price": 26500,
+    "sale_price": 22500,
+    "old_price": 26500,
+    "rating": 4.8,
+    "reviews_count": 25,
+    "badge": "SOM POTENTE",
+    "image_url": "/products/coluna-bluetooth.jpg",
+    "image": "/products/coluna-bluetooth.jpg",
+    "images": [
+      "/products/coluna-bluetooth.jpg"
+    ],
+    "description": "A Coluna Bluetooth Portátil foi criada para quem não dispensa música de alta qualidade em lugar nenhum em Angola. Seja num churrasco em família em Benfica ou no Talatona, na praia da Ilha de Luanda ou na tranquilidade de casa, os seus 10W de potência com radiador passivo de graves proporcionam um som surround limpo e encorpado que preenche o ambiente sem distorcer. A estrutura cilíndrica robusta com revestimento em tecido técnico e certificação IPX5 protege contra respingos de água e poeira, enquanto a bateria de longa duração garante mais de 10 a 12 horas contínuas de reprodução das suas músicas favoritas.",
+    "highlights": [
       "Potência sonora de 10W RMS com radiador passivo de graves profundos HavyBass",
       "Bateria recarregável de lítio garante até 12 horas ininterruptas de música",
       "Proteção IPX5 resistente a salpicos de água e poeira para praia e piscina",
@@ -520,13 +500,13 @@ export const PRODUCTS = [
       "Microfone de alta sensibilidade para atender chamadas telefónicas em mãos-livres",
       "Alça de transporte reforçada em silicone e tecido resistente de alta durabilidade"
     ],
-    features: [
+    "features": [
       "Tecnologia TWS: emparelhe duas colunas sem fios para som estéreo amplificado",
       "Rádio FM integrado com sintonização automática de estações de Angola",
       "Botões físicos emborrachados de toque suave na parte superior",
       "Design cilíndrico compacto que cabe no porta-copos da viatura"
     ],
-    specifications: {
+    "specifications": {
       "Potência de Áudio": "10W RMS (Graves HavyBass 360°)",
       "Versão do Bluetooth": "V5.1 com emparelhamento estável até 10m",
       "Capacidade da Bateria": "1800mAh Li-ion recarregável",
@@ -536,45 +516,43 @@ export const PRODUCTS = [
       "Tempo de Recarga": "Aproximadamente 2.5 horas via porta USB Tipo-C",
       "Dimensões": "120 x 85 x 85 mm"
     },
-    packageContent: [
+    "packageContent": [
       "1 Coluna Bluetooth Portátil com Alça de Transporte",
       "1 Cabo de carregamento USB Tipo-C",
       "1 Cabo de áudio auxiliar P2 3.5mm",
       "1 Manual de instruções oficial em português"
     ],
-    seoTitle: "Coluna Bluetooth Portátil com Graves Potentes e Bateria Longa | AQUI TEM ANGOLA",
-    seoDescription: "Compre a Coluna Bluetooth Portátil com graves HavyBass, 12h de autonomia e proteção IPX5 na AQUI TEM Angola. Som de alta qualidade com entrega expressa em Luanda.",
-    seoKeywords: "coluna bluetooth angola, caixa de som portatil luanda, oraimo soundpro luanda, coluna ipx5 a prova de agua, comprar coluna luanda, aqui tem angola"
+    "seoTitle": "Coluna Bluetooth Portátil com Graves Potentes e Bateria Longa | AQUI TEM ANGOLA",
+    "seoDescription": "Compre a Coluna Bluetooth Portátil com graves HavyBass, 12h de autonomia e proteção IPX5 na AQUI TEM Angola. Som de alta qualidade com entrega expressa em Luanda.",
+    "seoKeywords": "coluna bluetooth angola, caixa de som portatil luanda, oraimo soundpro luanda, coluna ipx5 a prova de agua, comprar coluna luanda, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 9. Mini Impressora Térmica Bluetooth
-  // --------------------------------------------------------------------------
   {
-    id: "91dc572e-84a1-4322-9df7-e61a2578c909",
-    supabaseId: "91dc572e-84a1-4322-9df7-e61a2578c909",
-    name: "Mini Impressora Térmica Portátil Bluetooth 58mm Sem Tinta para Telemóvel",
-    slug: "mini-impressora-termica",
-    slugAliases: [
+    "id": "91dc572e-84a1-4322-9df7-e61a2578c909",
+    "supabaseId": "91dc572e-84a1-4322-9df7-e61a2578c909",
+    "name": "Mini Impressora Térmica Portátil Bluetooth 58mm Sem Tinta para Telemóvel",
+    "slug": "mini-impressora-termica",
+    "slugAliases": [
       "mini-impressora-termica-bluetooth",
       "impressora-termica-portatil"
     ],
-    sku: "AT-PRN-009",
-    brand: "PeriPage / Phomemo",
-    category: "Acessórios & Tech",
-    stock: 14,
-    active: true,
-    price: 29500,
-    sale_price: 25000,
-    old_price: 29500,
-    rating: 4.8,
-    reviews_count: 21,
-    badge: "ZERO TINTA",
-    image_url: "/products/mini-impressora-termica.jpg",
-    image: "/products/mini-impressora-termica.jpg",
-    images: ["/products/mini-impressora-termica.jpg"],
-    description: "A Mini Impressora Térmica Portátil Bluetooth é o gadget indispensável para empreendedores, comerciantes, estudantes e profissionais autónomos em Angola. Graças ao cabeçote térmico de alta precisão, ela não usa tinta, toner ou fitas de impressão: o texto e imagens são gerados termicamente no papel com custo praticamente zero por folha. Conectada via Bluetooth ao telemóvel Android ou iPhone, imprime recibos imediatos de entregas, notas de venda para clientes, comprovativos de transferência, listas de tarefas diárias, lembretes de estudo e etiquetas autocolantes com total praticidade e rapidez.",
-    highlights: [
+    "sku": "AT-PRN-009",
+    "brand": "PeriPage / Phomemo",
+    "category": "Acessórios & Tech",
+    "stock": 14,
+    "active": true,
+    "price": 29500,
+    "sale_price": 25000,
+    "old_price": 29500,
+    "rating": 4.8,
+    "reviews_count": 21,
+    "badge": "ZERO TINTA",
+    "image_url": "/products/mini-impressora-termica.jpg",
+    "image": "/products/mini-impressora-termica.jpg",
+    "images": [
+      "/products/mini-impressora-termica.jpg"
+    ],
+    "description": "A Mini Impressora Térmica Portátil Bluetooth é o gadget indispensável para empreendedores, comerciantes, estudantes e profissionais autónomos em Angola. Graças ao cabeçote térmico de alta precisão, ela não usa tinta, toner ou fitas de impressão: o texto e imagens são gerados termicamente no papel com custo praticamente zero por folha. Conectada via Bluetooth ao telemóvel Android ou iPhone, imprime recibos imediatos de entregas, notas de venda para clientes, comprovativos de transferência, listas de tarefas diárias, lembretes de estudo e etiquetas autocolantes com total praticidade e rapidez.",
+    "highlights": [
       "Tecnologia de impressão térmica direta: ZERO tinta, zero cartuchos e zero sujeira",
       "Conexão sem fios Bluetooth compatível com telemóveis Android e iPhones iOS",
       "Imprime recibos comerciais, comprovativos, etiquetas adesivas, notas e fotos P&B",
@@ -582,13 +560,13 @@ export const PRODUCTS = [
       "Bateria recarregável integrada de 1000mAh com carregamento via porta USB Tipo-C",
       "Formato de bolso ultra leve de apenas 160g cabe na mão ou na mala de trabalho"
     ],
-    features: [
+    "features": [
       "Aplicação gratuita para telemóvel com centenas de modelos prontos de etiquetas",
       "Compatível com rolos padrão de papel térmico de 57mm e 58mm comuns no mercado",
       "Impressão silenciosa e imediata em segundos",
       "Excelente para vendedores online, estafetas, pequenos comércios e estudantes"
     ],
-    specifications: {
+    "specifications": {
       "Método de Impressão": "Térmica direta (Sem tinta/toner)",
       "Largura do Papel": "57mm / 58mm padrão comercial",
       "Diâmetro do Rolo": "Até 30mm",
@@ -598,45 +576,43 @@ export const PRODUCTS = [
       "Compatibilidade": "Android e iOS (Apps WalkPrint, FunPrint, Phomemo)",
       "Velocidade": "Até 10mm/s"
     },
-    packageContent: [
+    "packageContent": [
       "1 Mini Impressora Térmica Portátil Bluetooth",
       "1 Rolo de papel térmico branco inicial (58mm)",
       "1 Cabo de carregamento USB Tipo-C",
       "1 Manual do utilizador passo a passo em português"
     ],
-    seoTitle: "Mini Impressora Térmica Portátil Bluetooth Sem Tinta para Telemóvel | AQUI TEM ANGOLA",
-    seoDescription: "Imprima recibos e etiquetas onde estiver com a Mini Impressora Térmica Bluetooth na AQUI TEM Angola. Sem uso de tinta, econômica e com entrega rápida em Luanda.",
-    seoKeywords: "mini impressora termica angola, impressora bluetooth celular luanda, impressora recibos sem tinta, impressora portatil 58mm angola, aqui tem angola"
+    "seoTitle": "Mini Impressora Térmica Portátil Bluetooth Sem Tinta para Telemóvel | AQUI TEM ANGOLA",
+    "seoDescription": "Imprima recibos e etiquetas onde estiver com a Mini Impressora Térmica Bluetooth na AQUI TEM Angola. Sem uso de tinta, econômica e com entrega rápida em Luanda.",
+    "seoKeywords": "mini impressora termica angola, impressora bluetooth celular luanda, impressora recibos sem tinta, impressora portatil 58mm angola, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // 10. Rastreador GPS
-  // --------------------------------------------------------------------------
   {
-    id: "a083d917-7e23-4581-be99-0e7f7b321a10",
-    supabaseId: "a083d917-7e23-4581-be99-0e7f7b321a10",
-    name: "Mini Rastreador GPS Magnético em Tempo Real com Botão SOS e Escuta",
-    slug: "rastreador-gps",
-    slugAliases: [
+    "id": "a083d917-7e23-4581-be99-0e7f7b321a10",
+    "supabaseId": "a083d917-7e23-4581-be99-0e7f7b321a10",
+    "name": "Mini Rastreador GPS Magnético em Tempo Real com Botão SOS e Escuta",
+    "slug": "rastreador-gps",
+    "slugAliases": [
       "mini-rastreador-gps-magnetico",
       "rastreador-veicular-gps"
     ],
-    sku: "AT-GPS-010",
-    brand: "Smart Tracker / GF-07",
-    category: "Acessórios & Tech",
-    stock: 22,
-    active: true,
-    price: 24500,
-    sale_price: 20000,
-    old_price: 24500,
-    rating: 4.9,
-    reviews_count: 29,
-    badge: "PROTEÇÃO TOTAL",
-    image_url: "/products/rastreador-gps.jpg",
-    image: "/products/rastreador-gps.jpg",
-    images: ["/products/rastreador-gps.jpg"],
-    description: "O Mini Rastreador GPS Magnético é o equipamento essencial para quem busca máxima segurança para viaturas, motorizadas, frotas comerciais e pertences valiosos em Angola. O seu tamanho reduzido e os potentes ímanes de neodímio permitem escondê-lo discretamente em qualquer parte do carro ou moto sem necessidade de cablagem elétrica. Funcionando com cartões SIM normais da Unitel ou Movicel, permite consultar a posição do veículo instantaneamente no Google Maps pelo telemóvel, receber alertas de movimento e ativar a escuta remota silenciosa para monitorizar o que se passa no interior do veículo.",
-    highlights: [
+    "sku": "AT-GPS-010",
+    "brand": "Smart Tracker / GF-07",
+    "category": "Acessórios & Tech",
+    "stock": 22,
+    "active": true,
+    "price": 24500,
+    "sale_price": 20000,
+    "old_price": 24500,
+    "rating": 4.9,
+    "reviews_count": 29,
+    "badge": "PROTEÇÃO TOTAL",
+    "image_url": "/products/rastreador-gps.jpg",
+    "image": "/products/rastreador-gps.jpg",
+    "images": [
+      "/products/rastreador-gps.jpg"
+    ],
+    "description": "O Mini Rastreador GPS Magnético é o equipamento essencial para quem busca máxima segurança para viaturas, motorizadas, frotas comerciais e pertences valiosos em Angola. O seu tamanho reduzido e os potentes ímanes de neodímio permitem escondê-lo discretamente em qualquer parte do carro ou moto sem necessidade de cablagem elétrica. Funcionando com cartões SIM normais da Unitel ou Movicel, permite consultar a posição do veículo instantaneamente no Google Maps pelo telemóvel, receber alertas de movimento e ativar a escuta remota silenciosa para monitorizar o que se passa no interior do veículo.",
+    "highlights": [
       "Localização precisa em tempo real via satélite GPS e triangulação de antenas LBS/GSM",
       "Fixação magnética ultra forte: adere firmemente ao chassi ou peças metálicas de viaturas",
       "Compatível com cartões SIM de operadoras de Angola (Unitel e Movicel)",
@@ -644,13 +620,13 @@ export const PRODUCTS = [
       "Botão SOS de emergência para envio automático de alerta com coordenadas geográficas",
       "Alerta de cerca geográfica (Geofencing) e histórico de rotas percorridas"
     ],
-    features: [
+    "features": [
       "Zero cabos ou instalações complexas: basta colocar no metal",
       "Modo de economia de energia com autonomia em standby de até 6 dias",
       "Dimensões microscópicas de apenas 4cm que o tornam totalmente indetetável",
       "Consulta de localização por link direto SMS para o Google Maps"
     ],
-    specifications: {
+    "specifications": {
       "Rede e Frequências": "GSM/GPRS Quad-band (850/900/1800/1900MHz)",
       "Precisão de Localização": "GPS 5-10 metros / LBS 100-500 metros",
       "Bateria": "Bateria de íon de lítio 400mAh recarregável integrada",
@@ -660,256 +636,809 @@ export const PRODUCTS = [
       "Dimensões": "4.2 x 2.5 x 1.5 cm",
       "Peso": "20 gramas"
     },
-    packageContent: [
+    "packageContent": [
       "1 Mini Rastreador GPS Magnético",
       "1 Cabo de carregamento USB",
       "1 Manual com comandos SMS em português e configuração fácil"
     ],
-    seoTitle: "Mini Rastreador GPS Magnético em Tempo Real para Viaturas e Objetos | AQUI TEM ANGOLA",
-    seoDescription: "Monitore o seu carro ou motorizada em tempo real com o Mini Rastreador GPS Magnético na AQUI TEM Angola. Alertas no telemóvel, botão SOS e entrega em Luanda.",
-    seoKeywords: "rastreador gps angola, rastreador veicular luanda, localizador gps moto luanda, rastreador magnetico gf-07, seguranca veicular angola, aqui tem angola"
+    "seoTitle": "Mini Rastreador GPS Magnético em Tempo Real para Viaturas e Objetos | AQUI TEM ANGOLA",
+    "seoDescription": "Monitore o seu carro ou motorizada em tempo real com o Mini Rastreador GPS Magnético na AQUI TEM Angola. Alertas no telemóvel, botão SOS e entrega em Luanda.",
+    "seoKeywords": "rastreador gps angola, rastreador veicular luanda, localizador gps moto luanda, rastreador magnetico gf-07, seguranca veicular angola, aqui tem angola"
   },
-
-  // --------------------------------------------------------------------------
-  // Outros produtos ativos complementares (mantidos no catálogo)
-  // --------------------------------------------------------------------------
   {
-    id: "b1665cb5-f5fc-4ff4-8dbf-379aacc9794b",
-    supabaseId: "b1665cb5-f5fc-4ff4-8dbf-379aacc9794b",
-    name: "Auscultadores Bluetooth Oraimo BoomPop",
-    slug: "auscultadores-bluetooth",
-    sku: "BOOM-BLK",
-    brand: "Oraimo",
-    category: "Áudio & Som",
-    stock: 10,
-    active: true,
-    price: 44000,
-    sale_price: 38500,
-    old_price: 44000,
-    rating: 4.9,
-    reviews_count: 30,
-    badge: "BASS BOOST",
-    image_url: "/product_boompop.jpg",
-    image: "/product_boompop.jpg",
-    images: ["/product_boompop.jpg"],
-    description: "Auscultadores over-ear Bluetooth Oraimo BoomPop com graves profundos HavyBass, cancelamento de ruído passivo e almofadas ergonómicas macias. Autonomia de até 40 horas contínuas de reprodução.",
-    highlights: [
+    "id": "b1665cb5-f5fc-4ff4-8dbf-379aacc9794b",
+    "supabaseId": "b1665cb5-f5fc-4ff4-8dbf-379aacc9794b",
+    "name": "Auscultadores Bluetooth Oraimo BoomPop",
+    "slug": "auscultadores-bluetooth",
+    "sku": "BOOM-BLK",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 10,
+    "active": true,
+    "price": 44000,
+    "sale_price": 38500,
+    "old_price": 44000,
+    "rating": 4.9,
+    "reviews_count": 30,
+    "badge": "BASS BOOST",
+    "image_url": "/product_boompop.jpg",
+    "image": "/product_boompop.jpg",
+    "images": [
+      "/product_boompop.jpg"
+    ],
+    "description": "Auscultadores over-ear Bluetooth Oraimo BoomPop com graves profundos HavyBass, cancelamento de ruído passivo e almofadas ergonómicas macias. Autonomia de até 40 horas contínuas de reprodução.",
+    "highlights": [
       "Graves potentes HavyBass calibrados para música e gaming",
       "Bateria com até 40 horas de autonomia",
       "Almofadas de isolamento acústico confortáveis",
       "Entrada auxiliar P2 3.5mm e rádio FM integrado"
     ],
-    features: [
+    "features": [
       "Design dobrável para transporte fácil",
       "Microfone embutido para chamadas telefónicas em mãos-livres"
     ],
-    specifications: {
+    "specifications": {
       "Bluetooth": "V5.0",
       "Bateria": "500mAh",
       "Autonomia": "Até 40 horas",
       "Driver": "40mm dinâmico"
     },
-    packageContent: [
+    "packageContent": [
       "1 Auscultadores Oraimo BoomPop",
       "1 Cabo auxiliar 3.5mm",
       "1 Cabo de carregamento USB",
       "1 Manual do utilizador"
     ],
-    seoTitle: "Auscultadores Bluetooth Oraimo BoomPop com Graves Potentes | AQUI TEM ANGOLA",
-    seoDescription: "Auscultadores Bluetooth Oraimo BoomPop over-ear com cancelamento de ruído e até 40h de música na AQUI TEM Angola. Garantia oficial e entrega em Luanda.",
-    seoKeywords: "auscultadores oraimo boompop, headphones bluetooth angola, fones de ouvido luanda, aqui tem angola"
+    "seoTitle": "Auscultadores Bluetooth Oraimo BoomPop com Graves Potentes | AQUI TEM ANGOLA",
+    "seoDescription": "Auscultadores Bluetooth Oraimo BoomPop over-ear com cancelamento de ruído e até 40h de música na AQUI TEM Angola. Garantia oficial e entrega em Luanda.",
+    "seoKeywords": "auscultadores oraimo boompop, headphones bluetooth angola, fones de ouvido luanda, aqui tem angola"
   },
   {
-    id: "f18e3d33-95bf-4bfe-90bf-87969b094e32",
-    supabaseId: "f18e3d33-95bf-4bfe-90bf-87969b094e32",
-    name: "Carregador de Parede WiWU Fast Charger 45W",
-    slug: "carregador-de-parede-wiwu-fast-charger-45w",
-    sku: "WIWU-CH-45W-BLK",
-    brand: "WIWU",
-    category: "Acessórios & Tech",
-    stock: 15,
-    active: true,
-    price: 23000,
-    sale_price: 20125,
-    old_price: 23000,
-    rating: 4.8,
-    reviews_count: 18,
-    badge: "DUAL PORT",
-    image_url: "/products/carregador-gan.jpg",
-    image: "/products/carregador-gan.jpg",
-    images: ["/products/carregador-gan.jpg"],
-    description: "Carregador rápido WiWU de 45W com portas duplas USB-C e USB-A, ideal para carregar rapidamente smartphones modernos e tablets com proteção total contra sobrecarga.",
-    highlights: [
+    "id": "f18e3d33-95bf-4bfe-90bf-87969b094e32",
+    "supabaseId": "f18e3d33-95bf-4bfe-90bf-87969b094e32",
+    "name": "Carregador de Parede WiWU Fast Charger 45W",
+    "slug": "carregador-de-parede-wiwu-fast-charger-45w",
+    "sku": "WIWU-CH-45W-BLK",
+    "brand": "WIWU",
+    "category": "Acessórios & Tech",
+    "stock": 15,
+    "active": true,
+    "price": 23000,
+    "sale_price": 20125,
+    "old_price": 23000,
+    "rating": 4.8,
+    "reviews_count": 18,
+    "badge": "DUAL PORT",
+    "image_url": "/products/carregador-gan.jpg",
+    "image": "/products/carregador-gan.jpg",
+    "images": [
+      "/products/carregador-gan.jpg"
+    ],
+    "description": "Carregador rápido WiWU de 45W com portas duplas USB-C e USB-A, ideal para carregar rapidamente smartphones modernos e tablets com proteção total contra sobrecarga.",
+    "highlights": [
       "Potência de 45W Power Delivery",
       "Duas portas: USB-C e USB-A",
       "Compatível com iPhone, Samsung e tablets"
     ],
-    features: [
+    "features": [
       "Proteção inteligente contra sobreaquecimento",
       "Compacto para viagens"
     ],
-    specifications: {
+    "specifications": {
       "Potência": "45W",
       "Saídas": "1x USB-C PD, 1x USB-A QC"
     },
-    packageContent: [
+    "packageContent": [
       "1 Carregador WiWU 45W",
       "1 Manual"
     ],
-    seoTitle: "Carregador de Parede WiWU Fast Charger 45W GaN Dual Port | AQUI TEM ANGOLA",
-    seoDescription: "Carregador rápido WiWU 45W com portas USB-C e USB-A na AQUI TEM Angola. Potência ideal para iPhone, Samsung e tablets com entrega rápida em Luanda.",
-    seoKeywords: "carregador wiwu 45w angola, carregador tipo c luanda, aqui tem angola"
+    "seoTitle": "Carregador de Parede WiWU Fast Charger 45W GaN Dual Port | AQUI TEM ANGOLA",
+    "seoDescription": "Carregador rápido WiWU 45W com portas USB-C e USB-A na AQUI TEM Angola. Potência ideal para iPhone, Samsung e tablets com entrega rápida em Luanda.",
+    "seoKeywords": "carregador wiwu 45w angola, carregador tipo c luanda, aqui tem angola"
   },
   {
-    id: "ce68593d-3752-4dff-99a3-d28b4237d6a2",
-    supabaseId: "ce68593d-3752-4dff-99a3-d28b4237d6a2",
-    name: "Oraimo OpenSnap Air OPN-371",
-    slug: "oraimo-opensnap-air-opn-371",
-    sku: "OPN371-BLK",
-    brand: "Oraimo",
-    category: "Áudio & Som",
-    stock: 10,
-    active: true,
-    price: 29500,
-    sale_price: 25875,
-    old_price: 29500,
-    rating: 4.8,
-    reviews_count: 15,
-    badge: "OPEN-EAR",
-    image_url: "/product_opensnap.jpg",
-    image: "/product_opensnap.jpg",
-    images: ["/product_opensnap.jpg"],
-    description: "Fones de ouvido abertos Oraimo OpenSnap Air com condução de ar que permitem ouvir música sem tapar o canal auditivo, ideais para segurança e desporto na rua.",
-    highlights: [
+    "id": "ce68593d-3752-4dff-99a3-d28b4237d6a2",
+    "supabaseId": "ce68593d-3752-4dff-99a3-d28b4237d6a2",
+    "name": "Oraimo OpenSnap Air OPN-371",
+    "slug": "oraimo-opensnap-air-opn-371",
+    "sku": "OPN371-BLK",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 10,
+    "active": true,
+    "price": 29500,
+    "sale_price": 25875,
+    "old_price": 29500,
+    "rating": 4.8,
+    "reviews_count": 15,
+    "badge": "OPEN-EAR",
+    "image_url": "/product_opensnap.jpg",
+    "image": "/product_opensnap.jpg",
+    "images": [
+      "/product_opensnap.jpg"
+    ],
+    "description": "Fones de ouvido abertos Oraimo OpenSnap Air com condução de ar que permitem ouvir música sem tapar o canal auditivo, ideais para segurança e desporto na rua.",
+    "highlights": [
       "Design Open-Ear seguro para desporto ao ar livre",
       "Som panorâmico de alta fidelidade",
       "Conforto ergonómico sem pressão nos ouvidos"
     ],
-    features: ["Resistência IPX4 a suor", "Autonomia prolongada"],
-    specifications: { "Bluetooth": "V5.3", "Tipo": "Open-Ear" },
-    packageContent: ["1 Par de fones OpenSnap", "1 Estojo", "1 Cabo USB"],
-    seoTitle: "Fones de Ouvido Abertos Oraimo OpenSnap Air OPN-371 | AQUI TEM ANGOLA",
-    seoDescription: "Fones de ouvido abertos Oraimo OpenSnap Air OPN-371 com som panorâmico e máximo conforto na AQUI TEM Angola. Ideal para desporto e dia a dia em Luanda.",
-    seoKeywords: "oraimo opensnap angola, fones de ouvido abertos luanda, aqui tem angola"
+    "features": [
+      "Resistência IPX4 a suor",
+      "Autonomia prolongada"
+    ],
+    "specifications": {
+      "Bluetooth": "V5.3",
+      "Tipo": "Open-Ear"
+    },
+    "packageContent": [
+      "1 Par de fones OpenSnap",
+      "1 Estojo",
+      "1 Cabo USB"
+    ],
+    "seoTitle": "Fones de Ouvido Abertos Oraimo OpenSnap Air OPN-371 | AQUI TEM ANGOLA",
+    "seoDescription": "Fones de ouvido abertos Oraimo OpenSnap Air OPN-371 com som panorâmico e máximo conforto na AQUI TEM Angola. Ideal para desporto e dia a dia em Luanda.",
+    "seoKeywords": "oraimo opensnap angola, fones de ouvido abertos luanda, aqui tem angola"
   },
   {
-    id: "9f9c71ca-5614-4385-8175-5e2e303a8709",
-    supabaseId: "9f9c71ca-5614-4385-8175-5e2e303a8709",
-    name: "Oraimo SpaceBuds Lite OTW-324",
-    slug: "oraimo-spacebuds-lite-otw-324",
-    sku: "OTW324-BLK",
-    brand: "Oraimo",
-    category: "Áudio & Som",
-    stock: 12,
-    active: true,
-    price: 20000,
-    sale_price: 17750,
-    old_price: 20000,
-    rating: 4.8,
-    reviews_count: 19,
-    badge: "FUTURISTA",
-    image_url: "/products/fones-tws-bluetooth.jpg",
-    image: "/products/fones-tws-bluetooth.jpg",
-    images: ["/products/fones-tws-bluetooth.jpg"],
-    description: "Fones TWS Bluetooth Oraimo SpaceBuds Lite com design espacial transparente moderno, graves potentes e chamadas limpas com redução de ruído.",
-    highlights: ["Design semi-transparente futurista", "Graves HavyBass potentes", "36 horas de bateria"],
-    features: ["Microfone HD", "Controles de toque"],
-    specifications: { "Bluetooth": "V5.3", "Bateria": "Até 36h" },
-    packageContent: ["1 Fones SpaceBuds", "1 Estojo", "1 Cabo USB"],
-    seoTitle: "Fones Bluetooth Oraimo SpaceBuds Lite OTW-324 | AQUI TEM ANGOLA",
-    seoDescription: "Oraimo SpaceBuds Lite OTW-324 com design moderno, graves envolventes e bateria de longa duração na AQUI TEM Angola. 100% original com garantia e entrega rápida.",
-    seoKeywords: "spacebuds lite oraimo angola, fones transparentes luanda, aqui tem angola"
+    "id": "9f9c71ca-5614-4385-8175-5e2e303a8709",
+    "supabaseId": "9f9c71ca-5614-4385-8175-5e2e303a8709",
+    "name": "Oraimo SpaceBuds Lite OTW-324",
+    "slug": "oraimo-spacebuds-lite-otw-324",
+    "sku": "OTW324-BLK",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 12,
+    "active": true,
+    "price": 20000,
+    "sale_price": 17750,
+    "old_price": 20000,
+    "rating": 4.8,
+    "reviews_count": 19,
+    "badge": "FUTURISTA",
+    "image_url": "/products/fones-tws-bluetooth.jpg",
+    "image": "/products/fones-tws-bluetooth.jpg",
+    "images": [
+      "/products/fones-tws-bluetooth.jpg"
+    ],
+    "description": "Fones TWS Bluetooth Oraimo SpaceBuds Lite com design espacial transparente moderno, graves potentes e chamadas limpas com redução de ruído.",
+    "highlights": [
+      "Design semi-transparente futurista",
+      "Graves HavyBass potentes",
+      "36 horas de bateria"
+    ],
+    "features": [
+      "Microfone HD",
+      "Controles de toque"
+    ],
+    "specifications": {
+      "Bluetooth": "V5.3",
+      "Bateria": "Até 36h"
+    },
+    "packageContent": [
+      "1 Fones SpaceBuds",
+      "1 Estojo",
+      "1 Cabo USB"
+    ],
+    "seoTitle": "Fones Bluetooth Oraimo SpaceBuds Lite OTW-324 | AQUI TEM ANGOLA",
+    "seoDescription": "Oraimo SpaceBuds Lite OTW-324 com design moderno, graves envolventes e bateria de longa duração na AQUI TEM Angola. 100% original com garantia e entrega rápida.",
+    "seoKeywords": "spacebuds lite oraimo angola, fones transparentes luanda, aqui tem angola"
   },
   {
-    id: "8cfe6239-ef53-47d2-bd1d-8a849ab9e38d",
-    supabaseId: "8cfe6239-ef53-47d2-bd1d-8a849ab9e38d",
-    name: "Oraimo Necklace Lite",
-    slug: "oraimo-necklace-lite",
-    sku: "ORAIMO-OEB311-GOLD",
-    brand: "Oraimo",
-    category: "Áudio & Som",
-    stock: 14,
-    active: true,
-    price: 22000,
-    sale_price: 19000,
-    old_price: 22000,
-    rating: 4.8,
-    reviews_count: 22,
-    badge: "NECKBAND",
-    image_url: "/products/fones-tws-bluetooth.jpg",
-    image: "/products/fones-tws-bluetooth.jpg",
-    images: ["/products/fones-tws-bluetooth.jpg"],
-    description: "Fones de ouvido neckband com suporte de pescoço Oraimo Necklace Lite. Até 30 horas de autonomia contínua, graves HavyBass e vibração para chamadas recebidas.",
-    highlights: ["30 horas de autonomia de reprodução", "Alerta vibratório no pescoço para chamadas", "Ponteiras magnéticas"],
-    features: ["Encaixe seguro no pescoço", "Carregamento rápido"],
-    specifications: { "Bluetooth": "V5.3", "Bateria": "30h" },
-    packageContent: ["1 Fones Necklace Lite", "1 Cabo USB", "1 Manual"],
-    seoTitle: "Auscultadores de Pescoço Oraimo Necklace Lite OEB-E311 | AQUI TEM ANGOLA",
-    seoDescription: "Oraimo Necklace Lite OEB-E311 com autonomia até 30 horas, vibração de chamadas e graves profundos na AQUI TEM Angola. Compre com entrega rápida em Luanda.",
-    seoKeywords: "oraimo necklace lite angola, fones de pescoco luanda, aqui tem angola"
+    "id": "8cfe6239-ef53-47d2-bd1d-8a849ab9e38d",
+    "supabaseId": "8cfe6239-ef53-47d2-bd1d-8a849ab9e38d",
+    "name": "Oraimo Necklace Lite",
+    "slug": "oraimo-necklace-lite",
+    "sku": "ORAIMO-OEB311-GOLD",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 14,
+    "active": true,
+    "price": 22000,
+    "sale_price": 19000,
+    "old_price": 22000,
+    "rating": 4.8,
+    "reviews_count": 22,
+    "badge": "NECKBAND",
+    "image_url": "/products/fones-tws-bluetooth.jpg",
+    "image": "/products/fones-tws-bluetooth.jpg",
+    "images": [
+      "/products/fones-tws-bluetooth.jpg"
+    ],
+    "description": "Fones de ouvido neckband com suporte de pescoço Oraimo Necklace Lite. Até 30 horas de autonomia contínua, graves HavyBass e vibração para chamadas recebidas.",
+    "highlights": [
+      "30 horas de autonomia de reprodução",
+      "Alerta vibratório no pescoço para chamadas",
+      "Ponteiras magnéticas"
+    ],
+    "features": [
+      "Encaixe seguro no pescoço",
+      "Carregamento rápido"
+    ],
+    "specifications": {
+      "Bluetooth": "V5.3",
+      "Bateria": "30h"
+    },
+    "packageContent": [
+      "1 Fones Necklace Lite",
+      "1 Cabo USB",
+      "1 Manual"
+    ],
+    "seoTitle": "Auscultadores de Pescoço Oraimo Necklace Lite OEB-E311 | AQUI TEM ANGOLA",
+    "seoDescription": "Oraimo Necklace Lite OEB-E311 com autonomia até 30 horas, vibração de chamadas e graves profundos na AQUI TEM Angola. Compre com entrega rápida em Luanda.",
+    "seoKeywords": "oraimo necklace lite angola, fones de pescoco luanda, aqui tem angola"
   },
   {
-    id: "46e7034d-6a7f-41de-a4d8-e883040645a4",
-    supabaseId: "46e7034d-6a7f-41de-a4d8-e883040645a4",
-    name: "X-WATCH PRISMA — Smartwatch 1.4\"",
-    slug: "x-watch-prisma-smartwatch-1",
-    sku: "AT-XW-PRISMA",
-    brand: "X-Watch",
-    category: "Smartwatches",
-    stock: 8,
-    active: true,
-    price: 26500,
-    sale_price: 22750,
-    old_price: 26500,
-    rating: 4.8,
-    reviews_count: 14,
-    badge: "COMPACTO",
-    image_url: "/products/smartwatch.jpg",
-    image: "/products/smartwatch.jpg",
-    images: ["/products/smartwatch.jpg"],
-    description: "Smartwatch X-Watch Prisma com ecrã de 1.4 polegadas, design moderno curvo, monitorização de passos, batimentos cardíacos e notificações de mensagens no pulso.",
-    highlights: ["Design curvo elegante", "Monitor de passos e frequência cardíaca", "Notificações do telemóvel"],
-    features: ["Leve e confortável", "Bateria até 5 dias"],
-    specifications: { "Ecrã": "1.4 polegadas", "Conectividade": "Bluetooth" },
-    packageContent: ["1 Smartwatch X-Watch Prisma", "1 Cabo de carregamento", "1 Manual"],
-    seoTitle: "Smartwatch X-Watch Prisma com Chamadas Bluetooth | AQUI TEM ANGOLA",
-    seoDescription: "Compre o relógio inteligente X-Watch Prisma com preço super competitivo em Angola na AQUI TEM. Chamadas Bluetooth, monitor de saúde e entrega rápida em Luanda.",
-    seoKeywords: "x-watch prisma angola, smartwatch economico luanda, aqui tem angola"
+    "id": "46e7034d-6a7f-41de-a4d8-e883040645a4",
+    "supabaseId": "46e7034d-6a7f-41de-a4d8-e883040645a4",
+    "name": "X-WATCH PRISMA — Smartwatch 1.4\"",
+    "slug": "x-watch-prisma-smartwatch-1",
+    "sku": "AT-XW-PRISMA",
+    "brand": "X-Watch",
+    "category": "Smartwatches",
+    "stock": 8,
+    "active": true,
+    "price": 26500,
+    "sale_price": 22750,
+    "old_price": 26500,
+    "rating": 4.8,
+    "reviews_count": 14,
+    "badge": "COMPACTO",
+    "image_url": "/products/smartwatch.jpg",
+    "image": "/products/smartwatch.jpg",
+    "images": [
+      "/products/smartwatch.jpg"
+    ],
+    "description": "Smartwatch X-Watch Prisma com ecrã de 1.4 polegadas, design moderno curvo, monitorização de passos, batimentos cardíacos e notificações de mensagens no pulso.",
+    "highlights": [
+      "Design curvo elegante",
+      "Monitor de passos e frequência cardíaca",
+      "Notificações do telemóvel"
+    ],
+    "features": [
+      "Leve e confortável",
+      "Bateria até 5 dias"
+    ],
+    "specifications": {
+      "Ecrã": "1.4 polegadas",
+      "Conectividade": "Bluetooth"
+    },
+    "packageContent": [
+      "1 Smartwatch X-Watch Prisma",
+      "1 Cabo de carregamento",
+      "1 Manual"
+    ],
+    "seoTitle": "Smartwatch X-Watch Prisma com Chamadas Bluetooth | AQUI TEM ANGOLA",
+    "seoDescription": "Compre o relógio inteligente X-Watch Prisma com preço super competitivo em Angola na AQUI TEM. Chamadas Bluetooth, monitor de saúde e entrega rápida em Luanda.",
+    "seoKeywords": "x-watch prisma angola, smartwatch economico luanda, aqui tem angola"
   },
   {
-    id: "d8f54944-7134-4d66-907e-4b134a091afc",
-    supabaseId: "d8f54944-7134-4d66-907e-4b134a091afc",
-    name: "X-WATCH SMARTWATCH — 1.8\" Bluetooth",
-    slug: "x-watch-smartwatch-18-bluetooth",
-    sku: "AT-XW-18",
-    brand: "X-Watch",
-    category: "Smartwatches",
-    stock: 8,
-    active: true,
-    price: 24500,
-    sale_price: 20875,
-    old_price: 24500,
-    rating: 4.8,
-    reviews_count: 16,
-    badge: "ECRÃ GRANDE",
-    image_url: "/products/smartwatch.jpg",
-    image: "/products/smartwatch.jpg",
-    images: ["/products/smartwatch.jpg"],
-    description: "Smartwatch X-Watch com ecrã generoso de 1.8 polegadas, chamadas Bluetooth nítidas e monitorização diária de atividades físicas com bateria de longa duração.",
-    highlights: ["Ecrã amplo de 1.8 polegadas", "Chamadas telefónicas por Bluetooth", "Monitor de sono e passos"],
-    features: ["Altifalante integrado", "Resistente ao suor"],
-    specifications: { "Ecrã": "1.8 polegadas HD", "Conectividade": "Bluetooth" },
-    packageContent: ["1 Smartwatch X-Watch 1.8", "1 Cabo magnético", "1 Manual"],
-    seoTitle: "Smartwatch X-Watch 1.8\" com Bluetooth e Notificações | AQUI TEM ANGOLA",
-    seoDescription: "Smartwatch X-Watch 1.8 polegadas com excelente relação qualidade-preço na AQUI TEM Angola. Faz chamadas Bluetooth e monitoriza desporto com entrega em Luanda.",
-    seoKeywords: "x-watch 1.8 angola, relogio bluetooth luanda, aqui tem angola"
+    "id": "d8f54944-7134-4d66-907e-4b134a091afc",
+    "supabaseId": "d8f54944-7134-4d66-907e-4b134a091afc",
+    "name": "X-WATCH SMARTWATCH — 1.8\" Bluetooth",
+    "slug": "x-watch-smartwatch-18-bluetooth",
+    "sku": "AT-XW-18",
+    "brand": "X-Watch",
+    "category": "Smartwatches",
+    "stock": 8,
+    "active": true,
+    "price": 24500,
+    "sale_price": 20875,
+    "old_price": 24500,
+    "rating": 4.8,
+    "reviews_count": 16,
+    "badge": "ECRÃ GRANDE",
+    "image_url": "/products/smartwatch.jpg",
+    "image": "/products/smartwatch.jpg",
+    "images": [
+      "/products/smartwatch.jpg"
+    ],
+    "description": "Smartwatch X-Watch com ecrã generoso de 1.8 polegadas, chamadas Bluetooth nítidas e monitorização diária de atividades físicas com bateria de longa duração.",
+    "highlights": [
+      "Ecrã amplo de 1.8 polegadas",
+      "Chamadas telefónicas por Bluetooth",
+      "Monitor de sono e passos"
+    ],
+    "features": [
+      "Altifalante integrado",
+      "Resistente ao suor"
+    ],
+    "specifications": {
+      "Ecrã": "1.8 polegadas HD",
+      "Conectividade": "Bluetooth"
+    },
+    "packageContent": [
+      "1 Smartwatch X-Watch 1.8",
+      "1 Cabo magnético",
+      "1 Manual"
+    ],
+    "seoTitle": "Smartwatch X-Watch 1.8\" com Bluetooth e Notificações | AQUI TEM ANGOLA",
+    "seoDescription": "Smartwatch X-Watch 1.8 polegadas com excelente relação qualidade-preço na AQUI TEM Angola. Faz chamadas Bluetooth e monitoriza desporto com entrega em Luanda.",
+    "seoKeywords": "x-watch 1.8 angola, relogio bluetooth luanda, aqui tem angola"
+  },
+  {
+    "id": "8a1e3b1c-7d6e-4f9a-8c2d-1b3a5f7e9d2b",
+    "supabaseId": "8a1e3b1c-7d6e-4f9a-8c2d-1b3a5f7e9d2b",
+    "name": "Rato Gaming Sem Fios Glorious Model O Wireless RGB",
+    "slug": "rato-gaming-glorious-model-o-wireless",
+    "slugAliases": [
+      "rato-gaming-sem-fios-glorious-model-o-wireless-rgb",
+      "glorious-model-o"
+    ],
+    "sku": "AT-GAM-011",
+    "brand": "Glorious",
+    "category": "Acessórios & Tech",
+    "stock": 10,
+    "active": true,
+    "price": 48000,
+    "sale_price": 40000,
+    "old_price": 48000,
+    "rating": 4.9,
+    "reviews_count": 32,
+    "badge": "GAMING",
+    "image_url": "/products/rato-gaming-glorious.jpg",
+    "image": "/products/rato-gaming-glorious.jpg",
+    "description": "Rato gaming sem fios Glorious Model O Wireless RGB com sensor BAMF ultra preciso de 19.000 DPI, carcaça ultra leve tipo favo de mel (69g) e conexão sem fios sem latência de 2.4GHz.",
+    "highlights": [
+      "Ultra leve: apenas 69g para movimentos ultra rápidos",
+      "Sensor BAMF de alta precisão 19.000 DPI",
+      "Iluminação RGB expansiva e personalizável",
+      "Autonomia de até 71 horas de jogo contínuo"
+    ],
+    "features": [
+      "Deslizadores G-Skates de PTFE puro",
+      "Cabo Ascend Paracord ultra flexível para carregamento durante o jogo"
+    ],
+    "specifications": {
+      "Sensor": "BAMF 19000 DPI",
+      "Peso": "69g",
+      "Bateria": "Até 71h"
+    },
+    "packageContent": [
+      "1 Rato Glorious Model O Wireless",
+      "1 Receptor Nano USB 2.4GHz",
+      "1 Cabo Ascend USB-C",
+      "1 Adaptador extensor"
+    ],
+    "seoTitle": "Rato Gaming Sem Fios Glorious Model O Wireless RGB | AQUI TEM ANGOLA",
+    "seoDescription": "Compre o Rato Gaming Sem Fios Glorious Model O Wireless RGB na AQUI TEM Angola. Sensor BAMF, ultra leve 69g e entrega rápida em Luanda."
+  },
+  {
+    "id": "2c4e6f8a-0b2d-4f6a-8c0e-2d4f6a8c0e2d",
+    "supabaseId": "2c4e6f8a-0b2d-4f6a-8c0e-2d4f6a8c0e2d",
+    "name": "Teclado Bluetooth Sem Fios Kapbom",
+    "slug": "teclado-bluetooth-kapbom",
+    "slugAliases": [
+      "teclado-bluetooth-sem-fios-kapbom"
+    ],
+    "sku": "AT-ACC-012",
+    "brand": "Kapbom",
+    "category": "Acessórios & Tech",
+    "stock": 18,
+    "active": true,
+    "price": 22000,
+    "sale_price": 17500,
+    "old_price": 22000,
+    "rating": 4.7,
+    "reviews_count": 24,
+    "badge": "SLIM",
+    "image_url": "/products/teclado-kapbom.jpg",
+    "image": "/products/teclado-kapbom.jpg",
+    "description": "Teclado Bluetooth Sem Fios Kapbom ultra fino, compacto e silencioso. Compatível com Android, iOS, Windows e Mac, ideal para tablets, smartphones e computadores.",
+    "highlights": [
+      "Conexão Bluetooth sem fios instantânea",
+      "Teclas perfil baixo silenciosas",
+      "Design ultra fino e fácil de transportar"
+    ],
+    "features": [
+      "Bateria recarregável via USB",
+      "Teclas de atalho multimédia"
+    ],
+    "specifications": {
+      "Conectividade": "Bluetooth 3.0/5.0",
+      "Alcance": "10 metros"
+    },
+    "packageContent": [
+      "1 Teclado Bluetooth Kapbom",
+      "1 Cabo de carregamento USB",
+      "1 Manual"
+    ],
+    "seoTitle": "Teclado Bluetooth Sem Fios Kapbom | AQUI TEM ANGOLA",
+    "seoDescription": "Teclado Bluetooth Sem Fios Kapbom ultra fino e silencioso para tablets e portáteis na AQUI TEM Angola. Entrega rápida em Luanda."
+  },
+  {
+    "id": "f4a6e8c0-2d4f-6a8c-0e2d-4f6a8c0e2d4f",
+    "supabaseId": "f4a6e8c0-2d4f-6a8c-0e2d-4f6a8c0e2d4f",
+    "name": "Oraimo Smart Mouse P Sem Fios",
+    "slug": "oraimo-smart-mouse-p",
+    "slugAliases": [
+      "oraimo-smart-mouse-p-sem-fios"
+    ],
+    "sku": "AT-ACC-013",
+    "brand": "Oraimo",
+    "category": "Acessórios & Tech",
+    "stock": 22,
+    "active": true,
+    "price": 19000,
+    "sale_price": 15000,
+    "old_price": 19000,
+    "rating": 4.8,
+    "reviews_count": 29,
+    "badge": "SILENCIOSO",
+    "image_url": "/products/oraimo-mouse-p.jpg",
+    "image": "/products/oraimo-mouse-p.jpg",
+    "description": "Rato sem fios Oraimo Smart Mouse P com tecnologia de clique silencioso de 90%, sensor óptico de alta resolução de 1600 DPI e design ergonómico para destros e esquerdinos.",
+    "highlights": [
+      "Cliques 90% mais silenciosos",
+      "Sensor óptico preciso de 1600 DPI",
+      "Modo de poupança inteligente de energia"
+    ],
+    "features": [
+      "Receptor Nano USB Plug & Play",
+      "Textura fosca suave que previne marcas"
+    ],
+    "specifications": {
+      "DPI": "1600",
+      "Conexão": "2.4GHz Sem Fios"
+    },
+    "packageContent": [
+      "1 Oraimo Smart Mouse P",
+      "1 Receptor Nano USB",
+      "1 Pilha AA"
+    ],
+    "seoTitle": "Oraimo Smart Mouse P Sem Fios Silencioso | AQUI TEM ANGOLA",
+    "seoDescription": "Compre o Rato Sem Fios Oraimo Smart Mouse P com cliques silenciosos na AQUI TEM Angola. Entrega rápida em Luanda."
+  },
+  {
+    "id": "a8c0e2d4-f6a8-c0e2-d4f6-a8c0e2d4f6a8",
+    "supabaseId": "a8c0e2d4-f6a8-c0e2-d4f6-a8c0e2d4f6a8",
+    "name": "Webcam Full HD Kapbom 1080p USB com Microfone",
+    "slug": "webcam-full-hd-kapbom-1080p",
+    "slugAliases": [
+      "webcam-full-hd-kapbom-1080p-usb"
+    ],
+    "sku": "AT-ACC-014",
+    "brand": "Kapbom",
+    "category": "Acessórios & Tech",
+    "stock": 14,
+    "active": true,
+    "price": 25000,
+    "sale_price": 20000,
+    "old_price": 25000,
+    "rating": 4.6,
+    "reviews_count": 19,
+    "badge": "FULL HD",
+    "image_url": "/products/webcam-kapbom.jpg",
+    "image": "/products/webcam-kapbom.jpg",
+    "description": "Webcam Full HD Kapbom 1080p USB com microfone duplo com redução de ruído, correção automática de luz fraca e clipe universal flexível para monitores e portáteis.",
+    "highlights": [
+      "Vídeo cristalino Full HD 1080p a 30fps",
+      "Microfone estéreo com cancelamento de ruído",
+      "Instalação automática Plug and Play via USB"
+    ],
+    "features": [
+      "Ajuste automático de brilho e contraste",
+      "Rotação de 360 graus"
+    ],
+    "specifications": {
+      "Resolução": "1920x1080 Full HD",
+      "Interface": "USB 2.0"
+    },
+    "packageContent": [
+      "1 Webcam Kapbom 1080p USB",
+      "1 Manual do utilizador"
+    ],
+    "seoTitle": "Webcam Full HD Kapbom 1080p USB | AQUI TEM ANGOLA",
+    "seoDescription": "Webcam Full HD Kapbom 1080p com microfone integrado para videochamadas e aulas online na AQUI TEM Angola."
+  },
+  {
+    "id": "e2d4f6a8-c0e2-d4f6-a8c0-e2d4f6a8c0e2",
+    "supabaseId": "e2d4f6a8-c0e2-d4f6-a8c0-e2d4f6a8c0e2",
+    "name": "Kit de Microfones Sem Fio Lapela — Duplo",
+    "slug": "kit-microfones-sem-fio-duplo",
+    "slugAliases": [
+      "kit-de-microfones-sem-fio-duplo"
+    ],
+    "sku": "AT-ACC-015",
+    "brand": "K8 / Kapbom",
+    "category": "Áudio & Som",
+    "stock": 15,
+    "active": true,
+    "price": 31000,
+    "sale_price": 25000,
+    "old_price": 31000,
+    "rating": 4.9,
+    "reviews_count": 41,
+    "badge": "GRAVAÇÃO PRO",
+    "image_url": "/products/kit-microfones-duplo.jpg",
+    "image": "/products/kit-microfones-duplo.jpg",
+    "description": "Kit de 2 Microfones Lapela Sem Fio com conector Type-C / Lightning para telemóveis. Captura omnidirecional de 360° com cancelamento inteligente de ruído para vídeos e entrevistas.",
+    "highlights": [
+      "2 Microfones transmissores incluídos no kit",
+      "Redução inteligente de ruído exterior de fundo",
+      "Conexão automática instantânea sem necessidade de app"
+    ],
+    "features": [
+      "Alcance até 20 metros sem barreiras",
+      "Autonomia de até 6 horas de gravação contínua"
+    ],
+    "specifications": {
+      "Frequência": "2.4GHz",
+      "Conexão": "USB-C / Lightning"
+    },
+    "packageContent": [
+      "2 Transmissores Microfone Lapela",
+      "1 Receptor para Telemóvel",
+      "1 Cabo de carregamento USB"
+    ],
+    "seoTitle": "Kit de Microfones Sem Fio Lapela Duplo | AQUI TEM ANGOLA",
+    "seoDescription": "Kit de Microfones Sem Fio Duplo para entrevistas e gravações no telemóvel na AQUI TEM Angola. Entrega rápida."
+  },
+  {
+    "id": "6a8c0e2d-4f6a-8c0e-2d4f-6a8c0e2d4f6a",
+    "supabaseId": "6a8c0e2d-4f6a-8c0e-2d4f-6a8c0e2d4f6a",
+    "name": "Cabo Oraimo MagCable USB-C para Lightning — 1m",
+    "slug": "cabo-oraimo-magcable-usb-c-lightning",
+    "slugAliases": [
+      "cabo-oraimo-magcable-usb-c-para-lightning-1m"
+    ],
+    "sku": "AT-ACC-016",
+    "brand": "Oraimo",
+    "category": "Acessórios & Tech",
+    "stock": 30,
+    "active": true,
+    "price": 16000,
+    "sale_price": 12500,
+    "old_price": 16000,
+    "rating": 4.9,
+    "reviews_count": 55,
+    "badge": "MAGNÉTICO",
+    "image_url": "/products/magcable-oraimo.jpg",
+    "image": "/products/magcable-oraimo.jpg",
+    "description": "Cabo Oraimo MagCable USB-C para Lightning 1m com conector magnético removível e suporte a carregamento rápido Power Delivery PD 20W para iPhone e iPad.",
+    "highlights": [
+      "Conector magnético destacável com atração forte",
+      "Carregamento PD 20W ultra rápido",
+      "Revestimento em nylon trançado anti-dobra"
+    ],
+    "features": [
+      "Luz LED indicadora de carregamento",
+      "Transferência de dados a 480Mbps"
+    ],
+    "specifications": {
+      "Comprimento": "1 Metro",
+      "Potência": "20W PD"
+    },
+    "packageContent": [
+      "1 Cabo MagCable Oraimo 1m",
+      "1 Conector magnético Lightning"
+    ],
+    "seoTitle": "Cabo Oraimo MagCable USB-C para Lightning 1m | AQUI TEM ANGOLA",
+    "seoDescription": "Cabo magnético rápido Oraimo MagCable USB-C para Lightning 1m para iPhone na AQUI TEM Angola."
+  },
+  {
+    "id": "0e2d4f6a-8c0e-2d4f-6a8c-0e2d4f6a8c0e",
+    "supabaseId": "0e2d4f6a-8c0e-2d4f-6a8c-0e2d4f6a8c0e",
+    "name": "Cabo USB-A para USB-C Oraimo DuraLine 3 — 1m",
+    "slug": "cabo-oraimo-duraline-3-usb-a-c",
+    "slugAliases": [
+      "cabo-usb-a-para-usb-c-oraimo-duraline-3-1m"
+    ],
+    "sku": "AT-ACC-017",
+    "brand": "Oraimo",
+    "category": "Acessórios & Tech",
+    "stock": 35,
+    "active": true,
+    "price": 15000,
+    "sale_price": 11250,
+    "old_price": 15000,
+    "rating": 4.8,
+    "reviews_count": 62,
+    "badge": "ULTRA RESISTENTE",
+    "image_url": "/products/duraline3-oraimo.jpg",
+    "image": "/products/duraline3-oraimo.jpg",
+    "description": "Cabo de carregamento rápido e sincronização USB-A para USB-C Oraimo DuraLine 3. Construído com fibra de Kevlar à prova de dobras, testado em mais de 25.000 dobras.",
+    "highlights": [
+      "Suporta carregamento rápido de até 3A",
+      "Reforçado com fibra de Kevlar ultra durável",
+      "Comprimento perfeito de 1 metro"
+    ],
+    "features": [
+      "Juntas de borracha flexíveis anti-quebra",
+      "Compatibilidade universal USB-C"
+    ],
+    "specifications": {
+      "Corrente": "3A Max",
+      "Comprimento": "1 Metro"
+    },
+    "packageContent": [
+      "1 Cabo Oraimo DuraLine 3 USB-C 1m"
+    ],
+    "seoTitle": "Cabo USB-A para USB-C Oraimo DuraLine 3 1m | AQUI TEM ANGOLA",
+    "seoDescription": "Cabo ultra resistente Oraimo DuraLine 3 USB-A para USB-C 1m na AQUI TEM Angola."
+  },
+  {
+    "id": "4f6a8c0e-2d4f-6a8c-0e2d-4f6a8c0e2d4f",
+    "supabaseId": "4f6a8c0e-2d4f-6a8c-0e2d-4f6a8c0e2d4f",
+    "name": "Rato Sem Fios Oraimo Smart Mouse F 1200 DPI",
+    "slug": "oraimo-smart-mouse-f-wireless",
+    "slugAliases": [
+      "rato-sem-fios-oraimo-smart-mouse-f-1200-dpi"
+    ],
+    "sku": "AT-ACC-018",
+    "brand": "Oraimo",
+    "category": "Acessórios & Tech",
+    "stock": 25,
+    "active": true,
+    "price": 18000,
+    "sale_price": 13750,
+    "old_price": 18000,
+    "rating": 4.7,
+    "reviews_count": 20,
+    "badge": "PORTÁTIL",
+    "image_url": "/products/oraimo-mouse-f.jpg",
+    "image": "/products/oraimo-mouse-f.jpg",
+    "description": "Rato sem fios ergonómico Oraimo Smart Mouse F com sensor óptico de 1200 DPI, ligação estável 2.4GHz sem fios até 10 metros e pilhas de longa duração.",
+    "highlights": [
+      "Design ergonómico antiderrapante",
+      "Sensor óptico preciso 1200 DPI",
+      "Plug & Play automático sem drivers"
+    ],
+    "features": [
+      "Compartimento interno para guardar o receptor USB",
+      "Desligamento automático inteligente"
+    ],
+    "specifications": {
+      "DPI": "1200",
+      "Conexão": "2.4GHz USB"
+    },
+    "packageContent": [
+      "1 Oraimo Smart Mouse F",
+      "1 Receptor USB Nano"
+    ],
+    "seoTitle": "Rato Sem Fios Oraimo Smart Mouse F 1200 DPI | AQUI TEM ANGOLA",
+    "seoDescription": "Rato sem fios Oraimo Smart Mouse F 1200 DPI na AQUI TEM Angola. Confortável e econômico."
+  },
+  {
+    "id": "8c0e2d4f-6a8c-0e2d-4f6a-8c0e2d4f6a8c",
+    "supabaseId": "8c0e2d4f-6a8c-0e2d-4f6a-8c0e2d4f6a8c",
+    "name": "Hub USB-C Oraimo Smart 7 em 1 Multiportas HDMI e SD",
+    "slug": "hub-usb-c-oraimo-smart-7-1",
+    "slugAliases": [
+      "hub-usb-c-oraimo-smart-7-em-1"
+    ],
+    "sku": "AT-ACC-019",
+    "brand": "Oraimo",
+    "category": "Acessórios & Tech",
+    "stock": 16,
+    "active": true,
+    "price": 34000,
+    "sale_price": 27500,
+    "old_price": 34000,
+    "rating": 4.9,
+    "reviews_count": 38,
+    "badge": "7 EM 1",
+    "image_url": "/products/hub-oraimo-7in1.jpg",
+    "image": "/products/hub-oraimo-7in1.jpg",
+    "description": "Hub adaptador multiportas USB-C Oraimo Smart 7 em 1 com saída HDMI 4K UHD, 3x portas USB 3.0 de alta velocidade, leitores de cartão SD e TF e porta USB-C Power Delivery 100W.",
+    "highlights": [
+      "Saída de vídeo HDMI 4K a 30Hz para monitores e TVs",
+      "3 Portas USB 3.0 super rápidas até 5Gbps",
+      "Carregamento USB-C PD de alta potência até 100W"
+    ],
+    "features": [
+      "Corpo em alumínio cinzento espacial com dissipação de calor eficiente",
+      "Plug & Play compatível com Mac, Windows e iPad"
+    ],
+    "specifications": {
+      "HDMI": "4K@30Hz",
+      "USB": "3x USB 3.0",
+      "Power Delivery": "100W PD"
+    },
+    "packageContent": [
+      "1 Hub USB-C Oraimo 7 em 1",
+      "1 Manual do utilizador"
+    ],
+    "seoTitle": "Hub USB-C Oraimo Smart 7 em 1 Multiportas | AQUI TEM ANGOLA",
+    "seoDescription": "Hub USB-C Oraimo Smart 7 em 1 com saída HDMI 4K, leitor SD e portas USB 3.0 na AQUI TEM Angola."
+  },
+  {
+    "id": "d4f6a8c0-e2d4-f6a8-c0e2-d4f6a8c0e2d4",
+    "supabaseId": "d4f6a8c0-e2d4-f6a8-c0e2-d4f6a8c0e2d4",
+    "name": "Suporte de Alumínio Articulado e Dobrável para Notebook",
+    "slug": "suporte-aluminio-notebook-dobravel",
+    "slugAliases": [
+      "suporte-de-aluminio-articulado-e-dobravel-para-notebook"
+    ],
+    "sku": "AT-ACC-020",
+    "brand": "ErgoTech",
+    "category": "Acessórios & Tech",
+    "stock": 20,
+    "active": true,
+    "price": 28000,
+    "sale_price": 22500,
+    "old_price": 28000,
+    "rating": 4.8,
+    "reviews_count": 45,
+    "badge": "ERGONÓMICO",
+    "image_url": "/products/suporte-notebook-aluminio.jpg",
+    "image": "/products/suporte-notebook-aluminio.jpg",
+    "description": "Suporte ergonómico dobrável de liga de alumínio reforçada para portáteis de 10 a 17.3 polegadas. Ajustável em 6 ângulos de altura, previne dores no pescoço e melhora a ventilação do computador.",
+    "highlights": [
+      "Estrutura em liga de alumínio sólida e antiderrapante",
+      "6 Níveis de ajuste de altura para ergonomia ideal",
+      "Design aberto que melhora o arrefecimento do portátil em 40%"
+    ],
+    "features": [
+      "Almofadas de silicone que protegem a carcaça do portátil contra riscos",
+      "Totalmente dobrável e inclui bolsa de veludo para transporte"
+    ],
+    "specifications": {
+      "Material": "Liga de Alumínio + Silicone",
+      "Compatibilidade": "Notebooks de 10\" a 17.3\""
+    },
+    "packageContent": [
+      "1 Suporte de Alumínio Dobrável",
+      "1 Bolsa de veludo para transporte"
+    ],
+    "seoTitle": "Suporte de Alumínio Articulado e Dobrável para Notebook | AQUI TEM ANGOLA",
+    "seoDescription": "Suporte ergonómico de alumínio dobrável para portátil na AQUI TEM Angola. Alivia dores no pescoço."
+  },
+  {
+    "id": "1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f",
+    "supabaseId": "1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f",
+    "name": "Aparelho Tigre TV Box 4K Ultra HD Android",
+    "slug": "aparelho-tigre-tv-box-4k",
+    "slugAliases": [
+      "aparelho-tigre-tv"
+    ],
+    "sku": "AT-TV-021",
+    "brand": "Tigre TV",
+    "category": "TV & Vídeo",
+    "stock": 12,
+    "active": true,
+    "price": 55000,
+    "sale_price": 45000,
+    "old_price": 55000,
+    "rating": 4.9,
+    "reviews_count": 76,
+    "badge": "OFICIAL 4K",
+    "image_url": "/products/tigre-tv-box.jpg",
+    "image": "/products/tigre-tv-box.jpg",
+    "description": "O Aparelho Tigre TV Box 4K Ultra HD transforma qualquer televisão comum em uma Smart TV de alta performance em Angola. Com sistema Android fluido, Wi-Fi Dual Band de alta velocidade, processador quad-core e suporte para reprodução de conteúdos em resolução 4K Ultra HD com cores vivas e sem travamentos. Acompanha comando remoto intuitivo, porta HDMI e suporte para todos os principais aplicativos de streaming.",
+    "highlights": [
+      "Resolução de imagem 4K Ultra HD nítida e fluida",
+      "Sistema Android rápido com loja de aplicativos",
+      "Ligação Wi-Fi Dual Band 2.4GHz / 5GHz + porta de rede Ethernet RJ45",
+      "Processador Quad-Core com resposta rápida sem travamentos",
+      "Transforma qualquer TV comum com porta HDMI em Smart TV"
+    ],
+    "features": [
+      "Portas USB para pen drives e discos externos",
+      "Saída de áudio óptico SPDIF e AV",
+      "Design compacto e moderno"
+    ],
+    "specifications": {
+      "Resolução": "4K Ultra HD (3840 x 2160)",
+      "Sistema": "Android",
+      "Conectividade": "Wi-Fi Dual Band (2.4G/5G) + Ethernet RJ45",
+      "Processador": "Quad-Core High Performance",
+      "Entradas": "HDMI, 2x USB, Slot MicroSD, AV, RJ45"
+    },
+    "packageContent": [
+      "1 Aparelho Tigre TV Box 4K",
+      "1 Comando remoto infravermelho",
+      "1 Cabo HDMI de alta velocidade",
+      "1 Fonte de alimentação Bivolt",
+      "1 Manual do utilizador em português"
+    ],
+    "seoTitle": "Aparelho Tigre TV Box 4K Ultra HD Android | AQUI TEM ANGOLA",
+    "seoDescription": "Compre o Aparelho Tigre TV Box 4K Ultra HD com Android na AQUI TEM Angola. Canais e filmes em alta definição com entrega rápida em Luanda.",
+    "seoKeywords": "aparelho tigre tv angola, tigre tv box 4k luanda, receptor tigre tv angola, smart tv box luanda, aqui tem angola"
   }
 ];
 
-// PRODUTOS ANTIGOS INATIVOS — PRESERVADOS INTEGRALMENTE CONFORME INSTRUÇÃO
-export const DEACTIVATED_LEGACY_PRODUCTS = [
-  // Preservado sem modificações
-];
+export const DEACTIVATED_LEGACY_PRODUCTS = [];
 
 export const CATEGORIES = [
   'Todos',

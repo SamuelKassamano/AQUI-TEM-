@@ -381,8 +381,30 @@ export function getProductTestimonials(product, lang = 'pt') {
       matched = TESTIMONIALS.filter(t => t.productId === '84f18b32-9cb4-482a-a9e3-2e78dc2361b2');
     } else if (rawName.includes('impressora') || rawSlug.includes('impressora')) {
       matched = TESTIMONIALS.filter(t => t.productId === '91dc572e-84a1-4322-9df7-e61a2578c909');
-    } else if (rawName.includes('rastreador') || rawName.includes('gps') || rawSlug.includes('rastreador')) {
+    } else if (rawName.includes('rastreador') || rawSlug.includes('rastreador')) {
       matched = TESTIMONIALS.filter(t => t.productId === 'a083d917-7e23-4581-be99-0e7f7b321a10');
+    } else if (rawName.includes('glorious') || rawName.includes('model o') || rawSlug.includes('glorious')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '8a1e3b1c-7d6e-4f9a-8c2d-1b3a5f7e9d2b');
+    } else if (rawName.includes('kapbom') && (rawName.includes('teclado') || rawSlug.includes('teclado'))) {
+      matched = TESTIMONIALS.filter(t => t.productId === '2c4e6f8a-0b2d-4f6a-8c0e-2d4f6a8c0e2d');
+    } else if (rawName.includes('mouse p') || rawSlug.includes('mouse-p')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'f4a6e8c0-2d4f-6a8c-0e2d-4f6a8c0e2d4f');
+    } else if (rawName.includes('kapbom') && (rawName.includes('webcam') || rawSlug.includes('webcam'))) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'a8c0e2d4-f6a8-c0e2-d4f6-a8c0e2d4f6a8');
+    } else if (rawName.includes('microfone') || rawSlug.includes('microfone')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'e2d4f6a8-c0e2-d4f6-a8c0-e2d4f6a8c0e2');
+    } else if (rawName.includes('magcable') || rawSlug.includes('magcable')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '6a8c0e2d-4f6a-8c0e-2d4f-6a8c0e2d4f6a');
+    } else if (rawName.includes('duraline') || rawSlug.includes('duraline')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '0e2d4f6a-8c0e-2d4f-6a8c-0e2d4f6a8c0e');
+    } else if (rawName.includes('mouse f') || rawSlug.includes('mouse-f')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '4f6a8c0e-2d4f-6a8c-0e2d-4f6a8c0e2d4f');
+    } else if (rawName.includes('hub') || rawSlug.includes('hub')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '8c0e2d4f-6a8c-0e2d-4f6a-8c0e2d4f6a8c');
+    } else if (rawName.includes('suporte') || rawSlug.includes('suporte')) {
+      matched = TESTIMONIALS.filter(t => t.productId === 'd4f6a8c0-e2d4-f6a8-c0e2-d4f6a8c0e2d4');
+    } else if (rawName.includes('tigre') || rawSlug.includes('tigre')) {
+      matched = TESTIMONIALS.filter(t => t.productId === '1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f');
     }
   }
 

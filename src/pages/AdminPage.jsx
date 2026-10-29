@@ -50,7 +50,7 @@ import {
 import { sendAdminPasswordReset, checkUserIsAdmin } from '../lib/crmService';
 import { CATEGORIES } from '../../data/products';
 import { createSlug } from '../utils/slug';
-import OriginalLogoImage from '../components/OriginalLogoImage';
+
 
 const EMPTY_FORM = {
   name: '',
@@ -918,7 +918,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
-            <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={40} />
+            <img src="/logo.jpg" alt="AQUI TEM" height={40} />
             <button
               type="button"
               onClick={() => {
@@ -1062,7 +1062,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '22px' }}>
-            <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={40} />
+            <img src="/logo.jpg" alt="AQUI TEM" height={40} />
             <Link to="/" className="nav-btn" style={{ textDecoration: 'none', fontSize: '0.82rem' }}>
               <ArrowLeft size={15} /> Voltar à Loja
             </Link>
@@ -1295,7 +1295,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
             <Link to="/" style={{ display: 'flex', alignItems: 'center' }}>
-              <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={36} />
+              <img src="/logo.jpg" alt="AQUI TEM" height={36} />
             </Link>
             <div>
               <h1 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0 }}>

@@ -110,14 +110,24 @@ export async function requireAdminSession() {
  */
 export function getEffectivePrice(product) {
   if (!product) return 0;
-  // If official catalog pricing applies, always enforce the verified formula (Cost + 25% + 4000 Kz)
+
+  const salePrice = Number(product.sale_price ?? product.salePrice);
+  const regularPrice = Number(product.price);
+  const isSupabaseRow = Boolean(
+    product.id && typeof product.id === 'string' && product.id.length > 10
+  );
+
+  // If product is directly from Supabase database row and has explicit price, use it
+  if (isSupabaseRow) {
+    if (Number.isFinite(salePrice) && salePrice > 0) return salePrice;
+    if (Number.isFinite(regularPrice) && regularPrice > 0) return regularPrice;
+  }
+
+  // If official catalog pricing applies, enforce verified pricing formula
   const official = getOfficialPricing(product);
   if (official && Number(official.calculatedSalePrice) > 0) {
     return Number(official.calculatedSalePrice);
   }
-
-  const salePrice = Number(product.sale_price ?? product.salePrice);
-  const regularPrice = Number(product.price);
 
   if (
     Number.isFinite(salePrice) &&
@@ -340,17 +350,23 @@ export function normalizeProduct(raw, index = 0) {
       ? Number(oldPriceRaw)
       : null;
 
-  const resolvedPrice = official?.regularPrice
+  const resolvedPrice = (isSupabaseRow && Number.isFinite(price) && price > 0)
+    ? price
+    : official?.regularPrice
     ? official.regularPrice
     : Number.isFinite(price) && price > 0
     ? price
     : (baseMatch?.price || 10000);
 
-  const resolvedSalePrice = official?.calculatedSalePrice
+  const resolvedSalePrice = (isSupabaseRow && sale_price !== null)
+    ? sale_price
+    : official?.calculatedSalePrice
     ? official.calculatedSalePrice
     : sale_price;
 
-  const resolvedOldPrice = official?.regularPrice
+  const resolvedOldPrice = (isSupabaseRow && old_price !== null)
+    ? old_price
+    : official?.regularPrice
     ? official.regularPrice
     : old_price;
 
@@ -372,22 +388,25 @@ export function normalizeProduct(raw, index = 0) {
     PRODUCT_FALLBACK_IMAGES.boompop;
 
   const ratingRaw = Number(
-    isSupabaseRow ? (raw.rating ?? 4.9) : (raw.rating ?? baseMatch?.rating ?? 4.9)
+    raw.rating ?? official?.rating ?? baseMatch?.rating ?? 4.8
   );
   const rating =
     Number.isFinite(ratingRaw) && ratingRaw > 0
       ? Math.min(5, Math.max(1, ratingRaw))
-      : 4.9;
+      : 4.8;
 
   const reviewsCountRaw = Number(
-    isSupabaseRow
-      ? (raw.reviews_count ?? 0)
-      : (raw.reviews_count ?? raw.reviewsCount ?? baseMatch?.reviewsCount ?? 50)
+    raw.reviews_count ??
+      raw.reviewsCount ??
+      official?.reviews_count ??
+      baseMatch?.reviews_count ??
+      baseMatch?.reviewsCount ??
+      35
   );
   const reviews_count =
     Number.isFinite(reviewsCountRaw) && reviewsCountRaw >= 0
       ? Math.round(reviewsCountRaw)
-      : 0;
+      : 35;
 
   const specs = Array.isArray(raw.specs)
     ? raw.specs.filter(Boolean)

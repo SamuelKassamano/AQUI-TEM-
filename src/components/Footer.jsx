@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { MessageCircle, ShieldCheck, MapPin, Phone, Mail, Clock } from 'lucide-react';
-import OriginalLogoImage from './OriginalLogoImage';
+
 import { useLanguage } from '../context/LanguageContext';
 
 export default function Footer() {
@@ -13,7 +13,7 @@ export default function Footer() {
         {/* Line 1: Logo + Slogan + Direct WhatsApp */}
         <div className="footer-line-main">
           <Link to="/" className="footer-logo-link">
-            <OriginalLogoImage src="/logo.jpg" alt="AQUI TEM" height={24} white={true} className="footer-logo-png" />
+            <img src="/logo.jpg" alt="AQUI TEM" height={24} className="footer-logo-png" style={{ filter: 'brightness(0) invert(1)' }} />
           </Link>
           <span className="footer-slogan-text">{t('siteSlogan') || 'Tecnologia, Gadgets e Eletrodomésticos em Angola'}</span>
           <span className="footer-dot">•</span>
@@ -61,7 +61,7 @@ export default function Footer() {
         {/* Line 3: Informações operacionais, localização e pagamento */}
         <div className="footer-line-bottom">
           <span>
-            © {new Date().getFullYear()} AQUI TEM Angola • Todos os direitos reservados • Produtos 100% Originais e Selados com Garantia • Multicaixa Express / TPA / Dinheiro / Pagamento na Entrega • Avenida Fidel de Castro, Benfica - Zona Verde, Município Cabolombo, Luanda - Angola
+            © {new Date().getFullYear()} AQUI TEM Angola • Todos os direitos reservados • Produtos 100% Originais e Selados com Garantia • Multicaixa Express / Transferência Bancária • Avenida Fidel de Castro, Benfica - Zona Verde, Município Cabolombo, Luanda - Angola
           </span>
         </div>
       </div>

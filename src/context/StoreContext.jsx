@@ -20,11 +20,47 @@ const StoreContext = createContext();
 const CART_STORAGE_KEY = 'aquitem_cart_v1';
 const WISHLIST_STORAGE_KEY = 'aquitem_wishlist_v1';
 const THEME_STORAGE_KEY = 'aquitem_theme_v1';
+const DELETED_PRODUCTS_KEY = 'aquitem_deleted_product_ids_v1';
+
+export function getDeletedProductIdentifiers() {
+  try {
+    const raw = localStorage.getItem(DELETED_PRODUCTS_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return new Set(arr.map(s => String(s).toLowerCase().trim()));
+    }
+  } catch (e) {
+    // ignore
+  }
+  return new Set();
+}
+
+export function saveDeletedProductIdentifier(val) {
+  if (!val) return;
+  try {
+    const set = getDeletedProductIdentifiers();
+    set.add(String(val).toLowerCase().trim());
+    localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(Array.from(set)));
+  } catch (e) {
+    // ignore
+  }
+}
+
+export function unmarkDeletedProductIdentifier(val) {
+  if (!val) return;
+  try {
+    const set = getDeletedProductIdentifiers();
+    set.delete(String(val).toLowerCase().trim());
+    localStorage.setItem(DELETED_PRODUCTS_KEY, JSON.stringify(Array.from(set)));
+  } catch (e) {
+    // ignore
+  }
+}
 
 export function StoreProvider({ children }) {
   const { lang } = useLanguage();
 
-  // Clear any legacy local product caches so localStorage is never used as product source
+  // Clear any legacy local product caches (preserve deleted product tracking)
   useEffect(() => {
     try {
       localStorage.removeItem('aquitem_admin_products_v1');
@@ -36,10 +72,61 @@ export function StoreProvider({ children }) {
     }
   }, []);
 
-  // Products state (loaded from Supabase `public.products` on mount; local catalog only as initial render placeholder)
-  const [products, setProducts] = useState(() =>
-    PRODUCTS.map((p, idx) => normalizeProduct(p, idx))
-  );
+  // Helper to merge catalog PRODUCTS with Supabase rows while ensuring deleted items NEVER resurrect
+  const combineCatalogWithSupabase = useCallback((supabaseRows = []) => {
+    const deleted = getDeletedProductIdentifiers();
+
+    const isDeleted = (p) => {
+      if (!p) return true;
+      const idStr = p.id ? String(p.id).toLowerCase().trim() : '';
+      const supabaseIdStr = p.supabaseId ? String(p.supabaseId).toLowerCase().trim() : '';
+      const slugStr = p.slug ? String(p.slug).toLowerCase().trim() : '';
+      const nameStr = p.name ? String(p.name).toLowerCase().trim() : '';
+
+      return (
+        deleted.has(idStr) ||
+        deleted.has(supabaseIdStr) ||
+        deleted.has(slugStr) ||
+        deleted.has(nameStr)
+      );
+    };
+
+    const sbNormalized = (supabaseRows || [])
+      .map((row, idx) => normalizeProduct(row, idx))
+      .filter(p => Boolean(p) && p.active !== false && !isDeleted(p));
+
+    const catalogNormalized = PRODUCTS
+      .map((p, idx) => normalizeProduct(p, idx))
+      .filter(p => Boolean(p) && p.active !== false && !isDeleted(p));
+
+    const map = new Map();
+
+    // 1. Add ALL non-deleted Supabase database rows FIRST
+    for (const sbProd of sbNormalized) {
+      map.set(String(sbProd.id), sbProd);
+    }
+
+    // 2. Add local catalog PRODUCTS ONLY IF DB has no rows or if not already in DB and not deleted
+    const hasDbRows = Array.isArray(supabaseRows) && supabaseRows.length > 0;
+
+    for (const catProd of catalogNormalized) {
+      const alreadyInDb = Array.from(map.values()).some(
+        dbProd =>
+          String(dbProd.id) === String(catProd.id) ||
+          (dbProd.slug && catProd.slug && dbProd.slug === catProd.slug) ||
+          (dbProd.name && catProd.name && dbProd.name.toLowerCase().trim() === catProd.name.toLowerCase().trim())
+      );
+
+      if (!alreadyInDb && !hasDbRows) {
+        map.set(String(catProd.id || catProd.slug), catProd);
+      }
+    }
+
+    return Array.from(map.values());
+  }, []);
+
+  // Products state (starts with all catalog items)
+  const [products, setProducts] = useState(() => combineCatalogWithSupabase([]));
 
   const [loadingProducts, setLoadingProducts] = useState(false);
   const [supabaseConnected, setSupabaseConnected] = useState(false);
@@ -148,44 +235,29 @@ export function StoreProvider({ children }) {
 
       if (!error && Array.isArray(data)) {
         setSupabaseConnected(true);
-        const normalized = data
-          .map((row, idx) => normalizeProduct(row, idx))
-          .filter(Boolean);
+        const combined = combineCatalogWithSupabase(data);
+        setProducts(combined);
 
-        if (normalized.length > 0) {
-          // Merge Supabase rows with local catalog PRODUCTS so all 10 products are always present and up-to-date
-          const allMap = new Map();
-          PRODUCTS.forEach((p, idx) => {
-            const norm = normalizeProduct(p, idx);
-            if (norm) allMap.set(String(norm.id), norm);
-          });
-          normalized.forEach(p => {
-            allMap.set(String(p.id), p);
-          });
-          const mergedList = Array.from(allMap.values());
-          setProducts(mergedList);
-
-          // Sync any cart items with the latest product data (including image_url, price, stock)
-          setCart(prevCart =>
-            prevCart.map(item => {
-              const liveMatch = mergedList.find(
-                p =>
-                  String(p.id) === String(item.id) ||
-                  (item.slug && p.slug === item.slug) ||
-                  (item.name && p.name === item.name)
-              );
-              if (!liveMatch) return item;
-              return {
-                ...item,
-                image_url: liveMatch.image_url,
-                image: liveMatch.image,
-                price: getEffectivePrice(liveMatch),
-                stock: liveMatch.stock
-              };
-            })
-          );
-        }
-        return normalized;
+        // Sync any cart items with the latest product data
+        setCart(prevCart =>
+          prevCart.map(item => {
+            const liveMatch = combined.find(
+              p =>
+                String(p.id) === String(item.id) ||
+                (item.slug && p.slug === item.slug) ||
+                (item.name && p.name === item.name)
+            );
+            if (!liveMatch) return item;
+            return {
+              ...item,
+              image_url: liveMatch.image_url,
+              image: liveMatch.image,
+              price: getEffectivePrice(liveMatch),
+              stock: liveMatch.stock
+            };
+          })
+        );
+        return combined;
       } else {
         setSupabaseConnected(false);
         return null;
@@ -196,7 +268,7 @@ export function StoreProvider({ children }) {
     } finally {
       setLoadingProducts(false);
     }
-  }, []);
+  }, [combineCatalogWithSupabase]);
 
   useEffect(() => {
     refreshProducts();
@@ -208,10 +280,57 @@ export function StoreProvider({ children }) {
     return () => window.removeEventListener('focus', handleFocus);
   }, [refreshProducts]);
 
-  // Public active products only (active = true)
+  // Helper to check if a product was added or edited on October 28 or 29
+  const isOct28Or29 = useCallback((p) => {
+    if (!p) return false;
+
+    const createdStr = String(p.created_at || p.createdAt || '').trim();
+    const updatedStr = String(p.updated_at || p.updatedAt || '').trim();
+
+    const checkStr = (str) => {
+      if (!str) return false;
+      const lower = str.toLowerCase();
+      if (lower.includes('2026-10-28') || lower.includes('2026-10-29')) return true;
+      if (lower.includes('10-28') || lower.includes('10-29')) return true;
+      if (lower.includes('28/10') || lower.includes('29/10')) return true;
+
+      try {
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          const month = d.getUTCMonth() + 1;
+          const day = d.getUTCDate();
+          const localMonth = d.getMonth() + 1;
+          const localDay = d.getDate();
+
+          if (
+            (month === 10 && (day === 28 || day === 29)) ||
+            (localMonth === 10 && (localDay === 28 || localDay === 29))
+          ) {
+            return true;
+          }
+        }
+      } catch {
+        // ignore
+      }
+      return false;
+    };
+
+    if (checkStr(createdStr) || checkStr(updatedStr)) {
+      return true;
+    }
+
+    // Default to true for items without an explicit legacy date
+    if (!createdStr && !updatedStr) {
+      return true;
+    }
+
+    return false;
+  }, []);
+
+  // Public active products only (active = true AND added/edited on Oct 28 or 29)
   const activeProducts = useMemo(() => {
-    return products.filter(p => p.active !== false);
-  }, [products]);
+    return products.filter(p => p.active !== false && isOct28Or29(p));
+  }, [products, isOct28Or29]);
 
   // Find product by slug (supports exact slug, createSlug(name), slugAliases, and prefix fallback like /produto/smart-tv-55)
   const findProductBySlug = useCallback(
@@ -419,6 +538,10 @@ export function StoreProvider({ children }) {
       }
       const normalizedRow = normalizeProduct(insertedRow, products.length);
 
+      if (normalizedRow.slug) unmarkDeletedProductIdentifier(normalizedRow.slug);
+      if (normalizedRow.id) unmarkDeletedProductIdentifier(normalizedRow.id);
+      if (normalizedRow.name) unmarkDeletedProductIdentifier(normalizedRow.name);
+
       // Immediately add to products state
       setProducts(prev => {
         const filtered = prev.filter(p => p.slug !== normalizedRow.slug && String(p.id) !== String(normalizedRow.id));
@@ -589,10 +712,10 @@ export function StoreProvider({ children }) {
         p =>
           String(p.id) === String(id) ||
           String(p.supabaseId) === String(id) ||
-          (p.slug && p.slug === String(id))
+          (p.slug && p.slug === String(id)) ||
+          (p.name && p.name === String(id))
       );
 
-      // Check if string is a valid UUID (32 hex characters with hyphens)
       const isUUID = (val) =>
         typeof val === 'string' &&
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
@@ -606,7 +729,6 @@ export function StoreProvider({ children }) {
         targetId = String(existing.id).trim();
       }
 
-      // If ID is not a direct UUID, look up the record's UUID in Supabase by slug or name
       if (!targetId && isSupabaseConfigured && supabase) {
         const searchSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
         if (searchSlug) {
@@ -632,37 +754,28 @@ export function StoreProvider({ children }) {
         }
       }
 
-      // If a UUID exists in Supabase, execute deletion
-      if (targetId && isSupabaseConfigured && supabase) {
-        const { error: delError } = await supabase
-          .from('products')
-          .delete()
-          .eq('id', targetId);
+      const targetSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
+      const targetName = existing?.name || '';
 
-        if (delError) {
-          // If RLS prevents hard delete, soft-delete by setting active = false
-          if (delError.code === '42501' || delError.message?.toLowerCase().includes('violates row-level security')) {
-            await supabase
-              .from('products')
-              .update({ active: false })
-              .eq('id', targetId);
-          } else {
-            console.warn('Erro ao deletar produto no Supabase:', delError);
-          }
-        }
-      }
+      // 1. Marca imediatamente como excluído nos identificadores persistentes
+      saveDeletedProductIdentifier(id);
+      if (targetId) saveDeletedProductIdentifier(targetId);
+      if (existing?.id) saveDeletedProductIdentifier(existing.id);
+      if (targetSlug) saveDeletedProductIdentifier(targetSlug);
+      if (targetName) saveDeletedProductIdentifier(targetName);
 
-      // Remove immediately from React products state
+      // 2. Remove imediatamente do estado do React
       setProducts(prev =>
         prev.filter(
           p =>
             String(p.id) !== String(id) &&
             (!targetId || String(p.id) !== String(targetId)) &&
-            (!existing || p.name !== existing.name)
+            (!targetSlug || p.slug !== targetSlug) &&
+            (!targetName || p.name.toLowerCase().trim() !== targetName.toLowerCase().trim())
         )
       );
 
-      // Clean up cart and wishlist
+      // Limpa carrinho e favoritos
       setCart(prev =>
         prev.filter(
           item =>
@@ -677,6 +790,26 @@ export function StoreProvider({ children }) {
             (!targetId || String(wId) !== String(targetId))
         )
       );
+
+      // 3. Executa a exclusão definitiva no Supabase (Soft Delete + Hard Delete)
+      if (isSupabaseConfigured && supabase) {
+        try {
+          if (targetId) {
+            await supabase.from('products').update({ active: false }).eq('id', targetId);
+            await supabase.from('products').delete().eq('id', targetId);
+          }
+          if (targetSlug) {
+            await supabase.from('products').update({ active: false }).eq('slug', targetSlug);
+            await supabase.from('products').delete().eq('slug', targetSlug);
+          }
+          if (targetName) {
+            await supabase.from('products').update({ active: false }).eq('name', targetName);
+            await supabase.from('products').delete().eq('name', targetName);
+          }
+        } catch (dbErr) {
+          console.error('Falha ao deletar produto no Supabase:', dbErr);
+        }
+      }
 
       await refreshProducts();
     },
@@ -724,6 +857,17 @@ export function StoreProvider({ children }) {
 
     // Sync current products without overwriting existing database stock/prices with static defaults
     for (const p of products) {
+      // Check if product was explicitly deleted locally
+      const deleted = getDeletedProductIdentifiers();
+      if (
+        deleted.has(String(p.id).toLowerCase()) ||
+        deleted.has(String(p.slug).toLowerCase()) ||
+        deleted.has(String(p.name).toLowerCase()) ||
+        (p.supabaseId && deleted.has(String(p.supabaseId).toLowerCase()))
+      ) {
+        continue;
+      }
+
       const payload = toSupabaseProductPayload(p);
       const pAliases = Array.isArray(p.slugAliases) ? p.slugAliases : [];
       const match = existingList.find(
@@ -734,9 +878,23 @@ export function StoreProvider({ children }) {
       );
 
       if (match && match.id) {
+        // PRESERVE critical fields from database that user might have changed in Admin
+        const patch = { ...payload };
+        
+        // If it's already in DB, don't force 'active: true' from static code if it was manually inactivated
+        if (match.active === false && p.active === true) {
+          patch.active = false;
+        }
+        
+        // Don't overwrite stock if DB has different value (unless we want full override)
+        // Here we keep DB value as it's more likely to be real-time
+        if (match.stock !== undefined) {
+          patch.stock = match.stock;
+        }
+
         const { data: updated, error: updErr } = await supabase
           .from('products')
-          .update(payload)
+          .update(patch)
           .eq('id', match.id)
           .select('*');
         if (updErr) throw updErr;

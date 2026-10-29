@@ -393,5 +393,399 @@ export const TESTIMONIALS = [
     comment: 'A vibração na gola quando alguém liga é perfeita para quem anda em movimento e não pode perder chamadas de clientes.',
     likes: 27,
     verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [11] Rato Gaming Glorious
+  // --------------------------------------------------------------------------
+  {
+    id: 25,
+    productId: '8a1e3b1c-7d6e-4f9a-8c2d-1b3a5f7e9d2b',
+    productSlug: 'rato-gaming-glorious-model-o-wireless',
+    name: 'Ricardo Kimbundu',
+    location: 'Luanda - Talatona',
+    avatar: 'https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&w=250&q=80',
+    product: 'Rato Gaming Sem Fios Glorious Model O Wireless RGB',
+    rating: 5,
+    date: 'Há 2 dias',
+    comment: 'O mouse é leve demais, parece que estou a deslizar no gelo! Para jogar CS2 e Valorant é perfeito, não tem nenhum atraso de resposta. O RGB é muito bonito no escuro.',
+    likes: 45,
+    verified: true
+  },
+  {
+    id: 26,
+    productId: '8a1e3b1c-7d6e-4f9a-8c2d-1b3a5f7e9d2b',
+    productSlug: 'rato-gaming-glorious-model-o-wireless',
+    name: 'Fábio Gouveia',
+    location: 'Luanda - Maculusso',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=250&q=80',
+    product: 'Rato Gaming Sem Fios Glorious Model O Wireless RGB',
+    rating: 5,
+    date: 'Há 5 dias',
+    comment: 'Qualidade de construção impecável. A bateria dura muito e carrega rápido com o cabo paracord que vem junto. Recomendo para quem quer performance pro em Luanda.',
+    likes: 32,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [12] Teclado Kapbom
+  // --------------------------------------------------------------------------
+  {
+    id: 27,
+    productId: '2c4e6f8a-0b2d-4f6a-8c0e-2d4f6a8c0e2d',
+    productSlug: 'teclado-bluetooth-kapbom',
+    name: 'Helena Patrício',
+    location: 'Luanda - Alvalade',
+    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=250&q=80',
+    product: 'Teclado Bluetooth Sem Fios Kapbom',
+    rating: 5,
+    date: 'Há 1 dia',
+    comment: 'Uso no meu iPad para trabalhar na biblioteca e é super silencioso. Conecta instantaneamente e o tamanho slim cabe em qualquer mala. Muito prático!',
+    likes: 28,
+    verified: true
+  },
+  {
+    id: 28,
+    productId: '2c4e6f8a-0b2d-4f6a-8c0e-2d4f6a8c0e2d',
+    productSlug: 'teclado-bluetooth-kapbom',
+    name: 'Wilson Santos',
+    location: 'Luanda - Viana',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=250&q=80',
+    product: 'Teclado Bluetooth Sem Fios Kapbom',
+    rating: 4,
+    date: 'Há 4 dias',
+    comment: 'Bom teclado pelo preço. As teclas têm um toque agradável e a bateria recarregável poupa muito em pilhas. Entrega rápida da AQUI TEM.',
+    likes: 15,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [13] Oraimo Mouse P
+  // --------------------------------------------------------------------------
+  {
+    id: 29,
+    productId: 'f4a6e8c0-2d4f-6a8c-0e2d-4f6a8c0e2d4f',
+    productSlug: 'oraimo-smart-mouse-p',
+    name: 'Sérgio Mário',
+    location: 'Luanda - Morro Bento',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
+    product: 'Oraimo Smart Mouse P Sem Fios',
+    rating: 5,
+    date: 'Há 2 dias',
+    comment: 'O mouse encaixa perfeitamente na mão, muito confortável para trabalhar o dia todo. Os cliques são realmente silenciosos como prometido.',
+    likes: 21,
+    verified: true
+  },
+  {
+    id: 30,
+    productId: 'f4a6e8c0-2d4f-6a8c-0e2d-4f6a8c0e2d4f',
+    productSlug: 'oraimo-smart-mouse-p',
+    name: 'Carla Bento',
+    location: 'Luanda - Maianga',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=250&q=80',
+    product: 'Oraimo Smart Mouse P Sem Fios',
+    rating: 5,
+    date: 'Há 6 dias',
+    comment: 'Mouse excelente e muito bonito. A conexão é estável e não falha. Vale cada kwanza!',
+    likes: 19,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [14] Webcam Kapbom
+  // --------------------------------------------------------------------------
+  {
+    id: 31,
+    productId: 'a8c0e2d4-f6a8-c0e2-d4f6-a8c0e2d4f6a8',
+    productSlug: 'webcam-full-hd-kapbom-1080p',
+    name: 'Dr. Fernando Luz',
+    location: 'Luanda - Kilamba',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=250&q=80',
+    product: 'Webcam Full HD Kapbom 1080p USB',
+    rating: 5,
+    date: 'Há 3 dias',
+    comment: 'Imagem muito nítida em 1080p para as minhas teleconsultas. O foco é rápido e as cores são naturais. Plugou no USB e funcionou na hora.',
+    likes: 34,
+    verified: true
+  },
+  {
+    id: 32,
+    productId: 'a8c0e2d4-f6a8-c0e2-d4f6-a8c0e2d4f6a8',
+    productSlug: 'webcam-full-hd-kapbom-1080p',
+    name: 'Vanessa Pires',
+    location: 'Luanda - Miramar',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    product: 'Webcam Full HD Kapbom 1080p USB',
+    rating: 4,
+    date: 'Há 1 semana',
+    comment: 'Boa webcam para estudos online. O microfone capta bem a voz mesmo sem usar fone. Atendimento da loja nota 10.',
+    likes: 22,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [15] Kit Microfones Duplo
+  // --------------------------------------------------------------------------
+  {
+    id: 33,
+    productId: 'e2d4f6a8-c0e2-d4f6-a8c0-e2d4f6a8c0e2',
+    productSlug: 'kit-microfones-sem-fio-duplo',
+    name: 'Joaquim Teodoro',
+    location: 'Luanda - Sambizanga',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
+    product: 'Kit de Microfones Sem Fio — Duplo',
+    rating: 5,
+    date: 'Há 2 dias',
+    comment: 'Uso para gravar os meus vídeos para o YouTube e o áudio mudou da água para o vinho. Ter dois microfones facilita muito em entrevistas de rua.',
+    likes: 39,
+    verified: true
+  },
+  {
+    id: 34,
+    productId: 'e2d4f6a8-c0e2-d4f6-a8c0-e2d4f6a8c0e2',
+    productSlug: 'kit-microfones-sem-fio-duplo',
+    name: 'Mariana Silva',
+    location: 'Luanda - Benfica',
+    avatar: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&w=250&q=80',
+    product: 'Kit de Microfones Sem Fio — Duplo',
+    rating: 5,
+    date: 'Há 4 dias',
+    comment: 'Leve, pequeno e a bateria dura o suficiente para várias gravações. A conexão com o iPhone foi instantânea.',
+    likes: 27,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [16] MagCable Oraimo
+  // --------------------------------------------------------------------------
+  {
+    id: 35,
+    productId: '6a8c0e2d-4f6a-8c0e-2d4f-6a8c0e2d4f6a',
+    productSlug: 'cabo-oraimo-magcable-usb-c-lightning',
+    name: 'Tiago Manuel',
+    location: 'Luanda - Talatona',
+    avatar: 'https://images.unsplash.com/photo-1522529599102-193c0d76b5b6?auto=format&fit=crop&w=250&q=80',
+    product: 'Cabo Oraimo MagCable USB-C para Lightning — 1m',
+    rating: 5,
+    date: 'Há 1 dia',
+    comment: 'O conector magnético é genial, evita que eu estrague a entrada do meu iPhone quando estou com pressa. Carregamento PD 20W funciona perfeitamente.',
+    likes: 18,
+    verified: true
+  },
+  {
+    id: 36,
+    productId: '6a8c0e2d-4f6a-8c0e-2d4f-6a8c0e2d4f6a',
+    productSlug: 'cabo-oraimo-magcable-usb-c-lightning',
+    name: 'Beatriz Almeida',
+    location: 'Luanda - Maculusso',
+    avatar: 'https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=250&q=80',
+    product: 'Cabo Oraimo MagCable USB-C para Lightning — 1m',
+    rating: 5,
+    date: 'Há 3 dias',
+    comment: 'Cabo muito resistente e o imã é forte, não solta à toa. Melhor cabo que já tive para usar no carro.',
+    likes: 14,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [17] DuraLine 3 Oraimo
+  // --------------------------------------------------------------------------
+  {
+    id: 37,
+    productId: '0e2d4f6a-8c0e-2d4f-6a8c-0e2d4f6a8c0e',
+    productSlug: 'cabo-oraimo-duraline-3-usb-a-c',
+    name: 'Pedro Galiano',
+    location: 'Luanda - Maculusso',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
+    product: 'Cabo USB-A para USB-C Oraimo DuraLine 3 — 1m',
+    rating: 5,
+    date: 'Há 5 dias',
+    comment: 'Cabo indestrutível! Já tive vários que partiam na ponta, mas esse DuraLine é muito robusto. Carrega o meu Samsung super rápido.',
+    likes: 25,
+    verified: true
+  },
+  {
+    id: 38,
+    productId: '0e2d4f6a-8c0e-2d4f-6a8c-0e2d4f6a8c0e',
+    productSlug: 'cabo-oraimo-duraline-3-usb-a-c',
+    name: 'Luísa Santos',
+    location: 'Huambo - Centro',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=250&q=80',
+    product: 'Cabo USB-A para USB-C Oraimo DuraLine 3 — 1m',
+    rating: 5,
+    date: 'Há 1 semana',
+    comment: 'Excelente custo-benefício. O cabo é grosso e passa muita segurança. A entrega para o Huambo foi bem rápida.',
+    likes: 12,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [18] Oraimo Mouse F
+  // --------------------------------------------------------------------------
+  {
+    id: 39,
+    productId: '4f6a8c0e-2d4f-6a8c-0e2d-4f6a8c0e2d4f',
+    productSlug: 'oraimo-smart-mouse-f-wireless',
+    name: 'André Lopes',
+    location: 'Luanda - Alvalade',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=250&q=80',
+    product: 'Rato Sem Fios Oraimo Smart Mouse F 1200 DPI',
+    rating: 5,
+    date: 'Há 2 dias',
+    comment: 'Rato simples, compacto e muito funcional. Ideal para usar com o laptop em cafés ou no escritório. A bateria dura meses.',
+    likes: 16,
+    verified: true
+  },
+  {
+    id: 40,
+    productId: '4f6a8c0e-2d4f-6a8c-0e2d-4f6a8c0e2d4f',
+    productSlug: 'oraimo-smart-mouse-f-wireless',
+    name: 'Isabel Rocha',
+    location: 'Benguela - Lobito',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    product: 'Rato Sem Fios Oraimo Smart Mouse F 1200 DPI',
+    rating: 5,
+    date: 'Há 4 dias',
+    comment: 'Pequeno e leve, cabe perfeitamente na minha bolsa do computador. Ótimo para quem está sempre em movimento.',
+    likes: 11,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [19] Hub Oraimo 7 em 1
+  // --------------------------------------------------------------------------
+  {
+    id: 41,
+    productId: '8c0e2d4f-6a8c-0e2d-4f6a-8c0e2d4f6a8c',
+    productSlug: 'hub-usb-c-oraimo-smart-7-1',
+    name: 'Eng. Paulo Mendes',
+    location: 'Luanda - Talatona',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
+    product: 'Hub USB-C Oraimo Smart 7 em 1',
+    rating: 5,
+    date: 'Há 1 dia',
+    comment: 'Resolveu o problema de falta de portas do meu MacBook. Conecto o monitor HDMI, mouse, teclado e carrego o telemóvel tudo por ele. Não esquenta e é bem construído.',
+    likes: 42,
+    verified: true
+  },
+  {
+    id: 42,
+    productId: '8c0e2d4f-6a8c-0e2d-4f6a-8c0e2d4f6a8c',
+    productSlug: 'hub-usb-c-oraimo-smart-7-1',
+    name: 'Tatiana Gouveia',
+    location: 'Luanda - Maculusso',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=250&q=80',
+    product: 'Hub USB-C Oraimo Smart 7 em 1',
+    rating: 5,
+    date: 'Há 3 dias',
+    comment: 'Essencial para quem trabalha com design e precisa passar fotos do cartão SD rapidamente. A velocidade de transferência é excelente.',
+    likes: 31,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [20] Suporte Notebook Alumínio
+  // --------------------------------------------------------------------------
+  {
+    id: 43,
+    productId: 'd4f6a8c0-e2d4-f6a8-c0e2-d4f6a8c0e2d4',
+    productSlug: 'suporte-aluminio-notebook-dobravel',
+    name: 'Soraia Varela',
+    location: 'Luanda - Kilamba',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    product: 'Suporte de Alumínio Articulado e Dobrável para Notebook',
+    rating: 5,
+    date: 'Há 2 dias',
+    comment: 'Minhas dores nas costas acabaram depois que comecei a usar esse suporte. Deixa o ecrã na altura certa dos olhos. Muito estável e bonito.',
+    likes: 56,
+    verified: true
+  },
+  {
+    id: 44,
+    productId: 'd4f6a8c0-e2d4-f6a8-c0e2-d4f6a8c0e2d4',
+    productSlug: 'suporte-aluminio-notebook-dobravel',
+    name: 'Mauro Cardoso',
+    location: 'Luanda - Viana',
+    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=250&q=80',
+    product: 'Suporte de Alumínio Articulado e Dobrável para Notebook',
+    rating: 5,
+    date: 'Há 5 dias',
+    comment: 'O alumínio é de boa qualidade e ajuda muito a ventilar o portátil. Dobrado ele fica muito pequeno, levo sempre na mochila para o trabalho.',
+    likes: 38,
+    verified: true
+  },
+
+  // --------------------------------------------------------------------------
+  // [21] Tigre TV Box
+  // --------------------------------------------------------------------------
+  {
+    id: 45,
+    productId: '1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f',
+    productSlug: 'aparelho-tigre-tv-box-4k',
+    name: 'António Calandula',
+    location: 'Luanda - Talatona',
+    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=250&q=80',
+    product: 'Aparelho Tigre TV Box 4K',
+    rating: 5,
+    date: 'Há 1 dia',
+    comment: 'Melhor investimento para entretenimento da família. Canais do mundo todo com imagem perfeita em 4K. O sistema é muito rápido e não trava nada.',
+    likes: 89,
+    verified: true
+  },
+  {
+    id: 46,
+    productId: '1e2d3c4b-5a6b-7c8d-9e0f-1a2b3c4d5e6f',
+    productSlug: 'aparelho-tigre-tv-box-4k',
+    name: 'Carla Mateus',
+    location: 'Luanda - Miramar',
+    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=250&q=80',
+    product: 'Aparelho Tigre TV Box 4K',
+    rating: 5,
+    date: 'Há 3 dias',
+    comment: 'Muitos filmes e séries atualizados. Instalação super simples, foi só ligar no HDMI e na internet. A entrega da AQUI TEM foi no mesmo dia!',
+    likes: 64,
+    verified: true
+  },
+  {
+    id: 47,
+    productId: 'f18e3d33-95bf-4bfe-90bf-87969b094e32',
+    productSlug: 'carregador-de-parede-wiwu-fast-charger-45w',
+    name: 'Dário Gonçalves',
+    location: 'Luanda - Maculusso',
+    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=250&q=80',
+    product: 'Carregador de Parede WiWU Fast Charger 45W',
+    rating: 5,
+    date: 'Há 2 dias',
+    comment: 'Carregador excelente, as duas portas ajudam muito no dia a dia. A qualidade da WiWU é indiscutível e o preço da AQUI TEM está imbatível.',
+    likes: 15,
+    verified: true
+  },
+  {
+    id: 48,
+    productId: '46e7034d-6a7f-41de-a4d8-e883040645a4',
+    productSlug: 'x-watch-prisma-smartwatch-1',
+    name: 'Lúcia de Fátima',
+    location: 'Benguela - Centro',
+    avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=250&q=80',
+    product: 'X-WATCH PRISMA — Smartwatch 1.4"',
+    rating: 5,
+    date: 'Há 4 dias',
+    comment: 'Lindo relógio, o design curvo é muito moderno. É leve e as notificações chegam sem atraso. Ótimo custo-benefício.',
+    likes: 12,
+    verified: true
+  },
+  {
+    id: 49,
+    productId: 'd8f54944-7134-4d66-907e-4b134a091afc',
+    productSlug: 'x-watch-smartwatch-18-bluetooth',
+    name: 'Sérgio Vunge',
+    location: 'Luanda - Talatona',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=250&q=80',
+    product: 'X-WATCH SMARTWATCH — 1.8" Bluetooth',
+    rating: 5,
+    date: 'Há 1 dia',
+    comment: 'Ecrã muito grande e nítido. Consigo ler as mensagens do WhatsApp perfeitamente e as chamadas via Bluetooth são bem claras.',
+    likes: 19,
+    verified: true
   }
 ];
