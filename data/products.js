@@ -2416,6 +2416,960 @@ export const PRODUCTS = [
     ],
     "seoTitle": "Headphone Sem Fio Bluetooth Basike Over-Ear com Isolamento | AQUI TEM ANGOLA",
     "seoDescription": "Auscultadores Bluetooth Basike Over-Ear com graves profundos, almofadas macias de isolamento acústico e bateria de longa duração na AQUI TEM Angola."
+  },
+  {
+    "id": "f1a1001a-1111-5001-a001-000000000052",
+    "supabaseId": "f1a1001a-1111-5001-a001-000000000052",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Fones de Ouvido Sem Fio Oraimo SpaceBuds Neo OTW-323 com BassUp",
+    "slug": "fones-sem-fio-oraimo-spacebuds-neo-otw-323",
+    "slugAliases": [
+      "spacebuds-neo-otw-323",
+      "oraimo-otw-323"
+    ],
+    "sku": "AT-ORA-OTW-323",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 25,
+    "active": true,
+    "price": 26000,
+    "sale_price": 21500,
+    "old_price": 26000,
+    "rating": 4.8,
+    "reviews_count": 36,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-spacebuds-neo-otw323.png",
+    "image": "/products/oraimo-spacebuds-neo-otw323.png",
+    "fallbackImage": "/products/oraimo-spacebuds-neo-otw323.png",
+    "images": [
+      "/products/oraimo-spacebuds-neo-otw323.png"
+    ],
+    "description": "Fones de Ouvido Sem Fio Oraimo SpaceBuds Neo OTW-323 com BassUp original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OTW-323",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Fones de Ouvido Sem Fio Oraimo SpaceBuds Neo OTW-323 com BassUp",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Fones Sem Fio Oraimo SpaceBuds Neo OTW-323 BassUp | AQUI TEM ANGOLA",
+    "seoDescription": "Compre os Fones Sem Fio Oraimo SpaceBuds Neo OTW-323 com tecnologia BassUp e autonomia estendida na AQUI TEM Angola."
+  },
+  {
+    "id": "f2a2002b-2222-5002-a002-000000000053",
+    "supabaseId": "f2a2002b-2222-5002-a002-000000000053",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Carregador Rápido de Parede Oraimo Firefly 3 OCW-E66S com Cabo M53",
+    "slug": "carregador-rapido-parede-oraimo-firefly-3-ocw-e66s",
+    "slugAliases": [
+      "carregador-oraimo-firefly-3",
+      "oraimo-ocw-e66s"
+    ],
+    "sku": "AT-ORA-OCW-E66S",
+    "brand": "Oraimo",
+    "category": "Acessórios & Tech",
+    "stock": 50,
+    "active": true,
+    "price": 13000,
+    "sale_price": 10250,
+    "old_price": 13000,
+    "rating": 4.9,
+    "reviews_count": 58,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-carregador-firefly-ocw-e66s.png",
+    "image": "/products/oraimo-carregador-firefly-ocw-e66s.png",
+    "fallbackImage": "/products/oraimo-carregador-firefly-ocw-e66s.png",
+    "images": [
+      "/products/oraimo-carregador-firefly-ocw-e66s.png"
+    ],
+    "description": "Carregador Rápido de Parede Oraimo Firefly 3 OCW-E66S com Cabo M53 original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OCW-E66S",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Carregador Rápido de Parede Oraimo Firefly 3 OCW-E66S com Cabo M53",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Carregador Rápido Oraimo Firefly 3 OCW-E66S com Cabo | AQUI TEM ANGOLA",
+    "seoDescription": "Carregador de parede rápido Oraimo Firefly 3 com tecnologia AniFast e proteção contra sobretensão na AQUI TEM Angola."
+  },
+  {
+    "id": "f3a3003c-3333-5003-a003-000000000054",
+    "supabaseId": "f3a3003c-3333-5003-a003-000000000054",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Difusor de Aromas e Humidificador Inteligente Oraimo OAD-213A com Luz Noturna",
+    "slug": "difusor-aromas-humidificador-oraimo-oad-213a",
+    "slugAliases": [
+      "difusor-oraimo-oad-213a",
+      "humidificador-oraimo"
+    ],
+    "sku": "AT-ORA-OAD-213A",
+    "brand": "Oraimo",
+    "category": "Acessórios & Casa",
+    "stock": 20,
+    "active": true,
+    "price": 30000,
+    "sale_price": 24000,
+    "old_price": 30000,
+    "rating": 4.9,
+    "reviews_count": 42,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-difusor-aroma-oad-213a.png",
+    "image": "/products/oraimo-difusor-aroma-oad-213a.png",
+    "fallbackImage": "/products/oraimo-difusor-aroma-oad-213a.png",
+    "images": [
+      "/products/oraimo-difusor-aroma-oad-213a.png"
+    ],
+    "description": "Difusor de Aromas e Humidificador Inteligente Oraimo OAD-213A com Luz Noturna original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OAD-213A",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Difusor de Aromas e Humidificador Inteligente Oraimo OAD-213A com Luz Noturna",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Difusor de Aromas e Humidificador Oraimo OAD-213A | AQUI TEM ANGOLA",
+    "seoDescription": "Melhore o ar e o bem-estar com o Difusor de Aromas e Humidificador Oraimo OAD-213A ultrassónico com iluminação relaxante na AQUI TEM Angola."
+  },
+  {
+    "id": "f4a4004d-4444-5004-a004-000000000055",
+    "supabaseId": "f4a4004d-4444-5004-a004-000000000055",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Fones de Ouvido Bluetooth de Pescoço Oraimo Necklace Neo OEB-E310 50h de Bateria",
+    "slug": "fones-ouvido-bluetooth-pescoco-oraimo-necklace-neo",
+    "slugAliases": [
+      "oraimo-necklace-neo-oeb-310",
+      "oraimo-oeb-310"
+    ],
+    "sku": "AT-ORA-OEB-E310",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 30,
+    "active": true,
+    "price": 24000,
+    "sale_price": 19000,
+    "old_price": 24000,
+    "rating": 4.8,
+    "reviews_count": 49,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-necklace-neo-oeb-310.png",
+    "image": "/products/oraimo-necklace-neo-oeb-310.png",
+    "fallbackImage": "/products/oraimo-necklace-neo-oeb-310.png",
+    "images": [
+      "/products/oraimo-necklace-neo-oeb-310.png"
+    ],
+    "description": "Fones de Ouvido Bluetooth de Pescoço Oraimo Necklace Neo OEB-E310 50h de Bateria original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OEB-E310",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Fones de Ouvido Bluetooth de Pescoço Oraimo Necklace Neo OEB-E310 50h de Bateria",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Fones Bluetooth de Pescoço Oraimo Necklace Neo OEB-E310 | AQUI TEM ANGOLA",
+    "seoDescription": "Fones sem fio de pescoço Oraimo Necklace Neo com 50 horas de reprodução contínua e graves envolventes na AQUI TEM Angola."
+  },
+  {
+    "id": "f5a5005e-5555-5005-a005-000000000056",
+    "supabaseId": "f5a5005e-5555-5005-a005-000000000056",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Garrafa Térmica Isolada a Vácuo Oraimo QuickSip 620ml OHDW-001 Aço Inox",
+    "slug": "garrafa-termica-quicksip-620ml-oraimo-ohdw-001",
+    "slugAliases": [
+      "garrafa-termica-oraimo-620ml",
+      "oraimo-ohdw-001"
+    ],
+    "sku": "AT-ORA-OHDW-001",
+    "brand": "Oraimo",
+    "category": "Acessórios & Casa",
+    "stock": 35,
+    "active": true,
+    "price": 19000,
+    "sale_price": 15250,
+    "old_price": 19000,
+    "rating": 4.9,
+    "reviews_count": 53,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-garrafa-termica-quicksip-620.png",
+    "image": "/products/oraimo-garrafa-termica-quicksip-620.png",
+    "fallbackImage": "/products/oraimo-garrafa-termica-quicksip-620.png",
+    "images": [
+      "/products/oraimo-garrafa-termica-quicksip-620.png"
+    ],
+    "description": "Garrafa Térmica Isolada a Vácuo Oraimo QuickSip 620ml OHDW-001 Aço Inox original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OHDW-001",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Garrafa Térmica Isolada a Vácuo Oraimo QuickSip 620ml OHDW-001 Aço Inox",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Garrafa Térmica Oraimo QuickSip 620ml Aço Inox | AQUI TEM ANGOLA",
+    "seoDescription": "Mantenha bebidas frias por 24h ou quentes por 12h com a Garrafa Térmica Oraimo QuickSip 620ml em aço inoxidável na AQUI TEM Angola."
+  },
+  {
+    "id": "f6a6006f-6666-5006-a006-000000000057",
+    "supabaseId": "f6a6006f-6666-5006-a006-000000000057",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Balança Digital Corporal Inteligente Oraimo Smart Body Scale OSH-015A com App",
+    "slug": "balanca-digital-corporal-inteligente-oraimo-osh-015a",
+    "slugAliases": [
+      "balanca-oraimo-osh-015a",
+      "smart-scale-oraimo"
+    ],
+    "sku": "AT-ORA-OSH-015A",
+    "brand": "Oraimo",
+    "category": "Acessórios & Casa",
+    "stock": 22,
+    "active": true,
+    "price": 28000,
+    "sale_price": 22750,
+    "old_price": 28000,
+    "rating": 4.9,
+    "reviews_count": 38,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-balanca-smart-osh-015a.png",
+    "image": "/products/oraimo-balanca-smart-osh-015a.png",
+    "fallbackImage": "/products/oraimo-balanca-smart-osh-015a.png",
+    "images": [
+      "/products/oraimo-balanca-smart-osh-015a.png"
+    ],
+    "description": "Balança Digital Corporal Inteligente Oraimo Smart Body Scale OSH-015A com App original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OSH-015A",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Balança Digital Corporal Inteligente Oraimo Smart Body Scale OSH-015A com App",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Balança Digital Corporal Inteligente Oraimo OSH-015A | AQUI TEM ANGOLA",
+    "seoDescription": "Monitore peso, gordura corporal, IMC e massa muscular com a Balança Inteligente Oraimo OSH-015A conectada via Bluetooth na AQUI TEM Angola."
+  },
+  {
+    "id": "f7a7007a-7777-5007-a007-000000000058",
+    "supabaseId": "f7a7007a-7777-5007-a007-000000000058",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Coluna de Som Portátil Bluetooth Oraimo SpaceBox Pro OBS-682 Graves Potentes",
+    "slug": "coluna-som-bluetooth-oraimo-spacebox-pro-obs-682",
+    "slugAliases": [
+      "oraimo-spacebox-pro-obs-682",
+      "coluna-oraimo-obs-682"
+    ],
+    "sku": "AT-ORA-OBS-682",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 18,
+    "active": true,
+    "price": 44000,
+    "sale_price": 36500,
+    "old_price": 44000,
+    "rating": 4.9,
+    "reviews_count": 45,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-speaker-spacebox-pro-obs-682.png",
+    "image": "/products/oraimo-speaker-spacebox-pro-obs-682.png",
+    "fallbackImage": "/products/oraimo-speaker-spacebox-pro-obs-682.png",
+    "images": [
+      "/products/oraimo-speaker-spacebox-pro-obs-682.png"
+    ],
+    "description": "Coluna de Som Portátil Bluetooth Oraimo SpaceBox Pro OBS-682 Graves Potentes original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OBS-682",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Coluna de Som Portátil Bluetooth Oraimo SpaceBox Pro OBS-682 Graves Potentes",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Coluna de Som Bluetooth Oraimo SpaceBox Pro OBS-682 | AQUI TEM ANGOLA",
+    "seoDescription": "Potência sonora e graves profundos com a Coluna Portátil Oraimo SpaceBox Pro OBS-682 na AQUI TEM Angola. À prova de respingos e bateria duradoura."
+  },
+  {
+    "id": "f8a8008b-8888-5008-a008-000000000059",
+    "supabaseId": "f8a8008b-8888-5008-a008-000000000059",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Smartwatch Fitness Oraimo Watch Fit com Monitor de Saúde e Notificações",
+    "slug": "smartwatch-fitness-oraimo-watch-fit-osw-805n",
+    "slugAliases": [
+      "oraimo-watch-fit-508",
+      "oraimo-osw-805n"
+    ],
+    "sku": "AT-ORA-OSW-805N",
+    "brand": "Oraimo",
+    "category": "Smartwatches",
+    "stock": 25,
+    "active": true,
+    "price": 32000,
+    "sale_price": 26500,
+    "old_price": 32000,
+    "rating": 4.8,
+    "reviews_count": 51,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-smartwatch-watch-fit-508.png",
+    "image": "/products/oraimo-smartwatch-watch-fit-508.png",
+    "fallbackImage": "/products/oraimo-smartwatch-watch-fit-508.png",
+    "images": [
+      "/products/oraimo-smartwatch-watch-fit-508.png"
+    ],
+    "description": "Smartwatch Fitness Oraimo Watch Fit com Monitor de Saúde e Notificações original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OSW-805N",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Smartwatch Fitness Oraimo Watch Fit com Monitor de Saúde e Notificações",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Smartwatch Fitness Oraimo Watch Fit com Notificações | AQUI TEM ANGOLA",
+    "seoDescription": "Acompanhe passos, batimentos cardíacos, sono e treinos com o relógio inteligente Oraimo Watch Fit na AQUI TEM Angola."
+  },
+  {
+    "id": "f9a9009c-9999-5009-a009-000000000060",
+    "supabaseId": "f9a9009c-9999-5009-a009-000000000060",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Fones de Ouvido Open-Ear Oraimo OpenAir OPN-670N Condução de Ar e Graves",
+    "slug": "fones-ouvido-open-ear-oraimo-openair-opn-670n",
+    "slugAliases": [
+      "oraimo-openair-opn-670n",
+      "oraimo-opn-670n"
+    ],
+    "sku": "AT-ORA-OPN-670N",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 20,
+    "active": true,
+    "price": 40000,
+    "sale_price": 34000,
+    "old_price": 40000,
+    "rating": 4.9,
+    "reviews_count": 37,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-openair-opn-670n.png",
+    "image": "/products/oraimo-openair-opn-670n.png",
+    "fallbackImage": "/products/oraimo-openair-opn-670n.png",
+    "images": [
+      "/products/oraimo-openair-opn-670n.png"
+    ],
+    "description": "Fones de Ouvido Open-Ear Oraimo OpenAir OPN-670N Condução de Ar e Graves original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OPN-670N",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Fones de Ouvido Open-Ear Oraimo OpenAir OPN-670N Condução de Ar e Graves",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Fones de Ouvido Open-Ear Oraimo OpenAir OPN-670N | AQUI TEM ANGOLA",
+    "seoDescription": "Design aberto confortável e som potente sem tampar os ouvidos com o Oraimo OpenAir OPN-670N na AQUI TEM Angola."
+  },
+  {
+    "id": "f0b0010d-0000-5010-b010-000000000061",
+    "supabaseId": "f0b0010d-0000-5010-b010-000000000061",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Power Bank Oraimo Toast 10 OPB-1205N 10.000mAh Dupla Saída Rápida",
+    "slug": "power-bank-oraimo-toast-10-opb-1205n-10000mah",
+    "slugAliases": [
+      "oraimo-powerbank-toast10",
+      "oraimo-opb-1205n"
+    ],
+    "sku": "AT-ORA-OPB-1205N",
+    "brand": "Oraimo",
+    "category": "Energia",
+    "stock": 45,
+    "active": true,
+    "price": 21000,
+    "sale_price": 16500,
+    "old_price": 21000,
+    "rating": 4.9,
+    "reviews_count": 62,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-powerbank-toast10-opb-1205n.png",
+    "image": "/products/oraimo-powerbank-toast10-opb-1205n.png",
+    "fallbackImage": "/products/oraimo-powerbank-toast10-opb-1205n.png",
+    "images": [
+      "/products/oraimo-powerbank-toast10-opb-1205n.png"
+    ],
+    "description": "Power Bank Oraimo Toast 10 OPB-1205N 10.000mAh Dupla Saída Rápida original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OPB-1205N",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Power Bank Oraimo Toast 10 OPB-1205N 10.000mAh Dupla Saída Rápida",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Power Bank Oraimo Toast 10 10000mAh Dupla Saída | AQUI TEM ANGOLA",
+    "seoDescription": "Bateria externa ultrafina Oraimo Toast 10 com 10.000mAh e carregamento rápido para telemóveis na AQUI TEM Angola."
+  },
+  {
+    "id": "f1b1011e-1111-5011-b011-000000000062",
+    "supabaseId": "f1b1011e-1111-5011-b011-000000000062",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Jarro Elétrico Chaleira em Aço Inox Oraimo OF-KK200N 1.8 Litros Fervura Rápida",
+    "slug": "jarro-eletrico-chaleira-inox-oraimo-of-kk200n-1-8l",
+    "slugAliases": [
+      "chaleira-eletrica-oraimo-of-kk200n",
+      "jarro-oraimo-1-8l"
+    ],
+    "sku": "AT-ORA-OF-KK200N",
+    "brand": "Oraimo",
+    "category": "Eletrodomésticos",
+    "stock": 24,
+    "active": true,
+    "price": 28000,
+    "sale_price": 22750,
+    "old_price": 28000,
+    "rating": 4.8,
+    "reviews_count": 39,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-jarro-eletrico-kettle-of-kk200n.png",
+    "image": "/products/oraimo-jarro-eletrico-kettle-of-kk200n.png",
+    "fallbackImage": "/products/oraimo-jarro-eletrico-kettle-of-kk200n.png",
+    "images": [
+      "/products/oraimo-jarro-eletrico-kettle-of-kk200n.png"
+    ],
+    "description": "Jarro Elétrico Chaleira em Aço Inox Oraimo OF-KK200N 1.8 Litros Fervura Rápida original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OF-KK200N",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Jarro Elétrico Chaleira em Aço Inox Oraimo OF-KK200N 1.8 Litros Fervura Rápida",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Jarro Elétrico Chaleira em Aço Inox Oraimo 1.8L | AQUI TEM ANGOLA",
+    "seoDescription": "Ferva água em poucos minutos com segurança com a Chaleira Elétrica Oraimo em aço inoxidável de 1.8L na AQUI TEM Angola."
+  },
+  {
+    "id": "f2b2012f-2222-5012-b012-000000000063",
+    "supabaseId": "f2b2012f-2222-5012-b012-000000000063",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã HD 2.01\" com Chamadas Bluetooth",
+    "slug": "smartwatch-oraimo-watch-4-plus-osw-824-hd-2-01",
+    "slugAliases": [
+      "oraimo-watch-4-plus",
+      "oraimo-osw-824"
+    ],
+    "sku": "AT-ORA-OSW-824",
+    "brand": "Oraimo",
+    "category": "Smartwatches",
+    "stock": 20,
+    "active": true,
+    "price": 42000,
+    "sale_price": 35250,
+    "old_price": 42000,
+    "rating": 4.9,
+    "reviews_count": 67,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-watch-4-plus-osw-824.png",
+    "image": "/products/oraimo-watch-4-plus-osw-824.png",
+    "fallbackImage": "/products/oraimo-watch-4-plus-osw-824.png",
+    "images": [
+      "/products/oraimo-watch-4-plus-osw-824.png"
+    ],
+    "description": "Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã HD 2.01\" com Chamadas Bluetooth original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OSW-824",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã HD 2.01\" com Chamadas Bluetooth",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã 2.01\" | AQUI TEM ANGOLA",
+    "seoDescription": "Relógio inteligente Oraimo Watch 4 Plus com tela gigante de 2.01 polegadas, chamadas Bluetooth e monitor de saúde 24h na AQUI TEM Angola."
+  },
+  {
+    "id": "f3b3013a-3333-5013-b013-000000000064",
+    "supabaseId": "f3b3013a-3333-5013-b013-000000000064",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Relógio Inteligente Oraimo Watch Nova OSW-833N Rose Gold com Display AMOLED",
+    "slug": "relogio-inteligente-oraimo-watch-nova-osw-833n-rose-gold",
+    "slugAliases": [
+      "oraimo-watch-nova",
+      "oraimo-osw-833n"
+    ],
+    "sku": "AT-ORA-OSW-833N",
+    "brand": "Oraimo",
+    "category": "Smartwatches",
+    "stock": 16,
+    "active": true,
+    "price": 45000,
+    "sale_price": 37750,
+    "old_price": 45000,
+    "rating": 4.9,
+    "reviews_count": 44,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-watch-nova-osw-833n.png",
+    "image": "/products/oraimo-watch-nova-osw-833n.png",
+    "fallbackImage": "/products/oraimo-watch-nova-osw-833n.png",
+    "images": [
+      "/products/oraimo-watch-nova-osw-833n.png"
+    ],
+    "description": "Relógio Inteligente Oraimo Watch Nova OSW-833N Rose Gold com Display AMOLED original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OSW-833N",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Relógio Inteligente Oraimo Watch Nova OSW-833N Rose Gold com Display AMOLED",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Smartwatch Oraimo Watch Nova OSW-833N Rose Gold | AQUI TEM ANGOLA",
+    "seoDescription": "Design elegante em tom Rose Gold com display AMOLED brilhante e chamadas Bluetooth no Oraimo Watch Nova na AQUI TEM Angola."
+  },
+  {
+    "id": "f4b4014b-4444-5014-b014-000000000065",
+    "supabaseId": "f4b4014b-4444-5014-b014-000000000065",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Smartwatch Redondo Oraimo Watch ER OSW-814S Display AMOLED Always-On",
+    "slug": "smartwatch-redondo-oraimo-watch-er-osw-814s-amoled",
+    "slugAliases": [
+      "oraimo-watch-er",
+      "oraimo-osw-814s"
+    ],
+    "sku": "AT-ORA-OSW-814S",
+    "brand": "Oraimo",
+    "category": "Smartwatches",
+    "stock": 18,
+    "active": true,
+    "price": 50000,
+    "sale_price": 41500,
+    "old_price": 50000,
+    "rating": 4.9,
+    "reviews_count": 59,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-watch-er-osw-814s.png",
+    "image": "/products/oraimo-watch-er-osw-814s.png",
+    "fallbackImage": "/products/oraimo-watch-er-osw-814s.png",
+    "images": [
+      "/products/oraimo-watch-er-osw-814s.png"
+    ],
+    "description": "Smartwatch Redondo Oraimo Watch ER OSW-814S Display AMOLED Always-On original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OSW-814S",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Smartwatch Redondo Oraimo Watch ER OSW-814S Display AMOLED Always-On",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Smartwatch Redondo Oraimo Watch ER OSW-814S AMOLED | AQUI TEM ANGOLA",
+    "seoDescription": "Mostrador circular clássico premium com ecrã AMOLED Always-On e acabamento metálico no Oraimo Watch ER na AQUI TEM Angola."
+  },
+  {
+    "id": "f5b5015c-5555-5015-b015-000000000066",
+    "supabaseId": "f5b5015c-5555-5015-b015-000000000066",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Secador de Cabelo Profissional Oraimo SwiftDry 2 OHD-210N com Tecnologia Iónica",
+    "slug": "secador-cabelo-profissional-oraimo-swiftdry-2-ohd-210n",
+    "slugAliases": [
+      "oraimo-swiftdry-2",
+      "oraimo-ohd-210n"
+    ],
+    "sku": "AT-ORA-OHD-210N",
+    "brand": "Oraimo",
+    "category": "Eletrodomésticos",
+    "stock": 20,
+    "active": true,
+    "price": 38000,
+    "sale_price": 31500,
+    "old_price": 38000,
+    "rating": 4.9,
+    "reviews_count": 48,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-secador-swiftdry-2-ohd-210n.png",
+    "image": "/products/oraimo-secador-swiftdry-2-ohd-210n.png",
+    "fallbackImage": "/products/oraimo-secador-swiftdry-2-ohd-210n.png",
+    "images": [
+      "/products/oraimo-secador-swiftdry-2-ohd-210n.png"
+    ],
+    "description": "Secador de Cabelo Profissional Oraimo SwiftDry 2 OHD-210N com Tecnologia Iónica original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OHD-210N",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Secador de Cabelo Profissional Oraimo SwiftDry 2 OHD-210N com Tecnologia Iónica",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Secador de Cabelo Oraimo SwiftDry 2 OHD-210N Iónico | AQUI TEM ANGOLA",
+    "seoDescription": "Secagem ultra rápida com proteção térmica e emissão de iões negativos para cabelos sem frizz com o Oraimo SwiftDry 2 na AQUI TEM Angola."
+  },
+  {
+    "id": "f6b6016d-6666-5016-b016-000000000067",
+    "supabaseId": "f6b6016d-6666-5016-b016-000000000067",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Máquina de Cortar Cabelo Profissional Oraimo SmartClipper 2 OPC-CL30C Bateria 150min",
+    "slug": "maquina-cortar-cabelo-oraimo-smartclipper-2-opc-cl30c",
+    "slugAliases": [
+      "oraimo-smartclipper-2",
+      "oraimo-opc-cl30c"
+    ],
+    "sku": "AT-ORA-OPC-CL30C",
+    "brand": "Oraimo",
+    "category": "Acessórios & Casa",
+    "stock": 28,
+    "active": true,
+    "price": 26000,
+    "sale_price": 21500,
+    "old_price": 26000,
+    "rating": 4.8,
+    "reviews_count": 41,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-maquina-cortar-cabelo-opc-cl30c.png",
+    "image": "/products/oraimo-maquina-cortar-cabelo-opc-cl30c.png",
+    "fallbackImage": "/products/oraimo-maquina-cortar-cabelo-opc-cl30c.png",
+    "images": [
+      "/products/oraimo-maquina-cortar-cabelo-opc-cl30c.png"
+    ],
+    "description": "Máquina de Cortar Cabelo Profissional Oraimo SmartClipper 2 OPC-CL30C Bateria 150min original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OPC-CL30C",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Máquina de Cortar Cabelo Profissional Oraimo SmartClipper 2 OPC-CL30C Bateria 150min",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Máquina de Cortar Cabelo Oraimo SmartClipper 2 | AQUI TEM ANGOLA",
+    "seoDescription": "Lâminas auto-afiáveis em aço inoxidável e bateria de 150 minutos na Máquina de Cortar Cabelo Oraimo SmartClipper 2 na AQUI TEM Angola."
+  },
+  {
+    "id": "f7b7017e-7777-5017-b017-000000000068",
+    "supabaseId": "f7b7017e-7777-5017-b017-000000000068",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Roteador Wi-Fi Dual Band Oraimo Falcon AC OF-WR205N AC1200 com 4 Antenas 5dBi",
+    "slug": "roteador-wifi-dual-band-oraimo-falcon-ac-of-wr205n",
+    "slugAliases": [
+      "oraimo-roteador-falcon-ac",
+      "oraimo-of-wr205n"
+    ],
+    "sku": "AT-ORA-OF-WR205N",
+    "brand": "Oraimo",
+    "category": "Acessórios & Tech",
+    "stock": 22,
+    "active": true,
+    "price": 35000,
+    "sale_price": 29000,
+    "old_price": 35000,
+    "rating": 4.9,
+    "reviews_count": 35,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-roteador-wifi-falcon-of-wr205n.png",
+    "image": "/products/oraimo-roteador-wifi-falcon-of-wr205n.png",
+    "fallbackImage": "/products/oraimo-roteador-wifi-falcon-of-wr205n.png",
+    "images": [
+      "/products/oraimo-roteador-wifi-falcon-of-wr205n.png"
+    ],
+    "description": "Roteador Wi-Fi Dual Band Oraimo Falcon AC OF-WR205N AC1200 com 4 Antenas 5dBi original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OF-WR205N",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Roteador Wi-Fi Dual Band Oraimo Falcon AC OF-WR205N AC1200 com 4 Antenas 5dBi",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Roteador Wi-Fi Dual Band Oraimo Falcon AC AC1200 | AQUI TEM ANGOLA",
+    "seoDescription": "Conexão estável de alta velocidade com 4 antenas de longo alcance no Roteador Wi-Fi Oraimo Falcon AC OF-WR205N na AQUI TEM Angola."
+  },
+  {
+    "id": "f8b8018f-8888-5018-b018-000000000069",
+    "supabaseId": "f8b8018f-8888-5018-b018-000000000069",
+    "created_at": "2026-11-09T22:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves",
+    "slug": "coluna-bluetooth-360-oraimo-soundflow-obs-680-rgb",
+    "slugAliases": [
+      "oraimo-soundflow-obs-680",
+      "coluna-oraimo-soundflow"
+    ],
+    "sku": "AT-ORA-OBS-680",
+    "brand": "Oraimo",
+    "category": "Áudio & Som",
+    "stock": 16,
+    "active": true,
+    "price": 48000,
+    "sale_price": 39000,
+    "old_price": 48000,
+    "rating": 4.9,
+    "reviews_count": 52,
+    "badge": "ORAIMO ORIGINAL",
+    "image_url": "/products/oraimo-soundflow-obs-680-black.png",
+    "image": "/products/oraimo-soundflow-obs-680-black.png",
+    "fallbackImage": "/products/oraimo-soundflow-obs-680-black.png",
+    "images": [
+      "/products/oraimo-soundflow-obs-680-black.png"
+    ],
+    "description": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "highlights": [
+      "Garantia oficial e autenticidade 100% comprovada Oraimo",
+      "Desempenho de alta eficiência e acabamento premium",
+      "Compatibilidade universal e alta durabilidade no uso diário",
+      "Entrega rápida e segura em Luanda e províncias"
+    ],
+    "features": [
+      "Tecnologia inteligente desenvolvida para máxima longevidade",
+      "Proteção contra sobretensão e aquecimento"
+    ],
+    "specifications": {
+      "Marca": "Oraimo",
+      "Modelo": "AT-ORA-OBS-680",
+      "Garantia": "12 Meses Oficial",
+      "Origem": "Distribuição Autorizada Oficial"
+    },
+    "packageContent": [
+      "1 Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves",
+      "1 Manual do Usuário e Certificado de Garantia Oraimo"
+    ],
+    "seoTitle": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 RGB | AQUI TEM ANGOLA",
+    "seoDescription": "Experiência imersiva de áudio 360 graus com iluminação dinâmica colorida RGB na Coluna Oraimo SoundFlow OBS-680 na AQUI TEM Angola."
   }
 ];
 
