@@ -5,6 +5,7 @@ import Footer from './Footer';
 import StoreDrawers from './StoreDrawers';
 import CRMDashboardModal from './CRMDashboardModal';
 import Chatbot from './Chatbot';
+import VoiceAssistantWelcome from './VoiceAssistantWelcome';
 
 export default function Layout({ children }) {
   const { pathname } = useLocation();
@@ -30,6 +31,9 @@ export default function Layout({ children }) {
 
       {/* AI Assistant Chatbot */}
       <Chatbot />
+
+      {/* Voice Assistant Welcome Speaker */}
+      <VoiceAssistantWelcome />
     </div>
   );
 }
