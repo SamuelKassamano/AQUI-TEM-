@@ -60,7 +60,7 @@ export default function AboutPage() {
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', background: 'rgba(255, 101, 0, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '10px' }}>
                 <Store size={15} /> Nossa Identidade
               </div>
-              <h2 style={{ fontSize: '1.85rem', fontWeight: 900, margin: '0 0 16px', lineHeight: 1.25 }}>
+              <h2 style={{ fontSize: '1.85rem', fontWeight: 800, margin: '0 0 16px', lineHeight: 1.25 }}>
                 Tecnologia Acessível, Genuína e com Garantia Real em Angola
               </h2>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.96rem', lineHeight: 1.7, marginBottom: '14px' }}>
@@ -109,7 +109,7 @@ export default function AboutPage() {
         </div>
 
         {/* 4 Pillars of Excellence */}
-        <h3 style={{ fontSize: '1.45rem', fontWeight: 900, marginBottom: '20px', textAlign: 'center' }}>
+        <h3 style={{ fontSize: '1.45rem', fontWeight: 800, marginBottom: '20px', textAlign: 'center' }}>
           Por que a AQUI TEM é a Escolha de Confiança em Angola?
         </h3>
 
@@ -196,7 +196,7 @@ export default function AboutPage() {
             boxShadow: 'var(--shadow-orange)'
           }}
         >
-          <h3 style={{ margin: '0 0 10px', fontSize: '1.6rem', fontWeight: 900 }}>
+          <h3 style={{ margin: '0 0 10px', fontSize: '1.6rem', fontWeight: 800 }}>
             Pronto para Adquirir a Sua Próxima Tecnologia?
           </h3>
           <p style={{ margin: '0 0 20px', fontSize: '0.95rem', opacity: 0.95, maxWidth: '600px', marginInline: 'auto' }}>

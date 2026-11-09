@@ -1642,9 +1642,10 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '0.88rem' }}>
                   <thead>
                     <tr style={{ background: 'var(--bg-body)', borderBottom: '1px solid var(--border-light)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Produto</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Produto & Fornecedor</th>
                       <th style={{ padding: '14px 16px', fontWeight: 700 }}>Categoria</th>
-                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Preço Efetivo</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Custo Fornecedor</th>
+                      <th style={{ padding: '14px 16px', fontWeight: 700 }}>Preço Final (+20%)</th>
                       <th style={{ padding: '14px 16px', fontWeight: 700 }}>Estoque</th>
                       <th style={{ padding: '14px 16px', fontWeight: 700 }}>Estado</th>
                       <th style={{ padding: '14px 16px', fontWeight: 700, textAlign: 'right' }}>Ações</th>
@@ -1653,7 +1654,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                   <tbody>
                     {filteredProducts.length === 0 ? (
                       <tr>
-                        <td colSpan={6} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                        <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
                           Nenhum produto encontrado com os filtros selecionados.
                         </td>
                       </tr>
@@ -1662,6 +1663,8 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                         const effective = getEffectivePrice(p);
                         const prevPrice = getPreviousPrice(p);
                         const isOut = Number(p.stock) <= 0;
+                        const supplierCost = Number(p.totalCostKz) > 0 ? Number(p.totalCostKz) : Math.round(effective / 1.2);
+                        const markupKz = Number(p.marginKz) > 0 ? Number(p.marginKz) : Math.round(supplierCost * 0.2);
 
                         return (
                           <tr
@@ -1684,7 +1687,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                     border: '1px solid var(--border-light)',
                                     background: '#f8fafc'
                                   }}
-                                  onError={(e) => { e.currentTarget.src = '/logo.jpg'; }}
+                                  onError={(e) => { e.currentTarget.src = '/product_boompop.jpg'; }}
                                 />
                                 <div>
                                   <div style={{ fontWeight: 800, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -1695,8 +1698,8 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                       </span>
                                     )}
                                   </div>
-                                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                                    SKU: {p.sku || 'N/A'} • Slug: {p.slug || createSlug(p.name)}
+                                  <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                    SKU: <strong>{p.sku || 'N/A'}</strong> • {p.supplierName || 'Fornecedor Oficial Direto'}
                                   </div>
                                 </div>
                               </div>
@@ -1709,11 +1712,20 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                             </td>
 
                             <td style={{ padding: '12px 16px' }}>
-                              <div style={{ fontWeight: 800, color: 'var(--primary-orange)' }}>
+                              <div style={{ fontWeight: 700, color: 'var(--text-main)', fontVariantNumeric: 'tabular-nums' }}>
+                                {formatPriceKz(supplierCost)}
+                              </div>
+                              <div style={{ fontSize: '0.72rem', color: '#16A34A', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>
+                                +20% ({formatPriceKz(markupKz)})
+                              </div>
+                            </td>
+
+                            <td style={{ padding: '12px 16px' }}>
+                              <div style={{ fontWeight: 800, color: 'var(--primary-orange)', fontVariantNumeric: 'tabular-nums' }}>
                                 {formatPriceKz(effective)}
                               </div>
                               {prevPrice && (
-                                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textDecoration: 'line-through' }}>
+                                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', textDecoration: 'line-through', fontVariantNumeric: 'tabular-nums' }}>
                                   {formatPriceKz(prevPrice)}
                                 </div>
                               )}

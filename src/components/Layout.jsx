@@ -4,6 +4,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import StoreDrawers from './StoreDrawers';
 import CRMDashboardModal from './CRMDashboardModal';
+import Chatbot from './Chatbot';
 
 export default function Layout({ children }) {
   const { pathname } = useLocation();
@@ -26,6 +27,9 @@ export default function Layout({ children }) {
 
       {/* Admin CRM Modal */}
       <CRMDashboardModal />
+
+      {/* AI Assistant Chatbot */}
+      <Chatbot />
     </div>
   );
 }

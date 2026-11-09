@@ -13,7 +13,7 @@ export default function Footer() {
         {/* Line 1: Logo + Slogan + Direct WhatsApp */}
         <div className="footer-line-main">
           <Link to="/" className="footer-logo-link">
-            <img src="/logo.jpg" alt="AQUI TEM" height={24} className="footer-logo-png" style={{ filter: 'brightness(0) invert(1)' }} />
+            <img src="/logo.jpg" alt="AQUI TEM" height={34} className="footer-logo-png" />
           </Link>
           <span className="footer-slogan-text">{t('siteSlogan') || 'Tecnologia, Gadgets e Eletrodomésticos em Angola'}</span>
           <span className="footer-dot">•</span>

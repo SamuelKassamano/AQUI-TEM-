@@ -22,7 +22,7 @@ export const PRODUCT_FALLBACK_IMAGES = {
   mic: 'https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80',
   cable: 'https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80',
   hub: 'https://images.unsplash.com/photo-1591405351990-4726e331f141?auto=format&fit=crop&w=800&q=80',
-  stand: 'https://images.unsplash.com/photo-1616353075d60-01d7e0966a33?auto=format&fit=crop&w=800&q=80'
+  stand: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80'
 };
 
 export const HERO_BANNER_FALLBACK = '/banners/banner_1.jpg';
@@ -976,8 +976,9 @@ export const PRODUCTS = [
     "rating": 4.9,
     "reviews_count": 32,
     "badge": "GAMING",
-    "image_url": "/products/rato-gaming-glorious.jpg",
-    "image": "/products/rato-gaming-glorious.jpg",
+    "image_url": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80",
     "description": "Rato gaming sem fios Glorious Model O Wireless RGB com sensor BAMF ultra preciso de 19.000 DPI, carcaça ultra leve tipo favo de mel (69g) e conexão sem fios sem latência de 2.4GHz.",
     "highlights": [
       "Ultra leve: apenas 69g para movimentos ultra rápidos",
@@ -1022,8 +1023,9 @@ export const PRODUCTS = [
     "rating": 4.7,
     "reviews_count": 24,
     "badge": "SLIM",
-    "image_url": "/products/teclado-kapbom.jpg",
-    "image": "/products/teclado-kapbom.jpg",
+    "image_url": "https://images.unsplash.com/photo-1587829741301-dc798b83dadc?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1587829741301-dc798b83dadc?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1587829741301-dc798b83dadc?auto=format&fit=crop&w=800&q=80",
     "description": "Teclado Bluetooth Sem Fios Kapbom ultra fino, compacto e silencioso. Compatível com Android, iOS, Windows e Mac, ideal para tablets, smartphones e computadores.",
     "highlights": [
       "Conexão Bluetooth sem fios instantânea",
@@ -1065,8 +1067,9 @@ export const PRODUCTS = [
     "rating": 4.8,
     "reviews_count": 29,
     "badge": "SILENCIOSO",
-    "image_url": "/products/oraimo-mouse-p.jpg",
-    "image": "/products/oraimo-mouse-p.jpg",
+    "image_url": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80",
     "description": "Rato sem fios Oraimo Smart Mouse P com tecnologia de clique silencioso de 90%, sensor óptico de alta resolução de 1600 DPI e design ergonómico para destros e esquerdinos.",
     "highlights": [
       "Cliques 90% mais silenciosos",
@@ -1108,8 +1111,9 @@ export const PRODUCTS = [
     "rating": 4.6,
     "reviews_count": 19,
     "badge": "FULL HD",
-    "image_url": "/products/webcam-kapbom.jpg",
-    "image": "/products/webcam-kapbom.jpg",
+    "image_url": "https://images.unsplash.com/photo-1588600102111-73602492160d?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1588600102111-73602492160d?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1588600102111-73602492160d?auto=format&fit=crop&w=800&q=80",
     "description": "Webcam Full HD Kapbom 1080p USB com microfone duplo com redução de ruído, correção automática de luz fraca e clipe universal flexível para monitores e portáteis.",
     "highlights": [
       "Vídeo cristalino Full HD 1080p a 30fps",
@@ -1150,8 +1154,9 @@ export const PRODUCTS = [
     "rating": 4.9,
     "reviews_count": 41,
     "badge": "GRAVAÇÃO PRO",
-    "image_url": "/products/kit-microfones-duplo.jpg",
-    "image": "/products/kit-microfones-duplo.jpg",
+    "image_url": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?auto=format&fit=crop&w=800&q=80",
     "description": "Kit de 2 Microfones Lapela Sem Fio com conector Type-C / Lightning para telemóveis. Captura omnidirecional de 360° com cancelamento inteligente de ruído para vídeos e entrevistas.",
     "highlights": [
       "2 Microfones transmissores incluídos no kit",
@@ -1193,8 +1198,9 @@ export const PRODUCTS = [
     "rating": 4.9,
     "reviews_count": 55,
     "badge": "MAGNÉTICO",
-    "image_url": "/products/magcable-oraimo.jpg",
-    "image": "/products/magcable-oraimo.jpg",
+    "image_url": "https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80",
     "description": "Cabo Oraimo MagCable USB-C para Lightning 1m com conector magnético removível e suporte a carregamento rápido Power Delivery PD 20W para iPhone e iPad.",
     "highlights": [
       "Conector magnético destacável com atração forte",
@@ -1235,8 +1241,9 @@ export const PRODUCTS = [
     "rating": 4.8,
     "reviews_count": 62,
     "badge": "ULTRA RESISTENTE",
-    "image_url": "/products/duraline3-oraimo.jpg",
-    "image": "/products/duraline3-oraimo.jpg",
+    "image_url": "https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1619190163414-04144b679116?auto=format&fit=crop&w=800&q=80",
     "description": "Cabo de carregamento rápido e sincronização USB-A para USB-C Oraimo DuraLine 3. Construído com fibra de Kevlar à prova de dobras, testado em mais de 25.000 dobras.",
     "highlights": [
       "Suporta carregamento rápido de até 3A",
@@ -1276,8 +1283,9 @@ export const PRODUCTS = [
     "rating": 4.7,
     "reviews_count": 20,
     "badge": "PORTÁTIL",
-    "image_url": "/products/oraimo-mouse-f.jpg",
-    "image": "/products/oraimo-mouse-f.jpg",
+    "image_url": "https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1527698266440-12104e498b76?auto=format&fit=crop&w=800&q=80",
     "description": "Rato sem fios ergonómico Oraimo Smart Mouse F com sensor óptico de 1200 DPI, ligação estável 2.4GHz sem fios até 10 metros e pilhas de longa duração.",
     "highlights": [
       "Design ergonómico antiderrapante",
@@ -1318,8 +1326,9 @@ export const PRODUCTS = [
     "rating": 4.9,
     "reviews_count": 38,
     "badge": "7 EM 1",
-    "image_url": "/products/hub-oraimo-7in1.jpg",
-    "image": "/products/hub-oraimo-7in1.jpg",
+    "image_url": "https://images.unsplash.com/photo-1591405351990-4726e331f141?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1591405351990-4726e331f141?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1591405351990-4726e331f141?auto=format&fit=crop&w=800&q=80",
     "description": "Hub adaptador multiportas USB-C Oraimo Smart 7 em 1 com saída HDMI 4K UHD, 3x portas USB 3.0 de alta velocidade, leitores de cartão SD e TF e porta USB-C Power Delivery 100W.",
     "highlights": [
       "Saída de vídeo HDMI 4K a 30Hz para monitores e TVs",
@@ -1361,8 +1370,9 @@ export const PRODUCTS = [
     "rating": 4.8,
     "reviews_count": 45,
     "badge": "ERGONÓMICO",
-    "image_url": "/products/suporte-notebook-aluminio.jpg",
-    "image": "/products/suporte-notebook-aluminio.jpg",
+    "image_url": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=800&q=80",
     "description": "Suporte ergonómico dobrável de liga de alumínio reforçada para portáteis de 10 a 17.3 polegadas. Ajustável em 6 ângulos de altura, previne dores no pescoço e melhora a ventilação do computador.",
     "highlights": [
       "Estrutura em liga de alumínio sólida e antiderrapante",
@@ -1403,8 +1413,9 @@ export const PRODUCTS = [
     "rating": 4.9,
     "reviews_count": 76,
     "badge": "OFICIAL 4K",
-    "image_url": "/products/tigre-tv-box.jpg",
-    "image": "/products/tigre-tv-box.jpg",
+    "image_url": "https://images.unsplash.com/photo-1593359677771-48288b3941a3?auto=format&fit=crop&w=800&q=80",
+    "image": "https://images.unsplash.com/photo-1593359677771-48288b3941a3?auto=format&fit=crop&w=800&q=80",
+    "fallbackImage": "https://images.unsplash.com/photo-1593359677771-48288b3941a3?auto=format&fit=crop&w=800&q=80",
     "description": "O Aparelho Tigre TV Box 4K Ultra HD transforma qualquer televisão comum em uma Smart TV de alta performance em Angola. Com sistema Android fluido, Wi-Fi Dual Band de alta velocidade, processador quad-core e suporte para reprodução de conteúdos em resolução 4K Ultra HD com cores vivas e sem travamentos. Acompanha comando remoto intuitivo, porta HDMI e suporte para todos os principais aplicativos de streaming.",
     "highlights": [
       "Resolução de imagem 4K Ultra HD nítida e fluida",
@@ -1435,6 +1446,976 @@ export const PRODUCTS = [
     "seoTitle": "Aparelho Tigre TV Box 4K Ultra HD Android | AQUI TEM ANGOLA",
     "seoDescription": "Compre o Aparelho Tigre TV Box 4K Ultra HD com Android na AQUI TEM Angola. Canais e filmes em alta definição com entrega rápida em Luanda.",
     "seoKeywords": "aparelho tigre tv angola, tigre tv box 4k luanda, receptor tigre tv angola, smart tv box luanda, aqui tem angola"
+  },
+  {
+    "id": "c1a7877b-a7f2-43d3-8dfe-b776b0c90075",
+    "supabaseId": "c1a7877b-a7f2-43d3-8dfe-b776b0c90075",
+    "created_at": "2026-10-29T15:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Auscultadores Bluetooth Sem Fio Philips TAH1108 com Microfone",
+    "slug": "auscultadores-bluetooth-sem-fio-philips-tah1108",
+    "slugAliases": [
+      "headphone-philips-tah1108",
+      "auscultadores-philips-bluetooth"
+    ],
+    "sku": "AT-PHI-TAH1108",
+    "brand": "Philips",
+    "category": "Áudio & Som",
+    "stock": 15,
+    "active": true,
+    "price": 36000,
+    "sale_price": 30000,
+    "old_price": 36000,
+    "rating": 4.9,
+    "reviews_count": 42,
+    "badge": "ORIGINAL PHILIPS",
+    "image_url": "https://images.philips.com/is/image/philipsconsumer/7877ba7f23d34dfeb776b0c90075f902?$pnglarge$&wid=960",
+    "image": "https://images.philips.com/is/image/philipsconsumer/7877ba7f23d34dfeb776b0c90075f902?$pnglarge$&wid=960",
+    "fallbackImage": "https://images.philips.com/is/image/philipsconsumer/7877ba7f23d34dfeb776b0c90075f902?$pnglarge$&wid=960",
+    "images": [
+      "https://images.philips.com/is/image/philipsconsumer/7877ba7f23d34dfeb776b0c90075f902?$pnglarge$&wid=960"
+    ],
+    "description": "Os Auscultadores Bluetooth Sem Fio Philips TAH1108 oferecem qualidade sonora autêntica Philips com drivers acústicos de neodímio de 30mm, graves encorpados e isolamento acústico confortável. Com autonomia de até 15 horas de reprodução contínua, almofadas auriculares acolchoadas ultra macias e design dobrável compacto, são ideais para trabalho, estudo, viagens e lazer em Angola.",
+    "highlights": [
+      "Drivers acústicos de 30mm para som limpo e graves potentes",
+      "Até 15 horas de reprodução contínua com carregamento rápido",
+      "Almofadas auriculares macias e haste ajustável ultra leve",
+      "Microfone integrado para chamadas telefónicas nítidas em mãos-livres",
+      "Design dobrável plano e compacto que cabe facilmente na mochila"
+    ],
+    "features": [
+      "Conexão Bluetooth 5.2 estável até 10 metros",
+      "Botões integrados na concha para controle de música e chamadas"
+    ],
+    "specifications": {
+      "Marca": "Philips (Modelo TAH1108BK/00)",
+      "Drivers": "30 mm Neodímio",
+      "Bluetooth": "V5.2",
+      "Autonomia": "Até 15 horas",
+      "Tempo de Carga": "2 horas via USB-C"
+    },
+    "packageContent": [
+      "1 Auscultadores Bluetooth Philips TAH1108 Original",
+      "1 Cabo de carregamento USB-C",
+      "1 Guia rápido e certificado de garantia"
+    ],
+    "seoTitle": "Auscultadores Bluetooth Sem Fio Philips TAH1108 Original | AQUI TEM ANGOLA",
+    "seoDescription": "Compre os Auscultadores Bluetooth Sem Fio Philips TAH1108 originais com graves potentes, almofadas macias e 15h de bateria na AQUI TEM Angola."
+  },
+  {
+    "id": "c2b8988c-b8e3-44e4-9ef0-c887c1da1186",
+    "supabaseId": "c2b8988c-b8e3-44e4-9ef0-c887c1da1186",
+    "created_at": "2026-10-29T15:05:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Fones Bluetooth TWS A9 Pro com Ecrã Touch Inteligente LCD e ANC",
+    "slug": "fones-bluetooth-tws-a9-pro-ecra-touch-anc",
+    "slugAliases": [
+      "fone-tws-a9-pro-tela-touch",
+      "fones-com-ecra-touch-lcd"
+    ],
+    "sku": "AT-TWS-A9PRO",
+    "brand": "Smart Audio Pro",
+    "category": "Áudio & Som",
+    "stock": 20,
+    "active": true,
+    "price": 22000,
+    "sale_price": 17500,
+    "old_price": 22000,
+    "rating": 4.9,
+    "reviews_count": 58,
+    "badge": "ECRÃ TOUCH LCD",
+    "image_url": "/products/fones-a9-pro-touch.png",
+    "image": "/products/fones-a9-pro-touch.png",
+    "fallbackImage": "https://tse3.mm.bing.net/th/id/OIP.Il4yvZk9VfklTeD3Um-UmQHaJ2?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+    "images": [
+      "/products/fones-a9-pro-touch.png",
+      "https://tse3.mm.bing.net/th/id/OIP.Il4yvZk9VfklTeD3Um-UmQHaJ2?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
+    ],
+    "description": "Os Fones Bluetooth TWS A9 Pro revolucionam a experiência de áudio sem fios com o seu estojo inteligente equipado com Ecrã Touch LCD a cores. Controle músicas, volume, equalizador, modos de Cancelamento Ativo de Ruído (ANC) e Modo Transparência, temporizador e localizador dos fones diretamente na tela do estojo sem precisar tocar no telemóvel.",
+    "highlights": [
+      "Ecrã Touch LCD colorido inteligente integrado no estojo de carga",
+      "Cancelamento Ativo de Ruído (ANC) + Redução de Ruído em Chamadas (ENC)",
+      "Bluetooth 5.4 de última geração com conexão instantânea e zero atraso",
+      "Controlo direto no ecrã: músicas, volume, equalizador, lanterna e câmara",
+      "Autonomia total de até 32 horas com carregamento rápido USB Tipo-C"
+    ],
+    "features": [
+      "Papéis de parede personalizáveis no ecrã do estojo",
+      "Função 'Encontrar Fones' com emissão de som localizador"
+    ],
+    "specifications": {
+      "Modelo": "A9 Pro ANC Smart Touch",
+      "Versão Bluetooth": "V5.4",
+      "Cancelamento de Ruído": "ANC Ativo + ENC Duplo Microfone",
+      "Ecrã do Estojo": "Display Touch LCD Colorido",
+      "Porta de Carga": "USB Tipo-C"
+    },
+    "packageContent": [
+      "1 Par de Fones TWS A9 Pro ANC",
+      "1 Estojo com Ecrã Touch LCD Inteligente",
+      "1 Cabo de carregamento USB Tipo-C",
+      "3 Pares de ponteiras de silicone (P, M, G)",
+      "1 Manual do utilizador"
+    ],
+    "seoTitle": "Fones Bluetooth TWS A9 Pro com Ecrã Touch LCD e Cancelamento de Ruído ANC | AQUI TEM ANGOLA",
+    "seoDescription": "Fones sem fios TWS A9 Pro com estojo inteligente de ecrã touch colorido LCD, cancelamento ativo de ruído ANC e Bluetooth 5.4 na AQUI TEM Angola."
+  },
+  {
+    "id": "c3c9099d-c9f4-45f5-af01-d998d2eb2297",
+    "supabaseId": "c3c9099d-c9f4-45f5-af01-d998d2eb2297",
+    "created_at": "2026-10-29T15:10:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Fones de Ouvido Bluetooth TWS Philips TAT1207 True Wireless IPX4",
+    "slug": "fones-bluetooth-tws-philips-tat1207-ipx4",
+    "slugAliases": [
+      "fone-philips-tat1207",
+      "fones-tws-philips-tat1207"
+    ],
+    "sku": "AT-PHI-TAT1207",
+    "brand": "Philips",
+    "category": "Áudio & Som",
+    "stock": 16,
+    "active": true,
+    "price": 33000,
+    "sale_price": 27500,
+    "old_price": 33000,
+    "rating": 4.9,
+    "reviews_count": 37,
+    "badge": "PHILIPS TWS",
+    "image_url": "https://static.hayapek.com.br/produtos/80054/2000/1.jpg",
+    "image": "https://static.hayapek.com.br/produtos/80054/2000/1.jpg",
+    "fallbackImage": "https://static.hayapek.com.br/produtos/80054/2000/1.jpg",
+    "images": [
+      "https://static.hayapek.com.br/produtos/80054/2000/1.jpg"
+    ],
+    "description": "Os Fones de Ouvido True Wireless Philips TAT1207 combinam som rico e nítido com um design ergonómico super compacto que se adapta com firmeza ao ouvido. Com proteção IPX4 contra respingos de água e suor, até 18 horas de reprodução total com o estojo de bolso e modo mono para chamadas, são perfeitos para o dia a dia e desporto em Luanda.",
+    "highlights": [
+      "Qualidade de som original Philips com drivers de neodímio de 6mm",
+      "Até 18 horas de autonomia combinada (6h nos fones + 12h no estojo)",
+      "Certificação IPX4 resistente a suor e salpicos de água",
+      "Encaixe intra-auricular ergonómico seguro e ultraleve",
+      "Modo Mono: utilize qualquer um dos fones individualmente em chamadas"
+    ],
+    "features": [
+      "Emparelhamento automático inteligente ao abrir o estojo",
+      "Controles integrados para música, chamadas e assistente de voz"
+    ],
+    "specifications": {
+      "Marca": "Philips (Modelo TAT1207BK/00)",
+      "Bluetooth": "V5.2",
+      "Proteção contra Água": "IPX4",
+      "Autonomia Total": "Até 18 horas",
+      "Carregamento": "USB Tipo-C"
+    },
+    "packageContent": [
+      "1 Par de Fones TWS Philips TAT1207 Original",
+      "1 Estojo de carregamento compacto",
+      "1 Cabo de carregamento USB-C",
+      "3 Pares de ponteiras auriculares de silicone",
+      "1 Manual e garantia oficial"
+    ],
+    "seoTitle": "Fones Bluetooth TWS Philips TAT1207 True Wireless IPX4 Original | AQUI TEM ANGOLA",
+    "seoDescription": "Compre os Fones de Ouvido Bluetooth TWS Philips TAT1207 originais com proteção IPX4, 18h de bateria e som cristalino na AQUI TEM Angola."
+  },
+  {
+    "id": "d1a1001a-1111-4001-a001-000000000038",
+    "supabaseId": "d1a1001a-1111-4001-a001-000000000038",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Suporte de Mesa Articulado e Dobrável para Telemóvel e Tablet",
+    "slug": "suporte-mesa-articulado-dobravel-telemovel-tablet",
+    "slugAliases": [
+      "suporte-telemovel-mesa",
+      "suporte-celular-dobravel"
+    ],
+    "sku": "AT-ACC-STAND-DESK",
+    "brand": "ErgoStand",
+    "category": "Acessórios & Tech",
+    "stock": 35,
+    "active": true,
+    "price": 12000,
+    "sale_price": 8800,
+    "old_price": 12000,
+    "rating": 4.8,
+    "reviews_count": 52,
+    "badge": "ERGONÓMICO",
+    "image_url": "/products/suporte-mesa-telemovel.jpg",
+    "image": "/products/suporte-mesa-telemovel.jpg",
+    "fallbackImage": "https://cdn1.ozone.ru/s3/multimedia-1-c/c600/6959844552.jpg",
+    "images": [
+      "/products/suporte-mesa-telemovel.jpg",
+      "https://cdn1.ozone.ru/s3/multimedia-1-c/c600/6959844552.jpg"
+    ],
+    "description": "Suporte de mesa articulado e dobrável compatível com telemóveis e tablets de todos os tamanhos. Possui ajuste multi-ângulo de inclinação e altura, base pesada com almofadas de silicone antiderrapante que previnem riscos e quedas, e design ultra compacto dobrável para levar no bolso ou mochila.",
+    "highlights": [
+      "Ajuste multi-ângulo ergonómico para postura correta",
+      "Design dobrável ultra compacto e portátil",
+      "Base reforçada e almofadas antiderrapantes em silicone",
+      "Compatível com todos os smartphones e tablets até 11 polegadas",
+      "Abertura inferior para carregar o telemóvel enquanto utiliza"
+    ],
+    "features": [
+      "Estrutura em ABS resistente e liga de alumínio reforçada",
+      "Rotação e inclinação suave de alta durabilidade"
+    ],
+    "specifications": {
+      "Compatibilidade": "Smartphones e Tablets de 4 a 11 polegadas",
+      "Material": "ABS Premium + Silicone Antiderrapante",
+      "Ajuste": "Multi-ângulo articulado",
+      "Peso": "Aprox. 180g"
+    },
+    "packageContent": [
+      "1 Suporte de Mesa Articulado Dobrável",
+      "1 Caixa de proteção e transporte"
+    ],
+    "seoTitle": "Suporte de Mesa Articulado e Dobrável para Telemóvel e Tablet | AQUI TEM ANGOLA",
+    "seoDescription": "Suporte de mesa ergonómico e dobrável para telemóveis e tablets na AQUI TEM Angola. Ângulo ajustável e base antiderrapante com entrega rápida."
+  },
+  {
+    "id": "d2a2002b-2222-4002-a002-000000000039",
+    "supabaseId": "d2a2002b-2222-4002-a002-000000000039",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Campainha Sem Fio Inteligente Wi-Fi com Câmera HD e Chime Sonoro",
+    "slug": "campainha-sem-fio-inteligente-wifi-camera-chime",
+    "slugAliases": [
+      "campainha-wifi-camera",
+      "smart-video-doorbell"
+    ],
+    "sku": "AT-CAM-DOORBELL-WIFI",
+    "brand": "Tuya Smart",
+    "category": "Acessórios & Casa",
+    "stock": 20,
+    "active": true,
+    "price": 24000,
+    "sale_price": 18400,
+    "old_price": 24000,
+    "rating": 4.9,
+    "reviews_count": 38,
+    "badge": "WI-FI HD",
+    "image_url": "/products/campainha-wifi-camera.jpg",
+    "image": "/products/campainha-wifi-camera.jpg",
+    "fallbackImage": "https://m.media-amazon.com/images/I/415mveQYmIL._AC_SL1000_.jpg",
+    "images": [
+      "/products/campainha-wifi-camera.jpg",
+      "https://m.media-amazon.com/images/I/415mveQYmIL._AC_SL1000_.jpg"
+    ],
+    "description": "Campainha inteligente sem fio Wi-Fi com câmera HD de alta resolução, áudio bidirecional em tempo real e visão noturna infravermelha. Receba notificações instantâneas no seu telemóvel quando alguém tocar à campainha e converse com as visitas através do aplicativo, esteja onde estiver. Acompanha chime sonoro para instalar no interior da residência.",
+    "highlights": [
+      "Vídeo HD com lente grande angular e visão noturna nítida",
+      "Áudio bidirecional: converse com as visitas pelo smartphone",
+      "Notificação e alerta em tempo real no aplicativo",
+      "Inclui campainha interna sonora (Chime USB)",
+      "Instalação sem fios rápida com fita 3M ou parafusos"
+    ],
+    "features": [
+      "Compatível com redes Wi-Fi 2.4GHz",
+      "Sensor de presença com detecção de movimento inteligente"
+    ],
+    "specifications": {
+      "Resolução": "HD 720p / 1080p",
+      "Conectividade": "Wi-Fi 2.4GHz",
+      "Áudio": "Bidirecional com cancelamento de eco",
+      "Visão Noturna": "Infravermelho até 5 metros",
+      "Alimentação": "Bateria recarregável de longa duração"
+    },
+    "packageContent": [
+      "1 Campainha Inteligente Wi-Fi com Câmera",
+      "1 Chime Sonoro Interno",
+      "1 Cabo de Carregamento USB",
+      "1 Kit de Fixação (Adesivo 3M + Parafusos)",
+      "1 Manual de Instruções"
+    ],
+    "seoTitle": "Campainha Sem Fio Inteligente Wi-Fi com Câmera e Chime | AQUI TEM ANGOLA",
+    "seoDescription": "Atenda à porta pelo telemóvel com a Campainha Inteligente Wi-Fi com câmera HD e visão noturna na AQUI TEM Angola. Segurança residencial com entrega em Luanda."
+  },
+  {
+    "id": "d3a3003c-3333-4003-a003-000000000040",
+    "supabaseId": "d3a3003c-3333-4003-a003-000000000040",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Fechadura Digital Inteligente Biométrica com Ecrã Touch e Cartão RFID",
+    "slug": "fechadura-digital-inteligente-biometrica-touch-rfid",
+    "slugAliases": [
+      "fechadura-digital-biometrica",
+      "fechadura-inteligente-porta"
+    ],
+    "sku": "AT-SEC-SMART-LOCK",
+    "brand": "Smart Security",
+    "category": "Acessórios & Casa",
+    "stock": 12,
+    "active": true,
+    "price": 85000,
+    "sale_price": 70000,
+    "old_price": 85000,
+    "rating": 4.9,
+    "reviews_count": 27,
+    "badge": "SEGURANÇA BIOMÉTRICA",
+    "image_url": "/products/fechadura-digital-biometrica.jpg",
+    "image": "/products/fechadura-digital-biometrica.jpg",
+    "fallbackImage": "https://cdn.awsli.com.br/2500x2500/436/436580/produto/171761348/8dfb0e2b9b.jpg",
+    "images": [
+      "/products/fechadura-digital-biometrica.jpg",
+      "https://cdn.awsli.com.br/2500x2500/436/436580/produto/171761348/8dfb0e2b9b.jpg"
+    ],
+    "description": "Fechadura eletrónica biométrica de alta segurança com múltiplos métodos de acesso: leitor de impressão digital ultra rápido, teclado tátil com senha numérica, cartões de aproximação RFID e chave mecânica de emergência. Ideal para portas de madeira ou metal de residências, apartamentos e escritórios comerciais.",
+    "highlights": [
+      "4 Modos de Abertura: Biometria, Senha Numérica Touch, Cartão RFID e Chave Física",
+      "Leitor biométrico semicondutor de 0.5s de alta precisão",
+      "Teclado touch retroiluminado com função de senha anti-espião",
+      "Travamento automático e alarme de violação",
+      "Entrada micro-USB de emergência para bateria descarregada"
+    ],
+    "features": [
+      "Capacidade para até 100 impressões digitais e 100 senhas/cartões",
+      "Design premium em liga de alumínio escovado de alta resistência"
+    ],
+    "specifications": {
+      "Espessura de Porta": "35mm a 55mm",
+      "Alimentação": "4 Pilhas AA (baixo consumo)",
+      "Autonomia": "Até 12 meses",
+      "Material": "Liga de Zinco e Alumínio Reforçado"
+    },
+    "packageContent": [
+      "1 Conjunto de Fechadura Digital (Painel Frontal e Traseiro)",
+      "1 Mecanismo de Trava de Embutir",
+      "2 Cartões de Proximidade RFID",
+      "2 Chaves Mecânicas de Emergência",
+      "1 Kit de Parafusos e Gabarito de Instalação",
+      "1 Manual"
+    ],
+    "seoTitle": "Fechadura Digital Inteligente Biométrica Touch e Cartão RFID | AQUI TEM ANGOLA",
+    "seoDescription": "Aumente a segurança do seu lar ou escritório com a Fechadura Digital Biométrica inteligente na AQUI TEM Angola. Abertura por impressão digital, senha e cartão."
+  },
+  {
+    "id": "d4a4004d-4444-4004-a004-000000000041",
+    "supabaseId": "d4a4004d-4444-4004-a004-000000000041",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Luz Noturna LED com Sensor de Movimento PIR Inteligente Recarregável USB",
+    "slug": "luz-noturna-led-sensor-movimento-pir-recarregavel-usb",
+    "slugAliases": [
+      "luminaria-sensor-movimento",
+      "luz-noturna-led-sensor"
+    ],
+    "sku": "AT-LGT-SENSOR-NIGHT",
+    "brand": "Smart Life",
+    "category": "Acessórios & Casa",
+    "stock": 40,
+    "active": true,
+    "price": 11000,
+    "sale_price": 8200,
+    "old_price": 11000,
+    "rating": 4.8,
+    "reviews_count": 64,
+    "badge": "SENSOR PIR",
+    "image_url": "/products/luz-noturna-sensor-movimento.jpg",
+    "image": "/products/luz-noturna-sensor-movimento.jpg",
+    "fallbackImage": "https://tse1.mm.bing.net/th/id/OIP.AbdA6abxS0gw2PR2VwjH8gHaHa?r=0&w=900&h=900&rs=1&pid=ImgDetMain&o=7&rm=3",
+    "images": [
+      "/products/luz-noturna-sensor-movimento.jpg",
+      "https://tse1.mm.bing.net/th/id/OIP.AbdA6abxS0gw2PR2VwjH8gHaHa?r=0&w=900&h=900&rs=1&pid=ImgDetMain&o=7&rm=3"
+    ],
+    "description": "Luz noturna LED inteligente com sensor de movimento infravermelho PIR e sensor crepuscular de luminosidade. Acende automaticamente ao detectar presença no escuro a até 3-5 metros e desliga após 20 segundos de inatividade. Possui fixação magnética e adesivo 3M para instalar facilmente em corredores, escadas, guarda-roupas, quartos e cozinhas sem fios.",
+    "highlights": [
+      "Sensor de movimento PIR de 120 graus com alcance até 5 metros",
+      "Acendimento automático apenas no escuro para máxima economia",
+      "Bateria interna de lítio recarregável via USB",
+      "Fixação magnética prática: retire facilmente para recarregar",
+      "Luz suave e agradável que não agride a visão à noite"
+    ],
+    "features": [
+      "Modo Automático (Sensor) e Modo Ligado Constante",
+      "Design circular elegante e ultrafino"
+    ],
+    "specifications": {
+      "Tipo de Luz": "LED Branco Quente / Neutro",
+      "Bateria": "Recarregável Lítio 500mAh USB",
+      "Alcance do Sensor": "3 a 5 metros em 120°",
+      "Fixação": "Base Magnética + Fita 3M"
+    },
+    "packageContent": [
+      "1 Luminária LED com Sensor de Movimento",
+      "1 Placa Metálica com Adesivo 3M",
+      "1 Cabo de Carregamento USB",
+      "1 Manual"
+    ],
+    "seoTitle": "Luz Noturna LED com Sensor de Movimento PIR Recarregável | AQUI TEM ANGOLA",
+    "seoDescription": "Luminária noturna inteligente com sensor de movimento PIR e bateria recarregável USB na AQUI TEM Angola. Ideal para corredores, quartos e armários."
+  },
+  {
+    "id": "d5a5005e-5555-4005-a005-000000000042",
+    "supabaseId": "d5a5005e-5555-4005-a005-000000000042",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Capa Protetora Magnética MagSafe Anti-Impacto para iPhone",
+    "slug": "capa-protetora-magnetica-magsafe-anti-impacto-iphone",
+    "slugAliases": [
+      "capa-magsafe-iphone",
+      "case-magsafe-anti-impacto"
+    ],
+    "sku": "AT-ACC-CASE-MAGSAFE",
+    "brand": "MagSafe Shield",
+    "category": "Acessórios & Tech",
+    "stock": 50,
+    "active": true,
+    "price": 14000,
+    "sale_price": 10000,
+    "old_price": 14000,
+    "rating": 4.9,
+    "reviews_count": 85,
+    "badge": "MAGSAFE COMPATÍVEL",
+    "image_url": "/products/capa-magsafe-iphone.webp",
+    "image": "/products/capa-magsafe-iphone.webp",
+    "fallbackImage": "https://http2.mlstatic.com/D_NQ_NP_699897-MLB73530213366_122023-O.webp",
+    "images": [
+      "/products/capa-magsafe-iphone.webp",
+      "https://http2.mlstatic.com/D_NQ_NP_699897-MLB73530213366_122023-O.webp"
+    ],
+    "description": "Capa protetora premium com anel magnético integrado MagSafe, compatível com carregadores por indução e suportes veiculares magnéticos. Estrutura híbrida com traseira rígida em policarbonato anti-amarelamento e bordas em TPU flexível com amortecimento militar nos cantos contra quedas e impactos acidentais.",
+    "highlights": [
+      "Anel magnético MagSafe com 38 ímãs de neodímio N52 fortes",
+      "Proteção militar contra quedas com airbags nos 4 cantos",
+      "Borda elevada para proteção da tela frontal e das lentes da câmera",
+      "Traseira cristalina com tratamento anti-riscos e anti-amarelamento",
+      "Botões metálicos com clique tátil macio e preciso"
+    ],
+    "features": [
+      "Carregamento rápido por indução sem necessidade de remover a capa",
+      "Design fino e elegante que mantém a estética original do aparelho"
+    ],
+    "specifications": {
+      "Material": "TPU Flexível + Policarbonato de Alta Densidade",
+      "Ímãs": "Alinhamento magnético forte MagSafe",
+      "Proteção de Câmera": "Moldura em relevo reforçada"
+    },
+    "packageContent": [
+      "1 Capa Protetora Magnética MagSafe Anti-Impacto"
+    ],
+    "seoTitle": "Capa Protetora Magnética MagSafe Anti-Impacto para iPhone | AQUI TEM ANGOLA",
+    "seoDescription": "Proteja o seu iPhone com a Capa Magnética MagSafe Anti-Impacto com cantos reforçados na AQUI TEM Angola. Compatível com carregamento sem fios."
+  },
+  {
+    "id": "d6a6006f-6666-4006-a006-000000000043",
+    "supabaseId": "d6a6006f-6666-4006-a006-000000000043",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Película de Vidro Temperado de Privacidade Anti-Spy para iPhone",
+    "slug": "pelicula-vidro-temperado-privacidade-anti-spy-iphone",
+    "slugAliases": [
+      "pelicula-privacidade-iphone",
+      "pelicula-anti-spy-vidro"
+    ],
+    "sku": "AT-ACC-GLASS-PRIVACY",
+    "brand": "Glass Pro 9H",
+    "category": "Acessórios & Tech",
+    "stock": 60,
+    "active": true,
+    "price": 10000,
+    "sale_price": 7600,
+    "old_price": 10000,
+    "rating": 4.8,
+    "reviews_count": 92,
+    "badge": "ANTI-ESPIÃO 9H",
+    "image_url": "/products/pelicula-privacidade-iphone.jpg",
+    "image": "/products/pelicula-privacidade-iphone.jpg",
+    "fallbackImage": "https://tse1.mm.bing.net/th/id/OIP.QE2slN2t6Jsu7RCZHItvZwHaL0?r=0&w=679&h=1084&rs=1&pid=ImgDetMain&o=7&rm=3",
+    "images": [
+      "/products/pelicula-privacidade-iphone.jpg",
+      "https://tse1.mm.bing.net/th/id/OIP.QE2slN2t6Jsu7RCZHItvZwHaL0?r=0&w=679&h=1084&rs=1&pid=ImgDetMain&o=7&rm=3"
+    ],
+    "description": "Película de vidro temperado de alta resistência 9H com filtro de privacidade anti-spy de 28 graus. Permite visualização nítida apenas para quem está de frente para o ecrã, escurecendo a tela para quem olha pelas laterais. Protege mensagens privadas, senhas bancárias e conversas contra curiosos em transportes públicos e locais movimentados.",
+    "highlights": [
+      "Tecnologia de micro-persianas: visão bloqueada a partir de 28 graus laterais",
+      "Vidro temperado 9H ultra resistente contra riscos, choques e quedas",
+      "Revestimento oleofóbico que repele marcas de dedos e gordura",
+      "Sensibilidade ao toque 100% preservada com resposta rápida",
+      "Fácil aplicação com alinhamento perfeito sem bolhas"
+    ],
+    "features": [
+      "Bordas curvas 2.5D confortáveis ao deslizar os dedos",
+      "Compatível com quase todas as capas de proteção do mercado"
+    ],
+    "specifications": {
+      "Dureza": "Vidro Temperado 9H",
+      "Ângulo de Privacidade": "28° lateral",
+      "Espessura": "0.33mm ultra fino",
+      "Revestimento": "Anti-impressão digital e anti-reflexo"
+    },
+    "packageContent": [
+      "1 Película de Vidro Temperado de Privacidade",
+      "1 Kit de Limpeza e Aplicação (Lenço com Álcool + Flanela + Adesivo tira-pó)"
+    ],
+    "seoTitle": "Película de Vidro Temperado Privacidade Anti-Spy para iPhone | AQUI TEM ANGOLA",
+    "seoDescription": "Mantenha a sua privacidade com a Película de Vidro Temperado 9H Anti-Spy para iPhone na AQUI TEM Angola. Protege a tela contra riscos e olhares curiosos."
+  },
+  {
+    "id": "d7a7007a-7777-4007-a007-000000000044",
+    "supabaseId": "d7a7007a-7777-4007-a007-000000000044",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Ring Light LED Profissional 26cm com Tripé Articulado e Comando Bluetooth",
+    "slug": "ring-light-led-profissional-26cm-tripe-comando-bluetooth",
+    "slugAliases": [
+      "ring-light-com-tripe",
+      "ring-light-led-26cm"
+    ],
+    "sku": "AT-FOTO-RINGLIGHT-26",
+    "brand": "Studio Pro",
+    "category": "Acessórios & Tech",
+    "stock": 25,
+    "active": true,
+    "price": 22000,
+    "sale_price": 17200,
+    "old_price": 22000,
+    "rating": 4.9,
+    "reviews_count": 48,
+    "badge": "ILUMINAÇÃO PRO",
+    "image_url": "/products/ring-light-tripe.jpg",
+    "image": "/products/ring-light-tripe.jpg",
+    "fallbackImage": "https://m.media-amazon.com/images/I/61-947b9ZDL.jpg",
+    "images": [
+      "/products/ring-light-tripe.jpg",
+      "https://m.media-amazon.com/images/I/61-947b9ZDL.jpg"
+    ],
+    "description": "Kit completo de iluminação profissional Ring Light LED de 26cm (10 polegadas) com tripé ajustável até 2.10m, suporte flexível para telemóvel e comando de controle Bluetooth. Oferece 3 temperaturas de cor (Branco Quente, Branco Frio e Neutro) e 10 níveis de intensidade de brilho para vídeos no TikTok, YouTube, transmissões ao vivo, fotografia e maquiagem.",
+    "highlights": [
+      "Anel de luz LED 26cm (10 polegadas) com iluminação uniforme sem sombras",
+      "3 Modos de Cor (3200K - 6500K) e 10 níveis de regulação de brilho",
+      "Tripé metálico telescópico ajustável e estável",
+      "Suporte giratório 360° para telemóvel na vertical ou horizontal",
+      "Alimentação USB universal (compatível com power bank, carregador ou portátil)"
+    ],
+    "features": [
+      "Comando no cabo para ajuste fácil de cor e luminosidade",
+      "Comando remoto Bluetooth disparador de fotos e vídeos"
+    ],
+    "specifications": {
+      "Diâmetro do Aro": "26 cm (10\")",
+      "Potência": "12W - 15W",
+      "Temperaturas de Cor": "Quente, Fria e Mista",
+      "Conexão": "Cabo USB com controlador embutido"
+    },
+    "packageContent": [
+      "1 Anel de Luz Ring Light LED 26cm",
+      "1 Tripé de Chão Ajustável",
+      "1 Suporte Flexível de Telemóvel",
+      "1 Cabeça Ballhead Articulada 360°",
+      "1 Controle Remoto Bluetooth Disparador"
+    ],
+    "seoTitle": "Ring Light LED Profissional 26cm com Tripé e Comando | AQUI TEM ANGOLA",
+    "seoDescription": "Iluminação profissional para vídeos, lives, maquiagem e fotos com o Ring Light LED 26cm com tripé e controle Bluetooth na AQUI TEM Angola."
+  },
+  {
+    "id": "d8a8008b-8888-4008-a008-000000000045",
+    "supabaseId": "d8a8008b-8888-4008-a008-000000000045",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Mini Liquidificador Portátil Recarregável USB 6 Lâminas 400ml",
+    "slug": "mini-liquidificador-portatil-recarregavel-usb-6-laminas",
+    "slugAliases": [
+      "mini-liquidificador-portatil",
+      "garrafa-blender-portatil-usb"
+    ],
+    "sku": "AT-ELET-BLENDER-PORTABLE",
+    "brand": "Juice Master",
+    "category": "Eletrodomésticos",
+    "stock": 30,
+    "active": true,
+    "price": 19000,
+    "sale_price": 14800,
+    "old_price": 19000,
+    "rating": 4.8,
+    "reviews_count": 56,
+    "badge": "6 LÂMINAS AÇO",
+    "image_url": "/products/mini-liquidificador-portatil.webp",
+    "image": "/products/mini-liquidificador-portatil.webp",
+    "fallbackImage": "https://imgaz.staticbg.com/thumb/view/oaupload/banggood/images/ED/AC/b14d6f88-7abd-447a-8f7d-378b716a2b3c.jpg.webp",
+    "images": [
+      "/products/mini-liquidificador-portatil.webp",
+      "https://imgaz.staticbg.com/thumb/view/oaupload/banggood/images/ED/AC/b14d6f88-7abd-447a-8f7d-378b716a2b3c.jpg.webp"
+    ],
+    "description": "Mini liquidificador e garrafa portátil recarregável via USB com motor potente e 6 lâminas em aço inoxidável 304 serrilhado. Triture frutas, gelo fino, sementes e prepare sumos naturais, batidos proteicos, smoothies e papinhas de bebê em apenas 30 segundos, diretamente na garrafa pronta para beber.",
+    "highlights": [
+      "Potente sistema de 6 lâminas serrilhadas em aço inox 304",
+      "Copo em material alimentar livre de BPA resistente a quedas",
+      "Bateria interna recarregável por USB de longa autonomia (12-15 batidos)",
+      "Sistema de segurança: só funciona com o copo totalmente travado",
+      "Alça de transporte em silicone para levar à academia ou trabalho"
+    ],
+    "features": [
+      "Lavagem fácil com função de auto-limpeza com água e sabão",
+      "Tampa hermética anti-vazamento"
+    ],
+    "specifications": {
+      "Capacidade": "380ml a 400ml",
+      "Lâminas": "6 em Aço Inox 304",
+      "Velocidade do Motor": "22.000 RPM",
+      "Carregamento": "USB 5V"
+    },
+    "packageContent": [
+      "1 Mini Liquidificador Portátil USB",
+      "1 Cabo de Carregamento USB",
+      "1 Manual de Instruções"
+    ],
+    "seoTitle": "Mini Liquidificador Portátil Recarregável USB 6 Lâminas | AQUI TEM ANGOLA",
+    "seoDescription": "Prepare sumos naturais, batidos e shakes em qualquer lugar com o Mini Liquidificador Portátil USB de 6 lâminas na AQUI TEM Angola. Prático e recarregável."
+  },
+  {
+    "id": "d9a9009c-9999-4009-a009-000000000046",
+    "supabaseId": "d9a9009c-9999-4009-a009-000000000046",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Máquina de Café Expresso Elétrica Portátil LEBURRY Cápsulas e Pó",
+    "slug": "maquina-cafe-expresso-eletrica-portatil-leburry",
+    "slugAliases": [
+      "cafeteira-portatil-leburry",
+      "maquina-cafe-portatil-capsula"
+    ],
+    "sku": "AT-ELET-COFFEE-LEBURRY",
+    "brand": "LEBURRY",
+    "category": "Eletrodomésticos",
+    "stock": 14,
+    "active": true,
+    "price": 62000,
+    "sale_price": 49600,
+    "old_price": 62000,
+    "rating": 4.9,
+    "reviews_count": 34,
+    "badge": "CAFÉ EXPRESSO PRO",
+    "image_url": "/products/cafeteira-portatil-leburry.jpg",
+    "image": "/products/cafeteira-portatil-leburry.jpg",
+    "fallbackImage": "https://m.media-amazon.com/images/I/51gCCWShb6L.jpg",
+    "images": [
+      "/products/cafeteira-portatil-leburry.jpg",
+      "https://m.media-amazon.com/images/I/51gCCWShb6L.jpg"
+    ],
+    "description": "Máquina de café expresso portátil LEBURRY de alta pressão para desfrutar de um expresso com crema perfeita em qualquer lugar. Sistema versátil 2 em 1 compatível com cápsulas Nespresso originais e café moído tradicional. Bateria recarregável integrada e bomba elétrica de extração constante com acionamento num único toque.",
+    "highlights": [
+      "Bomba de pressão constante que extrai creme rico e aveludado",
+      "Sistema 2 em 1: adaptador para cápsulas tipo Nespresso e para pó moído",
+      "Operação elétrica com um toque (sem necessidade de bombear manualmente)",
+      "Compacta e leve: cabe no porta-copos do carro ou mochila",
+      "Copo térmico integrado para beber diretamente"
+    ],
+    "features": [
+      "Bateria recarregável via USB Tipo-C",
+      "Fácil desmontagem e limpeza rápida"
+    ],
+    "specifications": {
+      "Marca": "LEBURRY Portable Coffee",
+      "Pressão": "Extração de alta pressão até 15-18 Bar",
+      "Compatibilidade": "Cápsulas Nespresso + Café Moído",
+      "Bateria": "Recarregável USB-C"
+    },
+    "packageContent": [
+      "1 Máquina de Café Expresso Portátil LEBURRY",
+      "1 Adaptador para Cápsulas Nespresso",
+      "1 Adaptador e Filtro para Café Moído",
+      "1 Colher Medidora / Compactador",
+      "1 Cabo USB-C",
+      "1 Manual de Utilização"
+    ],
+    "seoTitle": "Máquina de Café Expresso Elétrica Portátil LEBURRY | AQUI TEM ANGOLA",
+    "seoDescription": "Tenha café expresso cremoso onde estiver com a Máquina de Café Portátil LEBURRY compatível com cápsulas Nespresso e café moído na AQUI TEM Angola."
+  },
+  {
+    "id": "e0a0010d-0000-4010-a010-000000000047",
+    "supabaseId": "e0a0010d-0000-4010-a010-000000000047",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Vaporizador e Ferro de Passar Roupa a Vapor Portátil Bivolt",
+    "slug": "vaporizador-ferro-passar-roupa-vapor-portatil-bivolt",
+    "slugAliases": [
+      "vaporizador-roupa-portatil",
+      "ferro-a-vapor-portatil"
+    ],
+    "sku": "AT-ELET-STEAMER-PORTABLE",
+    "brand": "SteamPro",
+    "category": "Eletrodomésticos",
+    "stock": 18,
+    "active": true,
+    "price": 29000,
+    "sale_price": 23200,
+    "old_price": 29000,
+    "rating": 4.8,
+    "reviews_count": 41,
+    "badge": "VAPOR POTENTE",
+    "image_url": "/products/vaporizador-roupas-portatil.jpg",
+    "image": "/products/vaporizador-roupas-portatil.jpg",
+    "fallbackImage": "https://product-hub-prd.madeiramadeira.com.br/909968332/images/9fbddc8b-86f8-4774-9c48-9106c28e149a6b76cad7b39c1134f416368ff6.jpg",
+    "images": [
+      "/products/vaporizador-roupas-portatil.jpg",
+      "https://product-hub-prd.madeiramadeira.com.br/909968332/images/9fbddc8b-86f8-4774-9c48-9106c28e149a6b76cad7b39c1134f416368ff6.jpg"
+    ],
+    "description": "Vaporizador e ferro de passar roupas vertical e horizontal portátil de alto rendimento. Aquece em apenas 20 segundos liberando vapor contínuo de alta temperatura que desamassa tecidos delicados e pesados, higieniza cortinas e sofás e elimina até 99.9% de germes e bactérias sem queimar as roupas.",
+    "highlights": [
+      "Aquecimento ultra rápido pronto a usar em 20 segundos",
+      "Uso vertical no cabide e horizontal na tábua sem pingar água",
+      "Chapa metálica antiaderente suave para tecidos finos e grossos",
+      "Elimina odores, ácaros e bactérias com vapor a alta temperatura",
+      "Design ergonómico compacto com cabo articulado para guardar na mala"
+    ],
+    "features": [
+      "Reservatório de água transparente de fácil reabastecimento",
+      "Sistema de desligamento automático de segurança contra superaquecimento"
+    ],
+    "specifications": {
+      "Potência": "1000W - 1200W",
+      "Tensão": "Bivolt 110V - 220V",
+      "Aquecimento": "20 a 30 segundos",
+      "Reservatório": "120ml"
+    },
+    "packageContent": [
+      "1 Vaporizador e Ferro de Passar Roupa Portátil",
+      "1 Escova para tecidos com pelos",
+      "1 Copo medidor de água",
+      "1 Manual de Instruções"
+    ],
+    "seoTitle": "Vaporizador e Ferro de Passar Roupa a Vapor Portátil | AQUI TEM ANGOLA",
+    "seoDescription": "Desamasse e higienize roupas rapidamente com o Vaporizador e Ferro a Vapor Portátil na AQUI TEM Angola. Perfeito para viagens e uso diário."
+  },
+  {
+    "id": "e1a1011e-1111-4011-a011-000000000048",
+    "supabaseId": "e1a1011e-1111-4011-a011-000000000048",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "SSD Externo Portátil ADATA 512GB USB 3.2 Ultra Rápido",
+    "slug": "ssd-externo-portatil-adata-512gb-usb-3-2",
+    "slugAliases": [
+      "ssd-externo-adata-512gb",
+      "ssd-portatil-adata"
+    ],
+    "sku": "AT-INF-SSD-ADATA-512G",
+    "brand": "ADATA",
+    "category": "Acessórios & Tech",
+    "stock": 15,
+    "active": true,
+    "price": 45000,
+    "sale_price": 37600,
+    "old_price": 45000,
+    "rating": 4.9,
+    "reviews_count": 53,
+    "badge": "USB 3.2 GEN 2",
+    "image_url": "/products/ssd-externo-adata.jpg",
+    "image": "/products/ssd-externo-adata.jpg",
+    "fallbackImage": "https://tse2.mm.bing.net/th/id/OIP.LqQGUTjj_uBUMdcaNbyrqAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+    "images": [
+      "/products/ssd-externo-adata.jpg",
+      "https://tse2.mm.bing.net/th/id/OIP.LqQGUTjj_uBUMdcaNbyrqAHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
+    ],
+    "description": "SSD externo portátil ADATA de 512GB com interface USB 3.2 Gen 2 para transferências de dados em alta velocidade até 550MB/s. Corpo em liga metálica ultrafino resistente a impactos, poeira e vibrações. Plug and Play compatível com Windows, Mac, Linux, Android, PS5 e Xbox.",
+    "highlights": [
+      "Velocidade de leitura e gravação até 550 MB/s (até 5x mais rápido que HDD comum)",
+      "Capacidade real de 512GB para backups, jogos, filmes e projetos pesados",
+      "Corpo metálico com acabamento escovado premium ultra resistente",
+      "Compatibilidade universal com USB-C e USB-A",
+      "Operação silenciosa com baixo aquecimento e consumo eficiente"
+    ],
+    "features": [
+      "Indicador LED de transferência de dados",
+      "Design compacto que cabe na palma da mão ou bolso"
+    ],
+    "specifications": {
+      "Capacidade": "512GB",
+      "Interface": "USB 3.2 Gen 2 Tipo-C",
+      "Velocidade Máxima": "Até 550 MB/s",
+      "Compatibilidade": "Windows, macOS, Android, Consolas"
+    },
+    "packageContent": [
+      "1 SSD Externo Portátil ADATA 512GB",
+      "1 Cabo USB-C para USB-A / USB-C",
+      "1 Guia Rápido de Instalação"
+    ],
+    "seoTitle": "SSD Externo Portátil ADATA 512GB USB 3.2 Ultra Rápido | AQUI TEM ANGOLA",
+    "seoDescription": "Transfira ficheiros com velocidade extrema com o SSD Externo Portátil ADATA 512GB USB 3.2 na AQUI TEM Angola. Compacto, metálico e resistente."
+  },
+  {
+    "id": "e2a2012f-2222-4012-a012-000000000049",
+    "supabaseId": "e2a2012f-2222-4012-a012-000000000049",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Fones de Ouvido Sem Fio TWS Bluetooth Mini Macaron com Estojo Redondo",
+    "slug": "fones-ouvido-sem-fio-tws-bluetooth-mini-macaron",
+    "slugAliases": [
+      "fones-tws-macaron",
+      "fones-tws-mini-redondo"
+    ],
+    "sku": "AT-TWS-MINI-MACARON",
+    "brand": "AudioStyle",
+    "category": "Áudio & Som",
+    "stock": 45,
+    "active": true,
+    "price": 16000,
+    "sale_price": 12400,
+    "old_price": 16000,
+    "rating": 4.7,
+    "reviews_count": 67,
+    "badge": "DESIGN MACARON",
+    "image_url": "/products/fones-tws-mini-macaron.jpg",
+    "image": "/products/fones-tws-mini-macaron.jpg",
+    "fallbackImage": "https://tse3.mm.bing.net/th/id/OIP.9SxEYdIpXfyLASKUSjoxagHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+    "images": [
+      "/products/fones-tws-mini-macaron.jpg",
+      "https://tse3.mm.bing.net/th/id/OIP.9SxEYdIpXfyLASKUSjoxagHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3"
+    ],
+    "description": "Fones de ouvido sem fio TWS Bluetooth Mini Macaron com estojo redondo fosco de toque suave. Oferecem reprodução estéreo de alta fidelidade com graves marcantes, microfone integrado para chamadas cristalinas e encaixe ergonômico ultraleve ideal para caminhadas, trabalho e estudos.",
+    "highlights": [
+      "Estojo de carregamento redondo estilo macaron com acabamento fosco premium",
+      "Bluetooth 5.3 com emparelhamento instantâneo e estável",
+      "Som estéreo Hi-Fi balanceado com redução de ruído passiva",
+      "Bateria duradoura com até 20 horas de reprodução total com o estojo",
+      "Touch inteligente nos fones para pausar música e atender chamadas"
+    ],
+    "features": [
+      "Resistência básica a suor e pingos de chuva",
+      "Encaixe anatómico super confortável"
+    ],
+    "specifications": {
+      "Versão Bluetooth": "V5.3",
+      "Autonomia dos Fones": "4 a 5 horas contínuas",
+      "Autonomia com Estojo": "Até 20 horas",
+      "Conector": "USB Tipo-C"
+    },
+    "packageContent": [
+      "1 Par de Fones Sem Fio Mini Macaron",
+      "1 Estojo de Carregamento Redondo Macaron",
+      "1 Cabo USB Tipo-C",
+      "1 Manual"
+    ],
+    "seoTitle": "Fones de Ouvido Sem Fio TWS Bluetooth Mini Macaron | AQUI TEM ANGOLA",
+    "seoDescription": "Fones sem fios TWS Bluetooth compactos com estojo redondo e som estéreo de alta fidelidade na AQUI TEM Angola. Design moderno e bateria duradoura."
+  },
+  {
+    "id": "e3a3013a-3333-4013-a013-000000000050",
+    "supabaseId": "e3a3013a-3333-4013-a013-000000000050",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Smartwatch Xiaomi Redmi Watch 3 Active Ecrã 1.83\" Chamadas Bluetooth",
+    "slug": "smartwatch-xiaomi-redmi-watch-3-active-1-83-bluetooth",
+    "slugAliases": [
+      "redmi-watch-3-active",
+      "smartwatch-xiaomi-redmi-watch-3"
+    ],
+    "sku": "AT-SW-XIAOMI-REDMI-W3A",
+    "brand": "Xiaomi",
+    "category": "Smartwatches",
+    "stock": 18,
+    "active": true,
+    "price": 50000,
+    "sale_price": 42400,
+    "old_price": 50000,
+    "rating": 4.9,
+    "reviews_count": 88,
+    "badge": "ORIGINAL XIAOMI",
+    "image_url": "/products/redmi-watch-3-active.png",
+    "image": "/products/redmi-watch-3-active.png",
+    "fallbackImage": "https://i02.appmifile.com/mi-com-product/fly-birds/redmi-watch-3-active/pc/d85881ab842f063a1ca4cef8e5fc7f1a.png",
+    "images": [
+      "/products/redmi-watch-3-active.png",
+      "https://i02.appmifile.com/mi-com-product/fly-birds/redmi-watch-3-active/pc/d85881ab842f063a1ca4cef8e5fc7f1a.png"
+    ],
+    "description": "Smartwatch Xiaomi Redmi Watch 3 Active com ecrã ultra amplo de 1.83 polegadas com cores vivas e alta nitidez. Realize e atenda chamadas telefónicas via Bluetooth diretamente pelo pulso, monitore a frequência cardíaca 24 horas, oxigenação sanguínea (SpO2) e sono. Conta com mais de 100 modos desportivos, resistência à água 5 ATM e bateria de até 12 dias.",
+    "highlights": [
+      "Ecrã Ultra Grande de 1.83\" com vidro curvo 2.5D de alta resistência",
+      "Atendimento e realização de chamadas Bluetooth com microfone e alto-falante",
+      "Mais de 100 modos de treino desportivo profissionais",
+      "Monitorização completa de saúde 24h: Ritmo Cardíaco, SpO2 e Sono",
+      "Resistência à água 5 ATM (até 50 metros de profundidade)",
+      "Autonomia impressionante de até 12 dias com uso normal"
+    ],
+    "features": [
+      "Mais de 200 mostradores de relógio personalizáveis",
+      "Controlo de reprodução de música e notificações do WhatsApp e SMS"
+    ],
+    "specifications": {
+      "Ecrã": "1.83 polegadas LCD 240x280 pixels",
+      "Bluetooth": "V5.3 BLE",
+      "Resistência à Água": "5 ATM",
+      "Bateria": "289 mAh (Até 12 dias)",
+      "Compatibilidade": "Android 6.0+ ou iOS 12.0+"
+    },
+    "packageContent": [
+      "1 Relógio Inteligente Xiaomi Redmi Watch 3 Active Original",
+      "1 Pulseira de Silicone",
+      "1 Cabo Magnético de Carregamento",
+      "1 Manual do Utilizador"
+    ],
+    "seoTitle": "Smartwatch Xiaomi Redmi Watch 3 Active Ecrã 1.83\" Bluetooth | AQUI TEM ANGOLA",
+    "seoDescription": "Compre o Smartwatch Xiaomi Redmi Watch 3 Active com ecrã ultra grande de 1.83\", chamadas Bluetooth e monitor de saúde 24h na AQUI TEM Angola."
+  },
+  {
+    "id": "e4a4014b-4444-4014-a014-000000000051",
+    "supabaseId": "e4a4014b-4444-4014-a014-000000000051",
+    "created_at": "2026-11-09T17:00:00.000Z",
+    "isNewAddition": true,
+    "whiteBg": true,
+    "name": "Headphone Sem Fio Bluetooth Basike Over-Ear com Isolamento Acústico",
+    "slug": "headphone-sem-fio-bluetooth-basike-over-ear-isolamento",
+    "slugAliases": [
+      "headphone-basike-bluetooth",
+      "fone-basike-over-ear"
+    ],
+    "sku": "AT-AUD-HEADPHONE-BASIKE",
+    "brand": "Basike",
+    "category": "Áudio & Som",
+    "stock": 22,
+    "active": true,
+    "price": 32000,
+    "sale_price": 25600,
+    "old_price": 32000,
+    "rating": 4.9,
+    "reviews_count": 45,
+    "badge": "GRAVES POTENTES",
+    "image_url": "/products/headphone-basike-bluetooth.jpg",
+    "image": "/products/headphone-basike-bluetooth.jpg",
+    "fallbackImage": "https://m.media-amazon.com/images/I/514n0rnHIgL._AC_.jpg",
+    "images": [
+      "/products/headphone-basike-bluetooth.jpg",
+      "https://m.media-amazon.com/images/I/514n0rnHIgL._AC_.jpg"
+    ],
+    "description": "Headphone Bluetooth Basike Over-Ear que envolve totalmente as orelhas proporcionando isolamento acústico passivo superior e conforto prolongado. Equipado com drivers de 40mm de alta fidelidade para graves potentes e médios nítidos. Possui microfone embutido para chamadas, entrada auxiliar P2 de 3.5mm e bateria para até 18 horas contínuas de música.",
+    "highlights": [
+      "Drivers dinâmicos de 40mm com graves potentes e som cristalino",
+      "Almofadas circumaurais macias em couro sintético com isolamento de ruído",
+      "Haste acolchoada ajustável e dobrável para fácil transporte",
+      "Até 18 horas de autonomia de reprodução contínua",
+      "Conexão dupla: Bluetooth 5.0 ou cabo auxiliar P2 de 3.5mm"
+    ],
+    "features": [
+      "Botões multimídia laterais para volume, faixas e chamadas",
+      "Microfone integrado com voz limpa e nítida"
+    ],
+    "specifications": {
+      "Drivers": "40mm de Neodímio",
+      "Versão Bluetooth": "V5.0",
+      "Autonomia": "Até 18 horas",
+      "Entradas": "Bluetooth, Cabo Auxiliar 3.5mm, Ranhura Micro SD"
+    },
+    "packageContent": [
+      "1 Headphone Bluetooth Basike Over-Ear",
+      "1 Cabo de Carregamento USB",
+      "1 Cabo de Áudio P2 3.5mm",
+      "1 Manual de Instruções"
+    ],
+    "seoTitle": "Headphone Sem Fio Bluetooth Basike Over-Ear com Isolamento | AQUI TEM ANGOLA",
+    "seoDescription": "Auscultadores Bluetooth Basike Over-Ear com graves profundos, almofadas macias de isolamento acústico e bateria de longa duração na AQUI TEM Angola."
   }
 ];
 

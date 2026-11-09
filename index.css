@@ -15,6 +15,7 @@
 
   /* Neutral Light Theme */
   --bg-main: #F4F6F9;
+  --bg-body: #F4F6F9;
   --bg-card: #FFFFFF;
   --bg-card-hover: #FAFCFF;
   --bg-glass: rgba(255, 255, 255, 0.85);
@@ -32,9 +33,9 @@
   --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.12);
   --shadow-orange: 0 8px 25px rgba(255, 101, 0, 0.35);
 
-  /* Typography: Plus Jakarta Sans (Headings) + Manrope (Body & UI) */
-  --font-heading: 'Plus Jakarta Sans', 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Manrope', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Typography: Plus Jakarta Sans (Headings) + Inter (Body & UI) */
+  --font-heading: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Transitions */
   --transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -51,6 +52,7 @@
 /* Dark Mode Overrides */
 [data-theme="dark"] {
   --bg-main: #0B0F19;
+  --bg-body: #0B0F19;
   --bg-card: #151C2C;
   --bg-card-hover: #1E273B;
   --bg-glass: rgba(21, 28, 44, 0.88);
@@ -75,13 +77,18 @@
 html,
 body {
   font-family: var(--font-body);
+  font-optical-sizing: auto;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.011em;
   background-color: var(--bg-main);
   color: var(--text-main);
-  line-height: 1.5;
+  line-height: 1.55;
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
 .app-container {
@@ -90,11 +97,18 @@ body {
   overflow-x: hidden;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading);
   color: var(--text-main);
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.024em;
+  line-height: 1.22;
+  text-wrap: balance;
 }
 
 button {
@@ -105,7 +119,9 @@ button {
   transition: var(--transition-fast);
 }
 
-input, select, textarea {
+input,
+select,
+textarea {
   font-family: var(--font-body);
   outline: none;
 }
@@ -211,9 +227,10 @@ a {
 }
 
 .logo-title {
+  font-family: var(--font-heading);
   font-size: 1.4rem;
-  font-weight: 900;
-  letter-spacing: -0.5px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
   color: var(--text-main);
   line-height: 1;
 }
@@ -322,14 +339,16 @@ a {
   transform: translateY(-1px);
 }
 
-.badge-count {
+.badge-count,
+.nav-link-badge {
   position: absolute;
   top: -4px;
   right: -4px;
   background: #FF6500;
   color: #FFFFFF;
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   width: 17px;
   height: 17px;
   border-radius: 50%;
@@ -338,6 +357,16 @@ a {
   justify-content: center;
   border: 1.5px solid var(--bg-card);
   box-shadow: var(--shadow-sm);
+}
+
+.nav-link-badge {
+  position: static;
+  margin-left: 4px;
+  padding: 0 5px;
+  width: auto;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 999px;
 }
 
 /* Hero Section */
@@ -641,12 +670,12 @@ a {
 }
 
 .testimonial-comment-text {
-  font-family: var(--font-heading);
+  font-family: var(--font-body);
   font-style: normal;
-  font-weight: 500;
-  font-size: 0.8rem;
+  font-weight: 400;
+  font-size: 0.82rem;
   color: var(--text-main);
-  line-height: 1.42;
+  line-height: 1.5;
   margin-bottom: 8px;
 }
 
@@ -724,7 +753,8 @@ a {
   padding: 0 24px;
 }
 
-.category-list {
+.category-list,
+.categories-chips {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -733,7 +763,8 @@ a {
   scrollbar-width: none;
 }
 
-.category-list::-webkit-scrollbar {
+.category-list::-webkit-scrollbar,
+.categories-chips::-webkit-scrollbar {
   display: none;
 }
 
@@ -908,7 +939,7 @@ a {
 }
 
 [data-theme="dark"] .product-img-wrapper {
-  background: transparent;
+  background: #FFFFFF;
 }
 
 .product-img-wrapper.white-bg,
@@ -1001,39 +1032,51 @@ a {
   font-size: 0.85rem;
   color: var(--text-light);
   text-decoration: line-through;
+  font-variant-numeric: tabular-nums;
 }
 
 .current-price {
-  font-size: 1.5rem;
+  font-family: var(--font-heading);
+  font-size: 1.45rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
   color: var(--text-main);
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
 .pix-price {
   font-size: 0.82rem;
   color: var(--accent-green);
-  font-weight: 700;
+  font-weight: 600;
   margin-top: 2px;
 }
 
 .product-actions {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.product-actions .btn-add-cart {
+  flex: 1;
+  min-width: 0;
 }
 
 .btn-add-cart {
   background: var(--primary-orange);
   color: #FFFFFF;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-radius: var(--radius-md);
+  font-family: var(--font-heading);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   transition: var(--transition-fast);
 }
 
@@ -1335,7 +1378,7 @@ a {
   height: 100%;
   display: flex;
   flex-direction: column;
-  box-shadow: -10px 0 30px rgba(0,0,0,0.2);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
   animation: slideLeft 0.3s ease-out;
 }
 
@@ -1442,12 +1485,14 @@ a {
 .cart-summary-total {
   display: flex;
   justify-content: space-between;
+  font-family: var(--font-heading);
   font-size: 1.3rem;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
   color: var(--text-main);
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 2px stroke var(--border-light);
+  border-top: 2px solid var(--border-light);
 }
 
 .btn-whatsapp-checkout {
@@ -1508,15 +1553,25 @@ a {
 .footer-logo-link {
   display: inline-flex;
   align-items: center;
-  background: transparent;
-  padding: 0;
+  background: #FFFFFF;
+  padding: 4px 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.25);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.footer-logo-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(243, 112, 33, 0.35);
 }
 
 .footer-logo-png {
-  height: 24px !important;
+  height: 32px !important;
   width: auto;
-  background: transparent !important;
+  object-fit: contain;
+  background: #FFFFFF !important;
   display: block;
+  filter: none !important;
 }
 
 .footer-slogan-text {
@@ -1604,18 +1659,35 @@ a {
 
 /* Keyframes */
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes scaleUp {
-  from { transform: scale(0.92); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    transform: scale(0.92);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 @keyframes slideLeft {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+
+  to {
+    transform: translateX(0);
+  }
 }
 
 /* Responsive */
@@ -1623,38 +1695,47 @@ a {
   .desktop-only-lang {
     display: none !important;
   }
+
   .hero-banner {
     grid-template-columns: 1fr 1fr;
     padding: 22px 20px;
     gap: 18px;
   }
+
   .hero-title {
     font-size: 1.65rem;
   }
+
   .hero-subtitle {
     font-size: 0.88rem;
     margin-bottom: 16px;
   }
+
   .hero-img-container {
     height: 240px;
   }
+
   .testimonials-home-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
   .about-main-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
+
   .modal-product-grid,
   .modal-grid {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
     padding: 18px;
   }
+
   .modal-product-img,
   .modal-img-col img {
     max-height: 260px;
   }
+
   .footer-top-row {
     justify-content: center;
     gap: 10px;
@@ -1669,28 +1750,35 @@ a {
     flex-wrap: nowrap;
     white-space: nowrap;
   }
+
   .top-bar-sep,
   .top-bar-sub {
     display: none !important;
   }
+
   .desktop-only-action {
     display: none !important;
   }
+
   .header-nav {
     padding: 8px 0;
   }
+
   .header-container {
     flex-wrap: nowrap;
     padding: 0 12px;
     gap: 8px;
   }
+
   .header-left {
     gap: 6px;
   }
+
   .header-logo-img {
     height: 32px !important;
     max-width: 92px;
   }
+
   .search-form {
     order: 0;
     flex: 1;
@@ -1699,32 +1787,39 @@ a {
     width: auto;
     flex-basis: auto;
   }
+
   .search-input-wrapper {
     height: 34px;
     padding: 4px 10px;
     border-width: 1.5px;
   }
+
   .search-input {
     padding: 2px 6px;
     font-size: 0.78rem;
   }
+
   .nav-actions {
     gap: 6px;
     margin-left: 0;
   }
+
   .nav-btn {
     height: 34px;
     padding: 6px 10px;
     font-size: 0.76rem;
     gap: 4px;
   }
+
   .nav-btn-icon {
     height: 34px;
     padding: 6px 8px;
   }
+
   .nav-btn-label {
     display: none;
   }
+
   .badge-count {
     width: 16px;
     height: 16px;
@@ -1732,10 +1827,12 @@ a {
     top: -3px;
     right: -3px;
   }
+
   .hero-section {
     margin: 12px auto 0;
     padding: 0 12px;
   }
+
   .hero-banner {
     grid-template-columns: 1fr;
     text-align: left;
@@ -1743,21 +1840,25 @@ a {
     border-radius: 16px;
     gap: 10px;
   }
+
   .hero-tag {
     font-size: 0.62rem;
     padding: 3px 9px;
     margin-bottom: 4px;
   }
+
   .hero-title {
     font-size: clamp(1.08rem, 4.4vw, 1.32rem);
     line-height: 1.18;
     margin-bottom: 4px;
   }
+
   .hero-subtitle {
     font-size: 0.76rem;
     line-height: 1.35;
     margin: 0 0 8px;
   }
+
   .hero-cta-group {
     flex-direction: row;
     flex-wrap: nowrap;
@@ -1765,26 +1866,31 @@ a {
     width: 100%;
     gap: 8px;
   }
+
   .hero-cta-btn {
     flex: 1;
     padding: 8px 10px;
     font-size: 0.76rem;
     white-space: nowrap;
   }
+
   .hero-img-container {
     height: 145px;
     min-height: 135px;
     max-height: 155px;
     border-radius: 12px;
   }
+
   .advantages-section {
     margin: 14px auto 0;
     padding: 0 12px;
   }
+
   .advantages-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
+
   .advantage-card {
     padding: 10px 12px;
     gap: 8px;
@@ -1793,278 +1899,347 @@ a {
     text-align: left;
     border-radius: 10px;
   }
+
   .advantage-icon-box {
     width: 32px;
     height: 32px;
     border-radius: 8px;
   }
+
   .advantage-icon-box svg {
     width: 16px;
     height: 16px;
   }
+
   .advantage-title {
     font-size: 0.76rem;
     line-height: 1.2;
   }
+
   .advantage-subtitle {
     font-size: 0.66rem;
     line-height: 1.25;
   }
+
   .categories-section {
     margin: 16px auto 0;
     padding: 0 12px;
   }
+
   .category-list {
     gap: 8px;
     padding-bottom: 6px;
   }
+
   .category-chip {
     padding: 7px 14px;
     font-size: 0.76rem;
   }
+
   .products-section {
     margin: 18px auto 24px;
     padding: 0 12px;
   }
+
   .section-header {
     margin-bottom: 14px;
     gap: 10px;
   }
+
   .section-title {
     font-size: 1.08rem;
   }
+
   .products-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }
+
   .product-card {
     border-radius: 12px;
   }
+
   .product-badge {
     top: 8px;
     left: 8px;
     font-size: 0.58rem;
     padding: 2px 7px;
   }
+
   .product-img-wrapper {
     height: 165px;
     padding: 0;
   }
+
   .product-img-wrapper.white-bg,
   [data-theme="dark"] .product-img-wrapper.white-bg {
     padding: 0;
   }
+
   .product-img-wrapper.orange-bg,
   [data-theme="dark"] .product-img-wrapper.orange-bg {
     padding: 0;
   }
+
   .product-body {
     padding: 10px;
   }
+
   .product-category {
     font-size: 0.64rem;
     margin-bottom: 3px;
   }
+
   .product-name {
     font-size: 0.78rem;
     line-height: 1.25;
     height: 2.5em;
     margin-bottom: 6px;
   }
+
   .rating-row {
     font-size: 0.68rem;
     margin-bottom: 8px;
     gap: 4px;
   }
+
   .product-price-box {
     margin-bottom: 10px;
   }
+
   .old-price {
     font-size: 0.68rem;
   }
+
   .current-price {
     font-size: 0.96rem;
   }
+
   .pix-price {
     font-size: 0.65rem;
   }
+
   .product-actions {
     gap: 6px;
   }
+
   .btn-add-cart {
     padding: 7px 8px;
     font-size: 0.74rem;
     border-radius: 8px;
     gap: 4px;
   }
+
   .btn-view-details {
     padding: 7px;
     border-radius: 8px;
   }
+
   .content-section-card {
     margin: 14px 10px;
     padding: 14px 10px;
     border-radius: 14px;
   }
+
   .section-card-header {
     margin-bottom: 12px;
     gap: 8px;
   }
+
   .section-card-title {
     font-size: 1.05rem;
   }
+
   .video-showcase-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
+
   .video-showcase-player {
     height: 120px;
   }
+
   .video-showcase-tag {
     top: 5px;
     left: 5px;
     font-size: 0.55rem;
     padding: 2px 6px;
   }
+
   .video-showcase-body {
     padding: 8px;
   }
+
   .video-showcase-cat {
     font-size: 0.6rem;
   }
+
   .video-showcase-title {
     font-size: 0.74rem;
   }
+
   .video-showcase-desc {
     font-size: 0.66rem;
   }
+
   .video-showcase-footer {
     padding: 6px 8px;
   }
+
   .trust-stats-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 6px;
     padding: 8px;
     margin-bottom: 12px;
   }
-  .trust-stats-grid > div > div:first-child {
+
+  .trust-stats-grid>div>div:first-child {
     font-size: 0.85rem !important;
   }
-  .trust-stats-grid > div > div:last-child {
+
+  .trust-stats-grid>div>div:last-child {
     font-size: 0.6rem !important;
     line-height: 1.15;
   }
+
   .testimonials-home-grid,
   .testimonials-modal-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
+
   .testimonial-card {
     padding: 9px;
     border-radius: 10px;
   }
+
   .testimonial-avatar {
     width: 28px;
     height: 28px;
   }
+
   .testimonial-author-name {
     font-size: 0.72rem;
   }
+
   .testimonial-verified-badge {
     font-size: 0.56rem;
     padding: 1px 4px;
   }
+
   .testimonial-meta {
     font-size: 0.6rem;
   }
+
   .testimonial-product-tag {
     font-size: 0.6rem;
     padding: 2px 5px;
     margin-bottom: 4px;
   }
+
   .testimonial-comment-text {
     font-size: 0.68rem;
     line-height: 1.32;
     margin-bottom: 6px;
   }
+
   .testimonial-footer-row {
     font-size: 0.58rem;
     padding-top: 4px;
   }
+
   .about-main-grid {
     grid-template-columns: 1fr;
     gap: 12px;
   }
+
   .about-features-grid,
   .about-gallery-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
+
   .modal-overlay {
     padding: 8px;
   }
+
   .modal-content {
     max-height: 92vh;
     border-radius: 14px;
   }
+
   .modal-product-grid,
   .modal-grid {
     grid-template-columns: 1fr;
     padding: 14px 12px 10px;
     gap: 12px;
   }
+
   .modal-product-extra {
     padding: 0 12px 14px;
     gap: 12px;
   }
+
   .modal-desc-card,
   .modal-social-proof-box {
     padding: 10px 12px;
     border-radius: 12px;
   }
+
   .modal-desc-text {
     font-size: 0.78rem;
   }
+
   .modal-spec-pill {
     font-size: 0.68rem;
     padding: 3px 8px;
   }
+
   .product-reviews-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
+
   .modal-product-img,
   .modal-img-col img {
     max-height: 200px;
   }
+
   .modal-actions-row {
     flex-direction: row;
     gap: 8px;
   }
+
   .modal-actions-row button {
     padding: 9px 10px;
     font-size: 0.78rem;
   }
+
   .footer {
     padding: 12px 0 10px;
   }
+
   .footer-container {
     padding: 0 14px;
     gap: 6px;
   }
+
   .footer-logo-png {
     height: 20px !important;
   }
+
   .footer-line-main,
   .footer-line-links {
     gap: 6px 12px;
     letter-spacing: 0.35px;
   }
+
   .footer-slogan-text,
   .footer-wa-inline,
   .footer-link-item {
     font-size: 0.72rem;
   }
+
   .footer-line-bottom {
     font-size: 0.66rem;
     letter-spacing: 0.4px;
@@ -2127,9 +2302,11 @@ a {
 }
 
 .page-hero-title {
-  font-size: 2.2rem;
-  font-weight: 900;
-  line-height: 1.2;
+  font-family: var(--font-heading);
+  font-size: clamp(1.75rem, 3.5vw, 2.35rem);
+  font-weight: 800;
+  letter-spacing: -0.028em;
+  line-height: 1.18;
   margin: 0 0 10px;
   color: #FFFFFF;
 }
@@ -2209,7 +2386,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 900;
+  font-family: var(--font-heading);
+  font-weight: 800;
   font-size: 0.85rem;
   box-shadow: 0 4px 10px rgba(255, 101, 0, 0.35);
 }
@@ -2248,4 +2426,3 @@ a {
   border-top: 1px solid var(--border-light);
   padding-top: 14px;
 }
-
