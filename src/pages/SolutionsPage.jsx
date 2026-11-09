@@ -146,7 +146,7 @@ export default function SolutionsPage() {
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: '#1E5C9E', fontWeight: 800, fontSize: '0.8rem', textTransform: 'uppercase', background: 'rgba(30, 92, 158, 0.08)', padding: '4px 12px', borderRadius: '16px', marginBottom: '8px' }}>
                 <FileText size={15} /> Facturação Oficial
               </div>
-              <h3 style={{ fontSize: '1.6rem', fontWeight: 900, margin: '0 0 14px' }}>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '0 0 14px' }}>
                 Processo Formal com Factura Pró-forma e Recibo com NIF
               </h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.94rem', lineHeight: 1.6, marginBottom: '14px' }}>

@@ -117,13 +117,13 @@ export function StoreProvider({ children }) {
           (dbProd.name && catProd.name && dbProd.name.toLowerCase().trim() === catProd.name.toLowerCase().trim())
       );
 
-      if (!alreadyInDb && !hasDbRows) {
+      if (!alreadyInDb && (!hasDbRows || catProd.isNewAddition)) {
         map.set(String(catProd.id || catProd.slug), catProd);
       }
     }
 
-    return Array.from(map.values());
-  }, []);
+      return Array.from(map.values());
+    }, []);
 
   // Products state (starts with all catalog items)
   const [products, setProducts] = useState(() => combineCatalogWithSupabase([]));
@@ -283,6 +283,7 @@ export function StoreProvider({ children }) {
   // Helper to check if a product was added or edited on October 28 or 29
   const isOct28Or29 = useCallback((p) => {
     if (!p) return false;
+    if (p.isNewAddition) return true;
 
     const createdStr = String(p.created_at || p.createdAt || '').trim();
     const updatedStr = String(p.updated_at || p.updatedAt || '').trim();
@@ -329,642 +330,641 @@ export function StoreProvider({ children }) {
 
   // Public active products only (active = true AND added/edited on Oct 28 or 29)
   const activeProducts = useMemo(() => {
-    return products.filter(p => p.active !== false && isOct28Or29(p));
-  }, [products, isOct28Or29]);
+  return products.filter(p => p.active !== false && isOct28Or29(p));
+}, [products, isOct28Or29]);
 
-  // Find product by slug (supports exact slug, createSlug(name), slugAliases, and prefix fallback like /produto/smart-tv-55)
-  const findProductBySlug = useCallback(
-    (slugParam) => {
-      if (!slugParam) return null;
-      const cleanSlug = decodeURIComponent(slugParam).toLowerCase().trim();
+// Find product by slug (supports exact slug, createSlug(name), slugAliases, and prefix fallback like /produto/smart-tv-55)
+const findProductBySlug = useCallback(
+  (slugParam) => {
+    if (!slugParam) return null;
+    const cleanSlug = decodeURIComponent(slugParam).toLowerCase().trim();
 
-      // 1. Exact match on slug or createSlug(name) or slugAliases
-      const exact = products.find(p => {
-        const pSlug = (p.slug || createSlug(p.name)).toLowerCase();
-        const nameSlug = createSlug(p.name).toLowerCase();
-        const aliases = Array.isArray(p.slugAliases)
-          ? p.slugAliases.map(a => a.toLowerCase())
-          : [];
-        return (
-          pSlug === cleanSlug ||
-          nameSlug === cleanSlug ||
-          aliases.includes(cleanSlug)
-        );
-      });
-      if (exact) return exact;
+    // 1. Exact match on slug or createSlug(name) or slugAliases
+    const exact = products.find(p => {
+      const pSlug = (p.slug || createSlug(p.name)).toLowerCase();
+      const nameSlug = createSlug(p.name).toLowerCase();
+      const aliases = Array.isArray(p.slugAliases)
+        ? p.slugAliases.map(a => a.toLowerCase())
+        : [];
+      return (
+        pSlug === cleanSlug ||
+        nameSlug === cleanSlug ||
+        aliases.includes(cleanSlug)
+      );
+    });
+    if (exact) return exact;
 
-      // 2. Prefix match (e.g. /produto/smart-tv-55 matches smart-tv-55-crystal-uhd-4k-hdr-nova-geracao)
-      const prefixMatch = products.find(p => {
-        const pSlug = (p.slug || createSlug(p.name)).toLowerCase();
-        const nameSlug = createSlug(p.name).toLowerCase();
-        return pSlug.startsWith(cleanSlug) || nameSlug.startsWith(cleanSlug);
-      });
-      return prefixMatch || null;
-    },
-    [products]
-  );
+    // 2. Prefix match (e.g. /produto/smart-tv-55 matches smart-tv-55-crystal-uhd-4k-hdr-nova-geracao)
+    const prefixMatch = products.find(p => {
+      const pSlug = (p.slug || createSlug(p.name)).toLowerCase();
+      const nameSlug = createSlug(p.name).toLowerCase();
+      return pSlug.startsWith(cleanSlug) || nameSlug.startsWith(cleanSlug);
+    });
+    return prefixMatch || null;
+  },
+  [products]
+);
 
-  // Cart actions
-  const addToCart = useCallback(
-    (product, quantity = 1) => {
-      if (!product) return false;
-      const normalized = normalizeProduct(product);
+// Cart actions
+const addToCart = useCallback(
+  (product, quantity = 1) => {
+    if (!product) return false;
+    const normalized = normalizeProduct(product);
 
-      if (Number(normalized.stock) <= 0) {
-        showToast(
-          lang === 'en'
-            ? 'Product out of stock. Contact us on WhatsApp for restock/import.'
-            : 'Produto esgotado no momento. Consulte reposição/importação no WhatsApp.'
-        );
-        return false;
-      }
-
-      const translatedProd = getTranslatedProduct(normalized, lang);
-      const effectivePrice = getEffectivePrice(normalized);
-
-      setCart(prevCart => {
-        const existing = prevCart.find(item => String(item.id) === String(normalized.id));
-        if (existing) {
-          const nextQty = existing.quantity + quantity;
-          return prevCart.map(item =>
-            String(item.id) === String(normalized.id)
-              ? { ...item, ...translatedProd, price: effectivePrice, quantity: nextQty }
-              : item
-          );
-        }
-        return [
-          ...prevCart,
-          {
-            ...translatedProd,
-            price: effectivePrice,
-            quantity: Math.max(1, quantity)
-          }
-        ];
-      });
-
+    if (Number(normalized.stock) <= 0) {
       showToast(
-        `"${translatedProd.name.slice(0, 26)}..." ${
-          lang === 'en' ? 'added to cart!' : 'adicionado ao carrinho!'
-        }`
+        lang === 'en'
+          ? 'Product out of stock. Contact us on WhatsApp for restock/import.'
+          : 'Produto esgotado no momento. Consulte reposição/importação no WhatsApp.'
       );
-      return true;
-    },
-    [lang, showToast]
-  );
+      return false;
+    }
 
-  const updateQuantity = useCallback((id, delta) => {
-    setCart(prevCart =>
-      prevCart
-        .map(item => {
-          if (String(item.id) === String(id)) {
-            const newQty = item.quantity + delta;
-            return newQty > 0 ? { ...item, quantity: newQty } : null;
-          }
-          return item;
-        })
-        .filter(Boolean)
+    const translatedProd = getTranslatedProduct(normalized, lang);
+    const effectivePrice = getEffectivePrice(normalized);
+
+    setCart(prevCart => {
+      const existing = prevCart.find(item => String(item.id) === String(normalized.id));
+      if (existing) {
+        const nextQty = existing.quantity + quantity;
+        return prevCart.map(item =>
+          String(item.id) === String(normalized.id)
+            ? { ...item, ...translatedProd, price: effectivePrice, quantity: nextQty }
+            : item
+        );
+      }
+      return [
+        ...prevCart,
+        {
+          ...translatedProd,
+          price: effectivePrice,
+          quantity: Math.max(1, quantity)
+        }
+      ];
+    });
+
+    showToast(
+      `"${translatedProd.name.slice(0, 26)}..." ${lang === 'en' ? 'added to cart!' : 'adicionado ao carrinho!'
+      }`
     );
-  }, []);
+    return true;
+  },
+  [lang, showToast]
+);
 
-  const removeFromCart = useCallback((id) => {
-    setCart(prevCart => prevCart.filter(item => String(item.id) !== String(id)));
-  }, []);
-
-  const clearCart = useCallback(() => {
-    setCart([]);
-  }, []);
-
-  // Wishlist actions
-  const toggleWishlist = useCallback(
-    (productOrId) => {
-      const targetId = typeof productOrId === 'object' ? productOrId?.id : productOrId;
-      if (targetId === undefined || targetId === null) return;
-
-      setWishlist(prev => {
-        const exists = prev.some(id => String(id) === String(targetId));
-        if (exists) {
-          showToast(lang === 'en' ? 'Removed from favorites' : 'Removido dos favoritos');
-          return prev.filter(id => String(id) !== String(targetId));
-        } else {
-          showToast(lang === 'en' ? 'Added to favorites ❤️' : 'Adicionado aos favoritos ❤️');
-          return [...prev, targetId];
+const updateQuantity = useCallback((id, delta) => {
+  setCart(prevCart =>
+    prevCart
+      .map(item => {
+        if (String(item.id) === String(id)) {
+          const newQty = item.quantity + delta;
+          return newQty > 0 ? { ...item, quantity: newQty } : null;
         }
-      });
-    },
-    [lang, showToast]
+        return item;
+      })
+      .filter(Boolean)
   );
+}, []);
 
-  const isInWishlist = useCallback(
-    (productId) => {
-      return wishlist.some(id => String(id) === String(productId));
-    },
-    [wishlist]
-  );
+const removeFromCart = useCallback((id) => {
+  setCart(prevCart => prevCart.filter(item => String(item.id) !== String(id)));
+}, []);
 
-  const wishlistProducts = useMemo(() => {
-    return products.filter(p => wishlist.some(id => String(id) === String(p.id)));
-  }, [products, wishlist]);
+const clearCart = useCallback(() => {
+  setCart([]);
+}, []);
 
-  // Coupon handler
-  const handleApplyCoupon = useCallback(
-    (e) => {
-      if (e && e.preventDefault) e.preventDefault();
-      if (coupon.trim().toUpperCase() === 'AQUITEM10') {
-        setAppliedDiscount(0.1);
-        showToast(
-          lang === 'en'
-            ? 'Coupon AQUITEM10 applied! 10% discount.'
-            : 'Cupom AQUITEM10 aplicado! 10% de desconto.'
-        );
+// Wishlist actions
+const toggleWishlist = useCallback(
+  (productOrId) => {
+    const targetId = typeof productOrId === 'object' ? productOrId?.id : productOrId;
+    if (targetId === undefined || targetId === null) return;
+
+    setWishlist(prev => {
+      const exists = prev.some(id => String(id) === String(targetId));
+      if (exists) {
+        showToast(lang === 'en' ? 'Removed from favorites' : 'Removido dos favoritos');
+        return prev.filter(id => String(id) !== String(targetId));
       } else {
-        showToast(
-          lang === 'en'
-            ? 'Invalid coupon. Try AQUITEM10'
-            : 'Cupom inválido. Tente AQUITEM10'
-        );
+        showToast(lang === 'en' ? 'Added to favorites ❤️' : 'Adicionado aos favoritos ❤️');
+        return [...prev, targetId];
       }
-    },
-    [coupon, lang, showToast]
-  );
+    });
+  },
+  [lang, showToast]
+);
 
-  // Cart totals
-  const subtotal = useMemo(() => {
-    return cart.reduce((sum, item) => {
-      const itemPrice = getEffectivePrice(item);
-      return sum + itemPrice * (Number(item.quantity) || 1);
-    }, 0);
-  }, [cart]);
+const isInWishlist = useCallback(
+  (productId) => {
+    return wishlist.some(id => String(id) === String(productId));
+  },
+  [wishlist]
+);
 
-  const discountAmount = subtotal * appliedDiscount;
-  const shippingFee = subtotal > 150000 || subtotal === 0 ? 0 : 3000;
-  const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
+const wishlistProducts = useMemo(() => {
+  return products.filter(p => wishlist.some(id => String(id) === String(p.id)));
+}, [products, wishlist]);
 
-  // Admin CRUD Operations (Strictly persisted in Supabase `public.products` and reloaded from Supabase)
-  const createProduct = useCallback(
-    async (productData) => {
-      await requireAdminSession();
-      const payload = toSupabaseProductPayload(productData);
-
-      let { data, error } = await supabase
-        .from('products')
-        .insert([payload])
-        .select('*');
-
-      if (error && (error.message?.includes('seo_title') || error.message?.includes('seo_description'))) {
-        console.warn('Coluna seo_title/seo_description pendente de migração no Supabase. Salvando sem campos SEO adicionais.');
-        const fallbackPayload = { ...payload };
-        delete fallbackPayload.seo_title;
-        delete fallbackPayload.seo_description;
-        const retryResult = await supabase
-          .from('products')
-          .insert([fallbackPayload])
-          .select('*');
-        if (!retryResult.error) {
-          data = retryResult.data;
-          error = null;
-        } else {
-          error = retryResult.error;
-        }
-      }
-
-      if (error) {
-        throw error;
-      }
-
-      const insertedRow = Array.isArray(data) && data[0] ? data[0] : payload;
-      if (payload.seo_title || payload.seo_description) {
-        if (insertedRow.id) saveLocalSeoMetadata(insertedRow.id, payload.seo_title, payload.seo_description);
-        if (insertedRow.slug) saveLocalSeoMetadata(insertedRow.slug, payload.seo_title, payload.seo_description);
-      }
-      const normalizedRow = normalizeProduct(insertedRow, products.length);
-
-      if (normalizedRow.slug) unmarkDeletedProductIdentifier(normalizedRow.slug);
-      if (normalizedRow.id) unmarkDeletedProductIdentifier(normalizedRow.id);
-      if (normalizedRow.name) unmarkDeletedProductIdentifier(normalizedRow.name);
-
-      // Immediately add to products state
-      setProducts(prev => {
-        const filtered = prev.filter(p => p.slug !== normalizedRow.slug && String(p.id) !== String(normalizedRow.id));
-        return [...filtered, normalizedRow];
-      });
-
-      await refreshProducts();
-      return normalizedRow;
-    },
-    [products.length, refreshProducts]
-  );
-
-  const updateProduct = useCallback(
-    async (id, updates) => {
-      await requireAdminSession();
-      const existing = products.find(
-        p =>
-          String(p.id) === String(id) ||
-          String(p.supabaseId) === String(id) ||
-          (p.slug && p.slug === String(id))
+// Coupon handler
+const handleApplyCoupon = useCallback(
+  (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (coupon.trim().toUpperCase() === 'AQUITEM10') {
+      setAppliedDiscount(0.1);
+      showToast(
+        lang === 'en'
+          ? 'Coupon AQUITEM10 applied! 10% discount.'
+          : 'Cupom AQUITEM10 aplicado! 10% de desconto.'
       );
-
-      const isUUID = (val) =>
-        typeof val === 'string' &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
-
-      let targetId = null;
-      if (isUUID(id)) {
-        targetId = String(id).trim();
-      } else if (existing?.supabaseId && isUUID(existing.supabaseId)) {
-        targetId = String(existing.supabaseId).trim();
-      } else if (existing?.id && isUUID(existing.id)) {
-        targetId = String(existing.id).trim();
-      }
-
-      if (!targetId && isSupabaseConfigured && supabase) {
-        const searchSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
-        if (searchSlug) {
-          const { data: slugRows } = await supabase
-            .from('products')
-            .select('id')
-            .eq('slug', searchSlug)
-            .limit(1);
-          if (Array.isArray(slugRows) && slugRows[0]?.id && isUUID(slugRows[0].id)) {
-            targetId = slugRows[0].id;
-          }
-        }
-      }
-
-      if (!targetId && existing?.name && isSupabaseConfigured && supabase) {
-        const { data: nameRows } = await supabase
-          .from('products')
-          .select('id')
-          .eq('name', existing.name)
-          .limit(1);
-        if (Array.isArray(nameRows) && nameRows[0]?.id && isUUID(nameRows[0].id)) {
-          targetId = nameRows[0].id;
-        }
-      }
-
-      if (!targetId) {
-        throw new Error('ID do produto não encontrado no Supabase para atualização.');
-      }
-
-      // Check if this is a targeted update (e.g. only toggling active, updating stock, or price)
-      const updateKeys = Object.keys(updates);
-      const isTargeted =
-        updateKeys.length <= 4 &&
-        !('description' in updates && 'specs' in updates && 'name' in updates);
-
-      let payloadToSave;
-      if (isTargeted) {
-        payloadToSave = {};
-        if ('active' in updates) payloadToSave.active = Boolean(updates.active);
-        if ('stock' in updates) {
-          const parsed = parseInt(updates.stock, 10);
-          payloadToSave.stock = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
-        }
-        if ('price' in updates) {
-          const p = Number(updates.price);
-          if (Number.isFinite(p) && p > 0) payloadToSave.price = p;
-        }
-        if ('sale_price' in updates) {
-          const sp = Number(updates.sale_price);
-          payloadToSave.sale_price = Number.isFinite(sp) && sp > 0 ? sp : null;
-        }
-        if ('old_price' in updates) {
-          const op = Number(updates.old_price);
-          payloadToSave.old_price = Number.isFinite(op) && op > 0 ? op : null;
-        }
-        if ('image_url' in updates) {
-          payloadToSave.image_url = String(updates.image_url || '').trim();
-        }
-      } else {
-        const merged = { ...(existing || {}), ...updates };
-        if ('sale_price' in updates) merged.salePrice = updates.sale_price;
-        if ('old_price' in updates) merged.oldPrice = updates.old_price;
-        if ('reviews_count' in updates) merged.reviewsCount = updates.reviews_count;
-        if ('image_url' in updates) merged.image = updates.image_url;
-        payloadToSave = toSupabaseProductPayload(merged);
-      }
-
-      // Execute UPDATE in Supabase public.products
-      let { data, error } = await supabase
-        .from('products')
-        .update(payloadToSave)
-        .eq('id', targetId)
-        .select('*');
-
-      if (error && (error.message?.includes('seo_title') || error.message?.includes('seo_description'))) {
-        console.warn('Coluna seo_title/seo_description pendente de migração no Supabase. Atualizando sem campos SEO adicionais.');
-        const fallbackPayload = { ...payloadToSave };
-        delete fallbackPayload.seo_title;
-        delete fallbackPayload.seo_description;
-        const retryResult = await supabase
-          .from('products')
-          .update(fallbackPayload)
-          .eq('id', targetId)
-          .select('*');
-        if (!retryResult.error) {
-          data = retryResult.data;
-          error = null;
-        } else {
-          error = retryResult.error;
-        }
-      }
-
-      if (error) {
-        throw error;
-      }
-
-      if (payloadToSave?.seo_title || payloadToSave?.seo_description) {
-        if (targetId) saveLocalSeoMetadata(targetId, payloadToSave.seo_title, payloadToSave.seo_description);
-        if (existing?.slug) saveLocalSeoMetadata(existing.slug, payloadToSave.seo_title, payloadToSave.seo_description);
-        if (id) saveLocalSeoMetadata(id, payloadToSave.seo_title, payloadToSave.seo_description);
-      }
-
-      // Update local React state immediately so UI updates with zero latency
-      setProducts(prev =>
-        prev.map(p => {
-          if (String(p.id) === String(id) || String(p.id) === String(targetId)) {
-            return normalizeProduct({ ...p, ...payloadToSave, id: targetId });
-          }
-          return p;
-        })
+    } else {
+      showToast(
+        lang === 'en'
+          ? 'Invalid coupon. Try AQUITEM10'
+          : 'Cupom inválido. Tente AQUITEM10'
       );
+    }
+  },
+  [coupon, lang, showToast]
+);
 
-      // Reload fresh data from Supabase
-      const reloaded = await refreshProducts();
-      const confirmed =
-        (Array.isArray(reloaded)
-          ? reloaded.find(p => String(p.id) === String(targetId))
-          : null) ||
-        (Array.isArray(data) && data[0]
-          ? normalizeProduct(data[0])
-          : normalizeProduct({ ...(existing || {}), ...payloadToSave, id: targetId }));
+// Cart totals
+const subtotal = useMemo(() => {
+  return cart.reduce((sum, item) => {
+    const itemPrice = getEffectivePrice(item);
+    return sum + itemPrice * (Number(item.quantity) || 1);
+  }, 0);
+}, [cart]);
 
-      return confirmed;
-    },
-    [products, refreshProducts]
-  );
+const discountAmount = subtotal * appliedDiscount;
+const shippingFee = subtotal > 150000 || subtotal === 0 ? 0 : 3000;
+const finalTotal = Math.max(0, subtotal - discountAmount + shippingFee);
 
-  const deleteProduct = useCallback(
-    async (id) => {
-      await requireAdminSession();
-
-      const existing = products.find(
-        p =>
-          String(p.id) === String(id) ||
-          String(p.supabaseId) === String(id) ||
-          (p.slug && p.slug === String(id)) ||
-          (p.name && p.name === String(id))
-      );
-
-      const isUUID = (val) =>
-        typeof val === 'string' &&
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
-
-      let targetId = null;
-      if (isUUID(id)) {
-        targetId = String(id).trim();
-      } else if (existing?.supabaseId && isUUID(existing.supabaseId)) {
-        targetId = String(existing.supabaseId).trim();
-      } else if (existing?.id && isUUID(existing.id)) {
-        targetId = String(existing.id).trim();
-      }
-
-      if (!targetId && isSupabaseConfigured && supabase) {
-        const searchSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
-        if (searchSlug) {
-          const { data: slugRows } = await supabase
-            .from('products')
-            .select('id')
-            .eq('slug', searchSlug)
-            .limit(1);
-          if (Array.isArray(slugRows) && slugRows[0]?.id && isUUID(slugRows[0].id)) {
-            targetId = slugRows[0].id;
-          }
-        }
-      }
-
-      if (!targetId && existing?.name && isSupabaseConfigured && supabase) {
-        const { data: nameRows } = await supabase
-          .from('products')
-          .select('id')
-          .eq('name', existing.name)
-          .limit(1);
-        if (Array.isArray(nameRows) && nameRows[0]?.id && isUUID(nameRows[0].id)) {
-          targetId = nameRows[0].id;
-        }
-      }
-
-      const targetSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
-      const targetName = existing?.name || '';
-
-      // 1. Marca imediatamente como excluído nos identificadores persistentes
-      saveDeletedProductIdentifier(id);
-      if (targetId) saveDeletedProductIdentifier(targetId);
-      if (existing?.id) saveDeletedProductIdentifier(existing.id);
-      if (targetSlug) saveDeletedProductIdentifier(targetSlug);
-      if (targetName) saveDeletedProductIdentifier(targetName);
-
-      // 2. Remove imediatamente do estado do React
-      setProducts(prev =>
-        prev.filter(
-          p =>
-            String(p.id) !== String(id) &&
-            (!targetId || String(p.id) !== String(targetId)) &&
-            (!targetSlug || p.slug !== targetSlug) &&
-            (!targetName || p.name.toLowerCase().trim() !== targetName.toLowerCase().trim())
-        )
-      );
-
-      // Limpa carrinho e favoritos
-      setCart(prev =>
-        prev.filter(
-          item =>
-            String(item.id) !== String(id) &&
-            (!targetId || String(item.id) !== String(targetId))
-        )
-      );
-      setWishlist(prev =>
-        prev.filter(
-          wId =>
-            String(wId) !== String(id) &&
-            (!targetId || String(wId) !== String(targetId))
-        )
-      );
-
-      // 3. Executa a exclusão definitiva no Supabase (Soft Delete + Hard Delete)
-      if (isSupabaseConfigured && supabase) {
-        try {
-          if (targetId) {
-            await supabase.from('products').update({ active: false }).eq('id', targetId);
-            await supabase.from('products').delete().eq('id', targetId);
-          }
-          if (targetSlug) {
-            await supabase.from('products').update({ active: false }).eq('slug', targetSlug);
-            await supabase.from('products').delete().eq('slug', targetSlug);
-          }
-          if (targetName) {
-            await supabase.from('products').update({ active: false }).eq('name', targetName);
-            await supabase.from('products').delete().eq('name', targetName);
-          }
-        } catch (dbErr) {
-          console.error('Falha ao deletar produto no Supabase:', dbErr);
-        }
-      }
-
-      await refreshProducts();
-    },
-    [products, refreshProducts]
-  );
-
-  const duplicateProduct = useCallback(
-    async (product) => {
-      await requireAdminSession();
-      const baseName = `${product.name} (Cópia)`;
-      const newSlug = `${product.slug || createSlug(product.name)}-copia-${Date.now().toString().slice(-4)}`;
-      const newSku = `${product.sku || 'AT'}-COPY-${Date.now().toString().slice(-3)}`;
-
-      return createProduct({
-        ...product,
-        id: undefined,
-        name: baseName,
-        slug: newSlug,
-        sku: newSku,
-        active: false
-      });
-    },
-    [createProduct]
-  );
-
-  const toggleProductActive = useCallback(
-    async (product) => {
-      await requireAdminSession();
-      return updateProduct(product.id, { active: !product.active });
-    },
-    [updateProduct]
-  );
-
-  const syncCatalogToSupabase = useCallback(async () => {
+// Admin CRUD Operations (Strictly persisted in Supabase `public.products` and reloaded from Supabase)
+const createProduct = useCallback(
+  async (productData) => {
     await requireAdminSession();
+    const payload = toSupabaseProductPayload(productData);
 
-    const { data: existingRows, error: fetchErr } = await supabase
+    let { data, error } = await supabase
       .from('products')
+      .insert([payload])
       .select('*');
 
-    if (fetchErr) throw fetchErr;
-
-    const existingList = Array.isArray(existingRows) ? existingRows : [];
-    const results = [];
-
-    // Sync current products without overwriting existing database stock/prices with static defaults
-    for (const p of products) {
-      // Check if product was explicitly deleted locally
-      const deleted = getDeletedProductIdentifiers();
-      if (
-        deleted.has(String(p.id).toLowerCase()) ||
-        deleted.has(String(p.slug).toLowerCase()) ||
-        deleted.has(String(p.name).toLowerCase()) ||
-        (p.supabaseId && deleted.has(String(p.supabaseId).toLowerCase()))
-      ) {
-        continue;
-      }
-
-      const payload = toSupabaseProductPayload(p);
-      const pAliases = Array.isArray(p.slugAliases) ? p.slugAliases : [];
-      const match = existingList.find(
-        row =>
-          String(row.id) === String(p.id) ||
-          (row.slug && (row.slug === payload.slug || pAliases.includes(row.slug))) ||
-          (row.name && createSlug(row.name) === payload.slug)
-      );
-
-      if (match && match.id) {
-        // PRESERVE critical fields from database that user might have changed in Admin
-        const patch = { ...payload };
-        
-        // If it's already in DB, don't force 'active: true' from static code if it was manually inactivated
-        if (match.active === false && p.active === true) {
-          patch.active = false;
-        }
-        
-        // Don't overwrite stock if DB has different value (unless we want full override)
-        // Here we keep DB value as it's more likely to be real-time
-        if (match.stock !== undefined) {
-          patch.stock = match.stock;
-        }
-
-        const { data: updated, error: updErr } = await supabase
-          .from('products')
-          .update(patch)
-          .eq('id', match.id)
-          .select('*');
-        if (updErr) throw updErr;
-        if (Array.isArray(updated) && updated[0]) results.push(updated[0]);
+    if (error && (error.message?.includes('seo_title') || error.message?.includes('seo_description'))) {
+      console.warn('Coluna seo_title/seo_description pendente de migração no Supabase. Salvando sem campos SEO adicionais.');
+      const fallbackPayload = { ...payload };
+      delete fallbackPayload.seo_title;
+      delete fallbackPayload.seo_description;
+      const retryResult = await supabase
+        .from('products')
+        .insert([fallbackPayload])
+        .select('*');
+      if (!retryResult.error) {
+        data = retryResult.data;
+        error = null;
       } else {
-        const { data: inserted, error: insErr } = await supabase
+        error = retryResult.error;
+      }
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    const insertedRow = Array.isArray(data) && data[0] ? data[0] : payload;
+    if (payload.seo_title || payload.seo_description) {
+      if (insertedRow.id) saveLocalSeoMetadata(insertedRow.id, payload.seo_title, payload.seo_description);
+      if (insertedRow.slug) saveLocalSeoMetadata(insertedRow.slug, payload.seo_title, payload.seo_description);
+    }
+    const normalizedRow = normalizeProduct(insertedRow, products.length);
+
+    if (normalizedRow.slug) unmarkDeletedProductIdentifier(normalizedRow.slug);
+    if (normalizedRow.id) unmarkDeletedProductIdentifier(normalizedRow.id);
+    if (normalizedRow.name) unmarkDeletedProductIdentifier(normalizedRow.name);
+
+    // Immediately add to products state
+    setProducts(prev => {
+      const filtered = prev.filter(p => p.slug !== normalizedRow.slug && String(p.id) !== String(normalizedRow.id));
+      return [...filtered, normalizedRow];
+    });
+
+    await refreshProducts();
+    return normalizedRow;
+  },
+  [products.length, refreshProducts]
+);
+
+const updateProduct = useCallback(
+  async (id, updates) => {
+    await requireAdminSession();
+    const existing = products.find(
+      p =>
+        String(p.id) === String(id) ||
+        String(p.supabaseId) === String(id) ||
+        (p.slug && p.slug === String(id))
+    );
+
+    const isUUID = (val) =>
+      typeof val === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
+
+    let targetId = null;
+    if (isUUID(id)) {
+      targetId = String(id).trim();
+    } else if (existing?.supabaseId && isUUID(existing.supabaseId)) {
+      targetId = String(existing.supabaseId).trim();
+    } else if (existing?.id && isUUID(existing.id)) {
+      targetId = String(existing.id).trim();
+    }
+
+    if (!targetId && isSupabaseConfigured && supabase) {
+      const searchSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
+      if (searchSlug) {
+        const { data: slugRows } = await supabase
           .from('products')
-          .insert([payload])
-          .select('*');
-        if (insErr) throw insErr;
-        if (Array.isArray(inserted) && inserted[0]) results.push(inserted[0]);
+          .select('id')
+          .eq('slug', searchSlug)
+          .limit(1);
+        if (Array.isArray(slugRows) && slugRows[0]?.id && isUUID(slugRows[0].id)) {
+          targetId = slugRows[0].id;
+        }
+      }
+    }
+
+    if (!targetId && existing?.name && isSupabaseConfigured && supabase) {
+      const { data: nameRows } = await supabase
+        .from('products')
+        .select('id')
+        .eq('name', existing.name)
+        .limit(1);
+      if (Array.isArray(nameRows) && nameRows[0]?.id && isUUID(nameRows[0].id)) {
+        targetId = nameRows[0].id;
+      }
+    }
+
+    if (!targetId) {
+      throw new Error('ID do produto não encontrado no Supabase para atualização.');
+    }
+
+    // Check if this is a targeted update (e.g. only toggling active, updating stock, or price)
+    const updateKeys = Object.keys(updates);
+    const isTargeted =
+      updateKeys.length <= 4 &&
+      !('description' in updates && 'specs' in updates && 'name' in updates);
+
+    let payloadToSave;
+    if (isTargeted) {
+      payloadToSave = {};
+      if ('active' in updates) payloadToSave.active = Boolean(updates.active);
+      if ('stock' in updates) {
+        const parsed = parseInt(updates.stock, 10);
+        payloadToSave.stock = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+      }
+      if ('price' in updates) {
+        const p = Number(updates.price);
+        if (Number.isFinite(p) && p > 0) payloadToSave.price = p;
+      }
+      if ('sale_price' in updates) {
+        const sp = Number(updates.sale_price);
+        payloadToSave.sale_price = Number.isFinite(sp) && sp > 0 ? sp : null;
+      }
+      if ('old_price' in updates) {
+        const op = Number(updates.old_price);
+        payloadToSave.old_price = Number.isFinite(op) && op > 0 ? op : null;
+      }
+      if ('image_url' in updates) {
+        payloadToSave.image_url = String(updates.image_url || '').trim();
+      }
+    } else {
+      const merged = { ...(existing || {}), ...updates };
+      if ('sale_price' in updates) merged.salePrice = updates.sale_price;
+      if ('old_price' in updates) merged.oldPrice = updates.old_price;
+      if ('reviews_count' in updates) merged.reviewsCount = updates.reviews_count;
+      if ('image_url' in updates) merged.image = updates.image_url;
+      payloadToSave = toSupabaseProductPayload(merged);
+    }
+
+    // Execute UPDATE in Supabase public.products
+    let { data, error } = await supabase
+      .from('products')
+      .update(payloadToSave)
+      .eq('id', targetId)
+      .select('*');
+
+    if (error && (error.message?.includes('seo_title') || error.message?.includes('seo_description'))) {
+      console.warn('Coluna seo_title/seo_description pendente de migração no Supabase. Atualizando sem campos SEO adicionais.');
+      const fallbackPayload = { ...payloadToSave };
+      delete fallbackPayload.seo_title;
+      delete fallbackPayload.seo_description;
+      const retryResult = await supabase
+        .from('products')
+        .update(fallbackPayload)
+        .eq('id', targetId)
+        .select('*');
+      if (!retryResult.error) {
+        data = retryResult.data;
+        error = null;
+      } else {
+        error = retryResult.error;
+      }
+    }
+
+    if (error) {
+      throw error;
+    }
+
+    if (payloadToSave?.seo_title || payloadToSave?.seo_description) {
+      if (targetId) saveLocalSeoMetadata(targetId, payloadToSave.seo_title, payloadToSave.seo_description);
+      if (existing?.slug) saveLocalSeoMetadata(existing.slug, payloadToSave.seo_title, payloadToSave.seo_description);
+      if (id) saveLocalSeoMetadata(id, payloadToSave.seo_title, payloadToSave.seo_description);
+    }
+
+    // Update local React state immediately so UI updates with zero latency
+    setProducts(prev =>
+      prev.map(p => {
+        if (String(p.id) === String(id) || String(p.id) === String(targetId)) {
+          return normalizeProduct({ ...p, ...payloadToSave, id: targetId });
+        }
+        return p;
+      })
+    );
+
+    // Reload fresh data from Supabase
+    const reloaded = await refreshProducts();
+    const confirmed =
+      (Array.isArray(reloaded)
+        ? reloaded.find(p => String(p.id) === String(targetId))
+        : null) ||
+      (Array.isArray(data) && data[0]
+        ? normalizeProduct(data[0])
+        : normalizeProduct({ ...(existing || {}), ...payloadToSave, id: targetId }));
+
+    return confirmed;
+  },
+  [products, refreshProducts]
+);
+
+const deleteProduct = useCallback(
+  async (id) => {
+    await requireAdminSession();
+
+    const existing = products.find(
+      p =>
+        String(p.id) === String(id) ||
+        String(p.supabaseId) === String(id) ||
+        (p.slug && p.slug === String(id)) ||
+        (p.name && p.name === String(id))
+    );
+
+    const isUUID = (val) =>
+      typeof val === 'string' &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val.trim());
+
+    let targetId = null;
+    if (isUUID(id)) {
+      targetId = String(id).trim();
+    } else if (existing?.supabaseId && isUUID(existing.supabaseId)) {
+      targetId = String(existing.supabaseId).trim();
+    } else if (existing?.id && isUUID(existing.id)) {
+      targetId = String(existing.id).trim();
+    }
+
+    if (!targetId && isSupabaseConfigured && supabase) {
+      const searchSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
+      if (searchSlug) {
+        const { data: slugRows } = await supabase
+          .from('products')
+          .select('id')
+          .eq('slug', searchSlug)
+          .limit(1);
+        if (Array.isArray(slugRows) && slugRows[0]?.id && isUUID(slugRows[0].id)) {
+          targetId = slugRows[0].id;
+        }
+      }
+    }
+
+    if (!targetId && existing?.name && isSupabaseConfigured && supabase) {
+      const { data: nameRows } = await supabase
+        .from('products')
+        .select('id')
+        .eq('name', existing.name)
+        .limit(1);
+      if (Array.isArray(nameRows) && nameRows[0]?.id && isUUID(nameRows[0].id)) {
+        targetId = nameRows[0].id;
+      }
+    }
+
+    const targetSlug = existing?.slug || (typeof id === 'string' && !id.startsWith('local-') ? id : '');
+    const targetName = existing?.name || '';
+
+    // 1. Marca imediatamente como excluído nos identificadores persistentes
+    saveDeletedProductIdentifier(id);
+    if (targetId) saveDeletedProductIdentifier(targetId);
+    if (existing?.id) saveDeletedProductIdentifier(existing.id);
+    if (targetSlug) saveDeletedProductIdentifier(targetSlug);
+    if (targetName) saveDeletedProductIdentifier(targetName);
+
+    // 2. Remove imediatamente do estado do React
+    setProducts(prev =>
+      prev.filter(
+        p =>
+          String(p.id) !== String(id) &&
+          (!targetId || String(p.id) !== String(targetId)) &&
+          (!targetSlug || p.slug !== targetSlug) &&
+          (!targetName || p.name.toLowerCase().trim() !== targetName.toLowerCase().trim())
+      )
+    );
+
+    // Limpa carrinho e favoritos
+    setCart(prev =>
+      prev.filter(
+        item =>
+          String(item.id) !== String(id) &&
+          (!targetId || String(item.id) !== String(targetId))
+      )
+    );
+    setWishlist(prev =>
+      prev.filter(
+        wId =>
+          String(wId) !== String(id) &&
+          (!targetId || String(wId) !== String(targetId))
+      )
+    );
+
+    // 3. Executa a exclusão definitiva no Supabase (Soft Delete + Hard Delete)
+    if (isSupabaseConfigured && supabase) {
+      try {
+        if (targetId) {
+          await supabase.from('products').update({ active: false }).eq('id', targetId);
+          await supabase.from('products').delete().eq('id', targetId);
+        }
+        if (targetSlug) {
+          await supabase.from('products').update({ active: false }).eq('slug', targetSlug);
+          await supabase.from('products').delete().eq('slug', targetSlug);
+        }
+        if (targetName) {
+          await supabase.from('products').update({ active: false }).eq('name', targetName);
+          await supabase.from('products').delete().eq('name', targetName);
+        }
+      } catch (dbErr) {
+        console.error('Falha ao deletar produto no Supabase:', dbErr);
       }
     }
 
     await refreshProducts();
-    return results;
-  }, [products, refreshProducts]);
+  },
+  [products, refreshProducts]
+);
 
-  return (
-    <StoreContext.Provider
-      value={{
-        products,
-        activeProducts,
-        loadingProducts,
-        supabaseConnected,
-        refreshProducts,
-        findProductBySlug,
-        cart,
-        addToCart,
-        updateQuantity,
-        removeFromCart,
-        clearCart,
-        isCartOpen,
-        setIsCartOpen,
-        isWishlistOpen,
-        setIsWishlistOpen,
-        isCheckoutOpen,
-        setIsCheckoutOpen,
-        directCheckoutItem,
-        setDirectCheckoutItem,
-        wishlist,
-        wishlistProducts,
-        toggleWishlist,
-        isInWishlist,
-        coupon,
-        setCoupon,
-        appliedDiscount,
-        handleApplyCoupon,
-        subtotal,
-        discountAmount,
-        shippingFee,
-        finalTotal,
-        theme,
-        toggleTheme,
-        toastMessage,
-        showToast,
-        createProduct,
-        updateProduct,
-        deleteProduct,
-        duplicateProduct,
-        toggleProductActive,
-        syncCatalogToSupabase,
-        getEffectivePrice,
-        getPreviousPrice,
-        formatPriceKz
-      }}
-    >
-      {children}
-    </StoreContext.Provider>
-  );
+const duplicateProduct = useCallback(
+  async (product) => {
+    await requireAdminSession();
+    const baseName = `${product.name} (Cópia)`;
+    const newSlug = `${product.slug || createSlug(product.name)}-copia-${Date.now().toString().slice(-4)}`;
+    const newSku = `${product.sku || 'AT'}-COPY-${Date.now().toString().slice(-3)}`;
+
+    return createProduct({
+      ...product,
+      id: undefined,
+      name: baseName,
+      slug: newSlug,
+      sku: newSku,
+      active: false
+    });
+  },
+  [createProduct]
+);
+
+const toggleProductActive = useCallback(
+  async (product) => {
+    await requireAdminSession();
+    return updateProduct(product.id, { active: !product.active });
+  },
+  [updateProduct]
+);
+
+const syncCatalogToSupabase = useCallback(async () => {
+  await requireAdminSession();
+
+  const { data: existingRows, error: fetchErr } = await supabase
+    .from('products')
+    .select('*');
+
+  if (fetchErr) throw fetchErr;
+
+  const existingList = Array.isArray(existingRows) ? existingRows : [];
+  const results = [];
+
+  // Sync current products without overwriting existing database stock/prices with static defaults
+  for (const p of products) {
+    // Check if product was explicitly deleted locally
+    const deleted = getDeletedProductIdentifiers();
+    if (
+      deleted.has(String(p.id).toLowerCase()) ||
+      deleted.has(String(p.slug).toLowerCase()) ||
+      deleted.has(String(p.name).toLowerCase()) ||
+      (p.supabaseId && deleted.has(String(p.supabaseId).toLowerCase()))
+    ) {
+      continue;
+    }
+
+    const payload = toSupabaseProductPayload(p);
+    const pAliases = Array.isArray(p.slugAliases) ? p.slugAliases : [];
+    const match = existingList.find(
+      row =>
+        String(row.id) === String(p.id) ||
+        (row.slug && (row.slug === payload.slug || pAliases.includes(row.slug))) ||
+        (row.name && createSlug(row.name) === payload.slug)
+    );
+
+    if (match && match.id) {
+      // PRESERVE critical fields from database that user might have changed in Admin
+      const patch = { ...payload };
+
+      // If it's already in DB, don't force 'active: true' from static code if it was manually inactivated
+      if (match.active === false && p.active === true) {
+        patch.active = false;
+      }
+
+      // Don't overwrite stock if DB has different value (unless we want full override)
+      // Here we keep DB value as it's more likely to be real-time
+      if (match.stock !== undefined) {
+        patch.stock = match.stock;
+      }
+
+      const { data: updated, error: updErr } = await supabase
+        .from('products')
+        .update(patch)
+        .eq('id', match.id)
+        .select('*');
+      if (updErr) throw updErr;
+      if (Array.isArray(updated) && updated[0]) results.push(updated[0]);
+    } else {
+      const { data: inserted, error: insErr } = await supabase
+        .from('products')
+        .insert([payload])
+        .select('*');
+      if (insErr) throw insErr;
+      if (Array.isArray(inserted) && inserted[0]) results.push(inserted[0]);
+    }
+  }
+
+  await refreshProducts();
+  return results;
+}, [products, refreshProducts]);
+
+return (
+  <StoreContext.Provider
+    value={{
+      products,
+      activeProducts,
+      loadingProducts,
+      supabaseConnected,
+      refreshProducts,
+      findProductBySlug,
+      cart,
+      addToCart,
+      updateQuantity,
+      removeFromCart,
+      clearCart,
+      isCartOpen,
+      setIsCartOpen,
+      isWishlistOpen,
+      setIsWishlistOpen,
+      isCheckoutOpen,
+      setIsCheckoutOpen,
+      directCheckoutItem,
+      setDirectCheckoutItem,
+      wishlist,
+      wishlistProducts,
+      toggleWishlist,
+      isInWishlist,
+      coupon,
+      setCoupon,
+      appliedDiscount,
+      handleApplyCoupon,
+      subtotal,
+      discountAmount,
+      shippingFee,
+      finalTotal,
+      theme,
+      toggleTheme,
+      toastMessage,
+      showToast,
+      createProduct,
+      updateProduct,
+      deleteProduct,
+      duplicateProduct,
+      toggleProductActive,
+      syncCatalogToSupabase,
+      getEffectivePrice,
+      getPreviousPrice,
+      formatPriceKz
+    }}
+  >
+    {children}
+  </StoreContext.Provider>
+);
 }
 
 export function useStore() {

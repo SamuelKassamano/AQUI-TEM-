@@ -177,7 +177,7 @@ export default function ContactPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '36px' }}>
             {/* Interactive Form */}
             <div>
-              <h3 style={{ margin: '0 0 8px', fontSize: '1.4rem', fontWeight: 900 }}>
+              <h3 style={{ margin: '0 0 8px', fontSize: '1.4rem', fontWeight: 800 }}>
                 Envie-nos uma Mensagem
               </h3>
               <p style={{ margin: '0 0 20px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>

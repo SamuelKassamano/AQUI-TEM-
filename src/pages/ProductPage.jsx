@@ -12,6 +12,7 @@ import {
   ShoppingBag,
   Heart,
   Plus,
+  Minus,
   ArrowLeft,
   Package,
   Sun,
@@ -372,7 +373,34 @@ export default function ProductPage() {
                   </a>
                 ) : (
                   <>
-                    <div className="modal-actions-row">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-main)', padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                      <span style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                        {lang === 'en' ? 'Quantity:' : 'Quantidade:'}
+                      </span>
+                      <div className="qty-controls" style={{ marginTop: 0, background: 'var(--bg-card)', border: '1px solid var(--border-light)' }}>
+                        <button
+                          type="button"
+                          className="qty-btn"
+                          onClick={() => setQty(q => Math.max(1, q - 1))}
+                          aria-label="Diminuir quantidade"
+                        >
+                          <Minus size={14} />
+                        </button>
+                        <span style={{ fontWeight: 700, fontSize: '0.9rem', minWidth: '24px', textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>
+                          {qty}
+                        </span>
+                        <button
+                          type="button"
+                          className="qty-btn"
+                          onClick={() => setQty(q => Math.min(Number(product.stock) || 99, q + 1))}
+                          aria-label="Aumentar quantidade"
+                        >
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="modal-actions-row" style={{ marginTop: '4px' }}>
                       <button
                         type="button"
                         className="btn-primary"
@@ -388,7 +416,7 @@ export default function ProductPage() {
                       <button
                         type="button"
                         className="nav-btn"
-                        style={{ flex: 1, justifyContent: 'center', padding: '12px 16px', fontWeight: 800, borderColor: 'var(--primary-orange)', color: 'var(--primary-orange)' }}
+                        style={{ flex: 1, justifyContent: 'center', padding: '12px 16px', fontWeight: 700, borderColor: 'var(--primary-orange)', color: 'var(--primary-orange)' }}
                         onClick={() => addToCart(product, qty)}
                       >
                         <Plus size={17} /> {t('addCart')}

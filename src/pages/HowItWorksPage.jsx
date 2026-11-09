@@ -141,7 +141,7 @@ export default function HowItWorksPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-orange)', fontWeight: 800, fontSize: '0.82rem', textTransform: 'uppercase', marginBottom: '8px' }}>
             <Clock size={16} /> Prazos e Destinos
           </div>
-          <h3 style={{ fontSize: '1.5rem', fontWeight: 900, margin: '0 0 16px' }}>
+          <h3 style={{ fontSize: '1.5rem', fontWeight: 800, margin: '0 0 16px' }}>
             Prazos Estimados de Entrega em Angola
           </h3>
 
