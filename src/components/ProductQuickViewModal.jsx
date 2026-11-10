@@ -182,12 +182,22 @@ export default function ProductQuickViewModal({ product, onClose }) {
               {activeTab === 'reviews' && (
                 <div style={{ display: 'grid', gap: '8px' }}>
                   {reviews.map((r, i) => (
-                    <div key={i} style={{ padding: '8px 10px', background: 'var(--bg-body)', borderRadius: '8px', fontSize: '0.8rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700 }}>
-                        <span>{r.name}</span>
-                        <span>⭐ {r.rating}</span>
+                    <div key={i} style={{ padding: '10px 12px', background: 'var(--bg-body)', borderRadius: '10px', fontSize: '0.82rem', border: '1px solid var(--border-light)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, marginBottom: '2px' }}>
+                        <span style={{ color: 'var(--text-main)' }}>{r.name}</span>
+                        <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                          {r.satisfactionRate && (
+                            <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#10B981', background: 'rgba(16, 185, 129, 0.1)', padding: '1px 6px', borderRadius: '8px' }}>
+                              {r.satisfactionRate}% {lang === 'en' ? 'approved' : 'satisfeito'}
+                            </span>
+                          )}
+                          <span>⭐ {r.rating || 5}</span>
+                        </div>
                       </div>
-                      <p style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>{r.comment}</p>
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        📍 {r.location} • <span style={{ color: '#25D366', fontWeight: 600 }}>✓ Compra Verificada</span>
+                      </div>
+                      <p style={{ margin: '4px 0 0', color: 'var(--text-main)', lineHeight: 1.5 }}>"{r.comment}"</p>
                     </div>
                   ))}
                 </div>

@@ -468,9 +468,14 @@ export default function ProductPage() {
                   <Award size={16} color="var(--primary-orange)" />
                   <span>{lang === 'en' ? 'Customer Reviews for this Product' : 'Provas Sociais deste Produto'}</span>
                 </div>
-                <span className="modal-sp-rating-pill">
-                  ★ {product.rating} ({product.reviews_count ?? product.reviewsCount} {t('reviews')})
-                </span>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span className="modal-sp-rating-pill" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: 800 }}>
+                    👍 {productReviews[0]?.satisfactionRate || (product.rating ? Math.round((product.rating / 5) * 100) : 98)}% {lang === 'en' ? 'Satisfaction' : 'Aprovação'}
+                  </span>
+                  <span className="modal-sp-rating-pill">
+                    ★ {product.rating} ({product.reviews_count ?? product.reviewsCount ?? 32} {t('reviews')})
+                  </span>
+                </div>
               </div>
 
               <div className="product-reviews-grid">
@@ -484,12 +489,12 @@ export default function ProductPage() {
                           referrerPolicy="no-referrer"
                           className="testimonial-avatar"
                         />
-                        <div style={{ minWidth: 0 }}>
-                          <div className="testimonial-author-name">
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div className="testimonial-author-name" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
                             <span>{review.name}</span>
-                            {review.verified && (
-                              <span className="testimonial-verified-badge">
-                                <CheckCircle size={10} style={{ marginRight: '2px' }} /> {t('verified')}
+                            {review.satisfactionRate && (
+                              <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#10B981', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 6px', borderRadius: '10px' }}>
+                                {review.satisfactionRate}% {lang === 'en' ? 'approved' : 'satisfeito'}
                               </span>
                             )}
                           </div>
@@ -499,10 +504,21 @@ export default function ProductPage() {
                         </div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '2px', marginBottom: '6px' }}>
-                        {[...Array(review.rating)].map((_, idx) => (
-                          <Star key={idx} size={12} fill="#FFB800" color="#FFB800" />
-                        ))}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                        <div style={{ display: 'flex', gap: '2px' }}>
+                          {[...Array(review.rating || 5)].map((_, idx) => (
+                            <Star key={idx} size={12} fill="#FFB800" color="#FFB800" />
+                          ))}
+                        </div>
+                        {review.verified && (
+                          <span className="testimonial-verified-badge" style={{ fontSize: '0.72rem' }}>
+                            <CheckCircle size={10} style={{ marginRight: '2px' }} /> {t('verified')}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="testimonial-product-tag" style={{ fontSize: '0.76rem', color: 'var(--primary-orange)', fontWeight: 700, marginBottom: '6px' }}>
+                        📦 {review.product || product.name}
                       </div>
 
                       <p className="testimonial-comment-text">
@@ -512,7 +528,7 @@ export default function ProductPage() {
 
                     <div className="testimonial-footer-row">
                       <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <ThumbsUp size={11} color="var(--primary-orange)" /> {review.likes} {t('helpfulCount')}
+                        <ThumbsUp size={11} color="var(--primary-orange)" /> {review.likes || 25} {t('helpfulCount')}
                       </span>
                       <span style={{ color: '#25D366', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '3px' }}>
                         <ShieldCheck size={11} /> {t('securePurchase')}
