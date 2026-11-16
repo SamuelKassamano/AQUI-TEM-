@@ -194,6 +194,7 @@ for (const p of PRODUCTS) {
   }
 }
 
+// 3. Write updated data/products.js
 // 3. Write updated data/products.js with all exports
 const productsJsCode = `import { createSlug } from '../src/utils/slug.js';
 
@@ -229,8 +230,12 @@ export const HERO_COVER_IMAGES = [
 
 export const PRODUCTS = ${JSON.stringify(PRODUCTS, null, 2)};
 
+export default PRODUCTS;
+`;
 export const DEACTIVATED_LEGACY_PRODUCTS = [];
 
+fs.writeFileSync(path.resolve('data/products.js'), productsJsCode, 'utf8');
+console.log('Successfully updated data/products.js!');
 export const CATEGORIES = [
   'Todos',
   'Áudio & Som',
@@ -245,6 +250,21 @@ export const CATEGORIES = [
   'Outros'
 ];
 
+// 4. Update src/data/productPricing.js
+for (const p of OFFICIAL_NEW_PRODUCTS_PRICING) {
+  if (ORAIMO_FIXES[p.id]) {
+    const fix = ORAIMO_FIXES[p.id];
+    p.referenceCostKz = fix.supplier;
+    p.shippingKz = fix.fee;
+    p.totalCostKz = fix.supplier + fix.fee;
+    p.marginPercent = 25;
+    p.marginKz = fix.margin25;
+    p.calculatedSalePrice = fix.price;
+    p.regularPrice = fix.regular;
+    if (fix.name) p.name = fix.name;
+    if (fix.slug) p.slug = fix.slug;
+    if (fix.category) p.category = fix.category;
+    if (fix.image) p.image = fix.image;
 export const ADVANTAGES = [
   {
     icon: 'Truck',
@@ -266,10 +286,30 @@ export const ADVANTAGES = [
     title: 'Suporte Humanizado',
     subtitle: 'Atendimento contínuo via WhatsApp'
   }
+}
 ];
 
+const pricingJsCode = `// ==============================================================================
+// AQUI TEM — TABELA OFICIAL DE PREÇOS DE FORNECEDORES REAIS
+// FÓRMULA OFICIAL:
+// PRODUTOS ORAIMO: PREÇO REAL ao.oraimo.com + 25% + 4.000 Kz
+// DEMAIS PRODUTOS: CUSTO TOTAL FORNECEDOR + MARGEM COMERCIAL
+// ==============================================================================
+
+export const OFFICIAL_NEW_PRODUCTS_PRICING = ${JSON.stringify(OFFICIAL_NEW_PRODUCTS_PRICING, null, 2)};
+
+export function getOfficialPricing(product) {
+  if (!product) return null;
+  const pId = String(product.id || '').trim();
+  const pSlug = String(product.slug || '').trim();
+  return OFFICIAL_NEW_PRODUCTS_PRICING.find(
+    item => item.id === pId || item.slug === pSlug || (item.slugAliases && item.slugAliases.includes(pSlug))
+  ) || null;
+}
 export default PRODUCTS;
 `;
 
+fs.writeFileSync(path.resolve('src/data/productPricing.js'), pricingJsCode, 'utf8');
+console.log('Successfully updated src/data/productPricing.js!');
 fs.writeFileSync(path.resolve('data/products.js'), productsJsCode, 'utf8');
 console.log('Successfully updated data/products.js with all required exports!');

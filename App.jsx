@@ -54,6 +54,7 @@ import {
   createBreadcrumbStructuredData
 } from './src/seo/structuredData';
 import Chatbot from './src/components/Chatbot';
+import VoiceAssistantWelcome from './src/components/VoiceAssistantWelcome';
 
 export default function App() {
   const { lang, t } = useLanguage();
@@ -177,6 +178,7 @@ export default function App() {
   return (
     <>
       <Chatbot />
+      <VoiceAssistantWelcome />
       <div className="app-container">
 
         {/* Top Announcement Bar */}

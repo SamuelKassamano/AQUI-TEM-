@@ -468,6 +468,9 @@ export default function ProductPage() {
                   <Award size={16} color="var(--primary-orange)" />
                   <span>{lang === 'en' ? 'Customer Reviews for this Product' : 'Provas Sociais deste Produto'}</span>
                 </div>
+                <span className="modal-sp-rating-pill">
+                  ★ {product.rating} ({product.reviews_count ?? product.reviewsCount} {t('reviews')})
+                </span>
                 <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <span className="modal-sp-rating-pill" style={{ background: 'rgba(16, 185, 129, 0.12)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.25)', fontWeight: 800 }}>
                     👍 {productReviews[0]?.satisfactionRate || (product.rating ? Math.round((product.rating / 5) * 100) : 98)}% {lang === 'en' ? 'Satisfaction' : 'Aprovação'}

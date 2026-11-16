@@ -1,248 +1,228 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { Volume2, VolumeX, RotateCcw, X, Sparkles, MessageCircle, Headphones } from 'lucide-react';
+import { Volume2, VolumeX, RotateCcw, X, Headphones, Play, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 export default function VoiceAssistantWelcome() {
   const { lang } = useLanguage();
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
-  const [hasSpokenOnce, setHasSpokenOnce] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [voicesLoaded, setVoicesLoaded] = useState(false);
-  
-  const utteranceRef = useRef(null);
+  const [isVisible, setIsVisible] = useState(true);
+  const [autoplayBlocked, setAutoplayBlocked] = useState(false);
 
-  // Exact welcome messages requested
+  const audioRef = useRef(null);
+  const synthRef = useRef(null);
+
+  // Exact welcome messages
   const textPT = "Olá! Seja muito bem-vindo à nossa loja! É um prazer ter a sua visita. Explore a nossa variedade de produtos electrónicos, electrodomésticos e gadgets. Desejamos-lhe uma excelente experiência e boas compras! Estamos aqui para ajudar no que precisar";
   const textEN = "Hello! Welcome to our store! It's a pleasure to have you here. Explore our wide range of electronics, home appliances, and gadgets. We wish you an excellent experience and happy shopping! We are here to help whenever you need.";
 
   const currentText = lang === 'en' ? textEN : textPT;
+  const audioSrc = lang === 'en' ? '/audio/welcome_en.mp3' : '/audio/welcome_pt.mp3';
 
-  // Find best natural female voice based on language
-  const getFemaleVoice = useCallback((targetLang) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return null;
-    const voices = window.speechSynthesis.getVoices();
-    if (!voices || voices.length === 0) return null;
-
-    const isTargetPT = targetLang !== 'en';
-    const langPrefix = isTargetPT ? 'pt' : 'en';
-
-    // 1. Prioritize female named voices for language
-    const femaleKeywords = [
-      'maria', 'luciana', 'francisca', 'joana', 'helena', 'raquel', 
-      'fernanda', 'camila', 'vitoria', 'leticia', 'female', 'mulher',
-      'samantha', 'zira', 'victoria', 'karen', 'jenny', 'fiona', 'moira'
-    ];
-
-    const matchingLangVoices = voices.filter(v => 
-      v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(langPrefix)
-    );
-
-    // Try finding by female keyword
-    const femaleMatch = matchingLangVoices.find(v => {
-      const name = (v.name || '').toLowerCase();
-      return femaleKeywords.some(keyword => name.includes(keyword));
-    });
-
-    if (femaleMatch) return femaleMatch;
-
-    // Fallback: any voice of that language
-    if (matchingLangVoices.length > 0) return matchingLangVoices[0];
-
-    return null;
+  // Stop all sounds
+  const stopAll = useCallback(() => {
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch (e) {}
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch (e) {}
+    }
+    setIsPlaying(false);
   }, []);
 
-  // Speech execution
-  const speakMessage = useCallback((force = false) => {
+  // Web Speech API fallback if audio file cannot play
+  const playSpeechSynthesis = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    if (isMuted && !force) return;
-
     try {
-      window.speechSynthesis.cancel(); // Stop any previous speech
-
+      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(currentText);
-      utteranceRef.current = utterance;
-
+      synthRef.current = utterance;
       utterance.lang = lang === 'en' ? 'en-US' : 'pt-PT';
-      
-      const chosenVoice = getFemaleVoice(lang);
-      if (chosenVoice) {
-        utterance.voice = chosenVoice;
-      }
+      utterance.rate = 0.96;
+      utterance.pitch = 1.15;
 
-      // Configure female, pleasant, welcoming voice tone
-      utterance.pitch = 1.15; // Higher pitch produces a clear, friendly female tone
-      utterance.rate = 0.96;  // Gentle, natural reading pace
+      const voices = window.speechSynthesis.getVoices() || [];
+      const prefix = lang === 'en' ? 'en' : 'pt';
+      const femaleKeywords = ['maria', 'luciana', 'francisca', 'joana', 'helena', 'raquel', 'fernanda', 'camila', 'female', 'mulher', 'jenny', 'samantha', 'zira', 'victoria'];
+      const langVoices = voices.filter(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(prefix));
+      const femaleVoice = langVoices.find(v => femaleKeywords.some(k => (v.name || '').toLowerCase().includes(k))) || langVoices[0];
+      if (femaleVoice) utterance.voice = femaleVoice;
 
       utterance.onstart = () => {
-        setIsSpeaking(true);
-        setHasSpokenOnce(true);
-        setIsVisible(true);
+        setIsPlaying(true);
+        setAutoplayBlocked(false);
       };
-
-      utterance.onend = () => {
-        setIsSpeaking(false);
-      };
-
-      utterance.onerror = (e) => {
-        // If autoplay was blocked by browser policy, keep state ready for first interaction
-        setIsSpeaking(false);
-      };
+      utterance.onend = () => setIsPlaying(false);
+      utterance.onerror = () => setIsPlaying(false);
 
       window.speechSynthesis.speak(utterance);
-    } catch (err) {
-      console.warn('Speech synthesis error:', err);
+    } catch (e) {
+      setIsPlaying(false);
     }
-  }, [currentText, lang, isMuted, getFemaleVoice]);
+  }, [currentText, lang]);
 
-  // Handle voices loaded in browser
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+  // Main play function: tries MP3 first, then SpeechSynthesis fallback
+  const playWelcomeAudio = useCallback((userInitiated = false) => {
+    if (isMuted && !userInitiated) return;
 
-    const updateVoices = () => {
-      const v = window.speechSynthesis.getVoices();
-      if (v && v.length > 0) {
-        setVoicesLoaded(true);
+    stopAll();
+
+    try {
+      const audio = new Audio(audioSrc);
+      audioRef.current = audio;
+      audio.volume = 1.0;
+
+      audio.onplay = () => {
+        setIsPlaying(true);
+        setAutoplayBlocked(false);
+      };
+      audio.onended = () => {
+        setIsPlaying(false);
+      };
+      audio.onerror = () => {
+        // Fallback to browser SpeechSynthesis
+        playSpeechSynthesis();
+      };
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            setAutoplayBlocked(false);
+          })
+          .catch((err) => {
+            console.log('Autoplay deferred until user interaction:', err?.name);
+            setAutoplayBlocked(true);
+            setIsPlaying(false);
+            if (userInitiated) {
+              playSpeechSynthesis();
+            }
+          });
       }
-    };
-
-    updateVoices();
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = updateVoices;
+    } catch (err) {
+      playSpeechSynthesis();
     }
-  }, []);
+  }, [audioSrc, isMuted, stopAll, playSpeechSynthesis]);
 
-  // Automatic speaking trigger on page enter & browser interaction fallback
+  // Attempt play on mount and listen for first interaction if autoplay was gated
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    let triggered = false;
 
-    // Check if user already heard this in session
-    const hasAlreadyHeard = sessionStorage.getItem('aquitem_welcome_spoken');
-    if (hasAlreadyHeard) {
-      setHasSpokenOnce(true);
-      setIsMinimized(true);
-      return;
-    }
-
-    let userInteracted = false;
-
-    // 1. Attempt immediate speech
+    // Small delay to let page stabilize
     const timer = setTimeout(() => {
-      speakMessage();
-      sessionStorage.setItem('aquitem_welcome_spoken', 'true');
-    }, 800);
+      playWelcomeAudio(false);
+    }, 600);
 
-    // 2. Attach first-interaction listener in case browser blocked autoplay audio
     const handleFirstInteraction = () => {
-      if (!userInteracted) {
-        userInteracted = true;
-        if (!hasSpokenOnce && !isSpeaking) {
-          speakMessage();
-          sessionStorage.setItem('aquitem_welcome_spoken', 'true');
+      if (!triggered) {
+        triggered = true;
+        // If it wasn't already playing, play now that user has interacted
+        if (!audioRef.current || audioRef.current.paused) {
+          playWelcomeAudio(true);
         }
       }
       cleanup();
     };
 
     const cleanup = () => {
+      window.removeEventListener('pointerdown', handleFirstInteraction);
       window.removeEventListener('click', handleFirstInteraction);
       window.removeEventListener('touchstart', handleFirstInteraction);
       window.removeEventListener('keydown', handleFirstInteraction);
     };
 
-    window.addEventListener('click', handleFirstInteraction, { passive: true });
-    window.addEventListener('touchstart', handleFirstInteraction, { passive: true });
-    window.addEventListener('keydown', handleFirstInteraction, { passive: true });
+    window.addEventListener('pointerdown', handleFirstInteraction, { passive: true, once: true });
+    window.addEventListener('click', handleFirstInteraction, { passive: true, once: true });
+    window.addEventListener('touchstart', handleFirstInteraction, { passive: true, once: true });
+    window.addEventListener('keydown', handleFirstInteraction, { passive: true, once: true });
 
     return () => {
       clearTimeout(timer);
       cleanup();
+      stopAll();
     };
-  }, [voicesLoaded]);
+  }, [lang]);
 
-  // Handle speech cancellation on component unmount
-  useEffect(() => {
-    return () => {
-      if (typeof window !== 'undefined' && window.speechSynthesis) {
-        window.speechSynthesis.cancel();
-      }
-    };
-  }, []);
-
-  // Toggle mute
-  const toggleMute = () => {
-    if (isSpeaking) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+  // Mute / Unmute handler
+  const handleToggleMute = () => {
+    if (isPlaying) {
+      stopAll();
       setIsMuted(true);
     } else {
       setIsMuted(false);
-      speakMessage(true);
+      playWelcomeAudio(true);
     }
   };
 
-  // Replay speech
-  const replay = () => {
+  // Replay handler
+  const handleReplay = () => {
     setIsMuted(false);
     setIsMinimized(false);
-    speakMessage(true);
+    playWelcomeAudio(true);
   };
 
   if (!isVisible) return null;
 
   return (
-    <div
+    <aside
+      aria-label={lang === 'en' ? 'Virtual Voice Assistant' : 'Assistente Virtual de Voz'}
       style={{
         position: 'fixed',
         bottom: '24px',
         left: '24px',
         zIndex: 9998,
         maxWidth: isMinimized ? 'auto' : '360px',
+        width: isMinimized ? 'auto' : 'calc(100vw - 48px)',
         fontFamily: 'inherit',
-        animation: 'slideInUp 0.4s ease-out'
+        animation: 'welcomeSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1)'
       }}
     >
       {/* Minimized Pill Button */}
       {isMinimized ? (
         <button
+          type="button"
           onClick={() => {
             setIsMinimized(false);
-            replay();
+            handleReplay();
           }}
           style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '8px',
             backgroundColor: '#0f172a',
             color: '#ffffff',
-            border: '1px solid rgba(255,255,255,0.15)',
-            padding: '10px 16px',
+            border: '1px solid rgba(56, 189, 248, 0.4)',
+            padding: '10px 18px',
             borderRadius: '9999px',
-            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(56, 189, 248, 0.2)',
             cursor: 'pointer',
             fontSize: '13px',
-            fontWeight: 600,
-            transition: 'all 0.2s ease',
-            backdropFilter: 'blur(8px)'
+            fontWeight: 700,
+            backdropFilter: 'blur(10px)',
+            transition: 'transform 0.2s, box-shadow 0.2s'
           }}
           title={lang === 'en' ? 'Listen to Virtual Assistant' : 'Ouvir Assistente Virtual'}
         >
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <span
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: isSpeaking ? '#22c55e' : '#3b82f6',
-                display: 'inline-block',
-                marginRight: '6px'
-              }}
-            />
-            <Headphones size={16} color="#38bdf8" />
-          </div>
+          <span
+            style={{
+              width: '10px',
+              height: '10px',
+              borderRadius: '50%',
+              backgroundColor: isPlaying ? '#22c55e' : '#38bdf8',
+              display: 'inline-block',
+              boxShadow: isPlaying ? '0 0 10px #22c55e' : 'none'
+            }}
+          />
+          <Headphones size={16} color="#38bdf8" />
           <span>{lang === 'en' ? 'Virtual Assistant' : 'Assistente Virtual'}</span>
-          <Volume2 size={16} color="#4ade80" />
+          <Volume2 size={16} color="#22c55e" />
         </button>
       ) : (
         /* Full Floating Welcome Card */
@@ -250,37 +230,37 @@ export default function VoiceAssistantWelcome() {
           style={{
             backgroundColor: '#0f172a',
             color: '#f8fafc',
-            borderRadius: '18px',
+            borderRadius: '20px',
             padding: '16px',
-            boxShadow: '0 20px 35px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(56, 189, 248, 0.25)',
+            boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(56, 189, 248, 0.35)',
             display: 'flex',
             flexDirection: 'column',
             gap: '12px',
-            backdropFilter: 'blur(12px)',
+            backdropFilter: 'blur(16px)',
             position: 'relative'
           }}
         >
           {/* Header */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              {/* Female Assistant Avatar */}
+              {/* Animated Avatar */}
               <div
                 style={{
                   position: 'relative',
-                  width: '40px',
-                  height: '40px',
+                  width: '42px',
+                  height: '42px',
                   borderRadius: '50%',
-                  background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #3b82f6 100%)',
+                  background: 'linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #38bdf8 100%)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 0 15px rgba(236, 72, 153, 0.4)'
+                  boxShadow: isPlaying ? '0 0 20px rgba(236, 72, 153, 0.6)' : '0 0 10px rgba(56, 189, 248, 0.3)',
+                  flexShrink: 0
                 }}
               >
-                <span style={{ fontSize: '20px' }}>👩‍💼</span>
-                {/* Active Talking Wave Indicator */}
-                {isSpeaking && (
+                <span style={{ fontSize: '22px' }}>👩‍💼</span>
+                {isPlaying && (
                   <span
                     style={{
                       position: 'absolute',
@@ -291,7 +271,7 @@ export default function VoiceAssistantWelcome() {
                       borderRadius: '50%',
                       backgroundColor: '#22c55e',
                       border: '2px solid #0f172a',
-                      animation: 'pulse 1.5s infinite'
+                      boxShadow: '0 0 8px #22c55e'
                     }}
                   />
                 )}
@@ -299,62 +279,69 @@ export default function VoiceAssistantWelcome() {
 
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '14px', color: '#ffffff' }}>
+                  <span style={{ fontWeight: 800, fontSize: '14px', color: '#ffffff' }}>
                     {lang === 'en' ? 'Virtual Assistant' : 'Assistente Virtual'}
                   </span>
                   <span
                     style={{
                       fontSize: '10px',
-                      fontWeight: 600,
-                      backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                      color: '#38bdf8',
-                      padding: '2px 6px',
-                      borderRadius: '4px'
+                      fontWeight: 700,
+                      backgroundColor: isPlaying ? 'rgba(34, 197, 94, 0.2)' : 'rgba(56, 189, 248, 0.2)',
+                      color: isPlaying ? '#4ade80' : '#38bdf8',
+                      padding: '2px 7px',
+                      borderRadius: '12px',
+                      border: `1px solid ${isPlaying ? 'rgba(34, 197, 94, 0.4)' : 'rgba(56, 189, 248, 0.3)'}`
                     }}
                   >
-                    {isSpeaking ? (lang === 'en' ? 'Speaking...' : 'A Falar...') : (lang === 'en' ? 'Online' : 'Voz Feminina')}
+                    {isPlaying
+                      ? (lang === 'en' ? 'Speaking...' : 'A Falar...')
+                      : (lang === 'en' ? 'AI Voice' : 'Voz Feminina IA')}
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>
-                  {lang === 'en' ? 'AQUI TEM Angola' : 'AQUI TEM Angola'}
+                  AQUI TEM Angola • Boas-vindas
                 </p>
               </div>
             </div>
 
-            {/* Close / Minimize buttons */}
+            {/* Minimize / Close */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
               <button
+                type="button"
                 onClick={() => setIsMinimized(true)}
                 style={{
-                  background: 'transparent',
+                  background: 'rgba(255, 255, 255, 0.05)',
                   border: 'none',
                   color: '#94a3b8',
                   cursor: 'pointer',
-                  padding: '4px',
-                  borderRadius: '6px',
+                  padding: '6px',
+                  borderRadius: '50%',
                   display: 'flex',
-                  alignItems: 'center'
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s'
                 }}
                 title={lang === 'en' ? 'Minimize' : 'Minimizar'}
+                aria-label="Minimizar"
               >
-                <X size={16} />
+                <X size={15} />
               </button>
             </div>
           </div>
 
           {/* Soundwave Animation while speaking */}
-          {isSpeaking && (
+          {isPlaying && (
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '3px',
-                height: '16px',
+                gap: '4px',
+                height: '18px',
                 padding: '2px 0'
               }}
             >
-              {[0.4, 0.8, 1, 0.6, 0.9, 0.5, 0.7, 1, 0.6].map((scale, i) => (
+              {[0.4, 0.8, 1, 0.6, 0.9, 0.5, 0.7, 1, 0.6, 0.8].map((scale, i) => (
                 <span
                   key={i}
                   style={{
@@ -363,8 +350,8 @@ export default function VoiceAssistantWelcome() {
                     backgroundColor: '#38bdf8',
                     borderRadius: '2px',
                     display: 'inline-block',
-                    animation: `soundwave 0.8s ease-in-out infinite alternate`,
-                    animationDelay: `${i * 0.1}s`
+                    animation: `assistantSoundwave 0.7s ease-in-out infinite alternate`,
+                    animationDelay: `${i * 0.08}s`
                   }}
                 />
               ))}
@@ -374,14 +361,14 @@ export default function VoiceAssistantWelcome() {
           {/* Welcome Speech Text Box */}
           <div
             style={{
-              backgroundColor: 'rgba(30, 41, 59, 0.7)',
+              backgroundColor: 'rgba(15, 23, 42, 0.8)',
               borderRadius: '12px',
-              padding: '12px',
+              padding: '12px 14px',
               fontSize: '12.5px',
-              lineHeight: '1.5',
+              lineHeight: '1.55',
               color: '#e2e8f0',
-              border: '1px solid rgba(255, 255, 255, 0.05)',
-              maxHeight: '130px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              maxHeight: '120px',
               overflowY: 'auto'
             }}
           >
@@ -391,67 +378,72 @@ export default function VoiceAssistantWelcome() {
           {/* Action Controls */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px', paddingTop: '2px' }}>
             <button
-              onClick={replay}
+              type="button"
+              onClick={handleReplay}
               style={{
-                display: 'flex',
+                flex: 1,
+                display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
-                backgroundColor: 'rgba(56, 189, 248, 0.15)',
-                color: '#38bdf8',
-                border: '1px solid rgba(56, 189, 248, 0.3)',
-                padding: '6px 12px',
-                borderRadius: '8px',
+                backgroundColor: isPlaying ? 'rgba(56, 189, 248, 0.15)' : '#0284c7',
+                color: '#ffffff',
+                border: '1px solid rgba(56, 189, 248, 0.4)',
+                padding: '8px 12px',
+                borderRadius: '10px',
                 cursor: 'pointer',
                 fontSize: '12px',
-                fontWeight: 600,
-                transition: 'background 0.2s'
+                fontWeight: 700,
+                transition: 'all 0.2s ease'
               }}
             >
-              <RotateCcw size={13} />
-              <span>{lang === 'en' ? 'Replay Speech' : 'Ouvir Novamente'}</span>
+              {isPlaying ? <RotateCcw size={13} /> : <Play size={13} />}
+              <span>{isPlaying ? (lang === 'en' ? 'Replay' : 'Repetir') : (lang === 'en' ? 'Play Voice' : 'Ouvir Voz IA')}</span>
             </button>
 
             <button
-              onClick={toggleMute}
+              type="button"
+              onClick={handleToggleMute}
               style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
+                justifyContent: 'center',
                 gap: '6px',
-                backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'rgba(148, 163, 184, 0.1)',
-                color: isMuted ? '#f87171' : '#94a3b8',
-                border: `1px solid ${isMuted ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
-                padding: '6px 12px',
-                borderRadius: '8px',
+                backgroundColor: isMuted ? 'rgba(239, 68, 68, 0.15)' : 'rgba(148, 163, 184, 0.12)',
+                color: isMuted ? '#f87171' : '#cbd5e1',
+                border: `1px solid ${isMuted ? 'rgba(239, 68, 68, 0.35)' : 'rgba(255, 255, 255, 0.1)'}`,
+                padding: '8px 14px',
+                borderRadius: '10px',
                 cursor: 'pointer',
                 fontSize: '12px',
-                fontWeight: 600
+                fontWeight: 700,
+                transition: 'all 0.2s ease'
               }}
             >
-              {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+              {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
               <span>{isMuted ? (lang === 'en' ? 'Unmute' : 'Desmutar') : (lang === 'en' ? 'Mute' : 'Silenciar')}</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* Embedded CSS Animations */}
+      {/* CSS Animations */}
       <style>{`
-        @keyframes soundwave {
-          0% { height: 4px; opacity: 0.4; }
-          100% { height: 16px; opacity: 1; }
+        @keyframes assistantSoundwave {
+          0% { height: 3px; opacity: 0.3; }
+          100% { height: 18px; opacity: 1; }
         }
-        @keyframes slideInUp {
+        @keyframes welcomeSlideIn {
           from {
             opacity: 0;
-            transform: translateY(20px);
+            transform: translateY(24px) scale(0.96);
           }
           to {
             opacity: 1;
-            transform: translateY(0);
+            transform: translateY(0) scale(1);
           }
         }
       `}</style>
-    </div>
+    </aside>
   );
 }
-
