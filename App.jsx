@@ -33,7 +33,8 @@ import {
   ChevronRight,
   BarChart3,
   Lock,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from 'lucide-react';
 import { CATEGORIES, ADVANTAGES, HERO_BANNER_FALLBACK, HERO_COVER_IMAGES } from './data/products';
 import { PRODUCT_VIDEOS } from './src/data/videos';
