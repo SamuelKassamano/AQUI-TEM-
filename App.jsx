@@ -909,378 +909,249 @@ export default function App() {
           )}
         </section>
 
-        {/* 🏬 Sobre a AQUI TEM Section (Página Inicial - Design Fino, Minimalista & Letras Brancas) */}
+        {/* 🏬 Sobre a AQUI TEM (Design Compacto, Fino & Elegante) */}
         <section
           id="sobre"
           style={{
-            background: 'linear-gradient(180deg, #07090e 0%, #0c111d 50%, #07090e 100%)',
-            borderRadius: '28px',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
-            padding: '48px 40px',
-            marginBottom: '48px',
+            background: 'linear-gradient(135deg, #0b0f19 0%, #060911 100%)',
+            borderRadius: '16px',
+            border: '1px solid rgba(255, 255, 255, 0.09)',
+            padding: '24px 28px',
+            marginBottom: '32px',
             color: '#ffffff',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
-            position: 'relative',
-            overflow: 'hidden'
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+            position: 'relative'
           }}
         >
-          {/* Subtle Ambient Light Accents */}
+          {/* Top Row: Title + Short Brand Pitch + Quick Actions */}
           <div
             style={{
-              position: 'absolute',
-              top: '-20%',
-              right: '-10%',
-              width: '500px',
-              height: '500px',
-              background: 'radial-gradient(circle, rgba(255, 101, 0, 0.15) 0%, transparent 65%)',
-              filter: 'blur(70px)',
-              pointerEvents: 'none'
-            }}
-          />
-          <div
-            style={{
-              position: 'absolute',
-              bottom: '-25%',
-              left: '-10%',
-              width: '450px',
-              height: '450px',
-              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 65%)',
-              filter: 'blur(70px)',
-              pointerEvents: 'none'
-            }}
-          />
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-              gap: '44px',
-              alignItems: 'center',
-              position: 'relative',
-              zIndex: 2
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'flex-start',
+              justifyContent: 'space-between',
+              gap: '16px',
+              paddingBottom: '18px',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
             }}
           >
-            {/* Left Content Column */}
-            <div style={{ minWidth: 0 }}>
-              {/* Ultra-Fine Badge */}
+            <div style={{ maxWidth: '680px' }}>
               <div
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  color: '#ffffff',
-                  fontWeight: 600,
-                  fontSize: '0.74rem',
-                  textTransform: 'uppercase',
+                  gap: '6px',
+                  fontSize: '0.68rem',
+                  fontWeight: 700,
                   letterSpacing: '0.12em',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.18)',
-                  padding: '6px 16px',
-                  borderRadius: '9999px',
-                  marginBottom: '20px'
+                  textTransform: 'uppercase',
+                  color: '#ff8a3d',
+                  marginBottom: '6px'
                 }}
               >
-                <Sparkles size={13} color="#ff6500" /> AQUI TEM ANGOLA • DISTRIBUIÇÃO & IMPORTAÇÃO OFICIAL
+                <Sparkles size={12} color="#ff6500" /> AQUI TEM ANGOLA • DISTRIBUIÇÃO OFICIAL
               </div>
-
-              {/* Pure White Headline */}
               <h2
                 style={{
-                  fontSize: 'clamp(2rem, 3.2vw, 2.6rem)',
+                  fontSize: '1.35rem',
                   fontWeight: 800,
                   color: '#ffffff',
-                  marginBottom: '18px',
-                  lineHeight: '1.2',
-                  letterSpacing: '-0.03em'
+                  margin: '0 0 6px 0',
+                  letterSpacing: '-0.02em',
+                  lineHeight: '1.25'
                 }}
               >
                 Sobre a <span style={{ color: '#ff6500' }}>AQUI TEM</span> Angola
               </h2>
-
-              {/* Pure White / Bright Paragraphs */}
-              <p
-                style={{
-                  color: '#ffffff',
-                  fontSize: '1.02rem',
-                  lineHeight: '1.75',
-                  marginBottom: '14px',
-                  fontWeight: 400
-                }}
-              >
-                A <strong>AQUI TEM</strong> é a sua plataforma de tecnologia e comércio moderno de referência em Angola. Selecionamos o que há de mais recente em inovação mundial diretamente dos fabricantes oficiais, assegurando qualidade genuína sem inflações ou intermediários.
-              </p>
-
               <p
                 style={{
                   color: '#e2e8f0',
-                  fontSize: '0.94rem',
-                  lineHeight: '1.75',
-                  marginBottom: '28px',
-                  fontWeight: 300
+                  fontSize: '0.86rem',
+                  lineHeight: '1.55',
+                  margin: 0,
+                  fontWeight: 400
                 }}
               >
-                Operamos com stock real pronto para despacho e especialização comprovada na linha oficial <strong>Oraimo</strong> (fones sem fios, smartwatches, powerbanks e cabos reforçados), além de cúpulas de vigilância inteligente, eletrodomésticos para o lar e tecnologia empresarial.
+                A sua loja online de confiança para eletrónicos, eletrodomésticos e acessórios em Angola. Importação direta dos fabricantes oficiais, com stock real pronto para despacho e garantia real de fábrica.
               </p>
+            </div>
 
-              {/* Ultra-Fine Metrics Bar */}
-              <div
+            {/* Quick Action Badges */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                onClick={() => setActiveInfoModal('stores')}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '12px',
-                  padding: '16px 0',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                  marginBottom: '30px'
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  padding: '7px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                <div>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>100%</div>
-                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Selado de Fábrica</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>24h-48h</div>
-                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Despacho Rápido</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>18</div>
-                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Províncias</div>
-                </div>
-                <div>
-                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ff6500', letterSpacing: '-0.02em' }}>Zero</div>
-                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Réplicas / Cópias</div>
-                </div>
-              </div>
-
-              {/* 4 Fine Minimal Luxury Cards */}
-              <div
+                <Store size={13} color="#ff6500" /> Apoio Oficial
+              </button>
+              <button
+                onClick={() => setActiveInfoModal('warranty')}
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                  gap: '14px',
-                  marginBottom: '32px'
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  padding: '7px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
                 }}
               >
-                {/* Pillar 1 */}
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    padding: '16px 18px',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}
-                >
-                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <ShieldCheck size={16} color="#ff6500" />
-                    Produtos 100% Originais
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
-                    Artigos lacrados de fábrica com selo de autenticidade, número de série e garantia de troca rápida.
-                  </div>
-                </div>
+                <ShieldCheck size={13} color="#22c55e" /> Garantia & Trocas
+              </button>
+              <a
+                href="https://wa.me/244950752933?text=Ol%C3%A1%20AQUI%20TEM!%20Gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20produtos."
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  background: '#ff6500',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  padding: '7px 14px',
+                  borderRadius: '8px',
+                  fontSize: '0.78rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <MessageCircle size={13} /> WhatsApp (+244 950 752 933)
+              </a>
+            </div>
+          </div>
 
-                {/* Pillar 2 */}
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    padding: '16px 18px',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}
-                >
-                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <CreditCard size={16} color="#ff6500" />
-                    Pagamento & Agendamento
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
-                    Pagamento seguro antecipado via Express ou IBAN para reserva do artigo e agendamento da entrega.
-                  </div>
-                </div>
-
-                {/* Pillar 3 */}
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    padding: '16px 18px',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}
-                >
-                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Truck size={16} color="#ff6500" />
-                    Rotas Luanda & Províncias
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
-                    Despacho porta-a-porta na grande Luanda e expedição monitorada para as 18 províncias de Angola.
-                  </div>
-                </div>
-
-                {/* Pillar 4 */}
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    padding: '16px 18px',
-                    borderRadius: '16px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
-                  }}
-                >
-                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <MessageCircle size={16} color="#ff6500" />
-                    Suporte Oficial WhatsApp
-                  </div>
-                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
-                    Atendimento humanizado direto por consultores locais prontos para esclarecer e apoiar.
-                  </div>
-                </div>
+          {/* Middle Row: 3 Fine Micro-Columns */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '16px',
+              padding: '16px 0',
+              borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+            }}
+          >
+            {/* Col 1 */}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '2px'
+                }}
+              >
+                <ShieldCheck size={14} color="#ff6500" />
               </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
-                <button
-                  onClick={() => setActiveInfoModal('stores')}
-                  style={{
-                    background: '#ff6500',
-                    color: '#ffffff',
-                    padding: '12px 24px',
-                    borderRadius: '9999px',
-                    fontSize: '0.88rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    boxShadow: '0 4px 16px rgba(255, 101, 0, 0.35)',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <Store size={16} /> Lojas & Apoio Oficial
-                </button>
-
-                <button
-                  onClick={() => setActiveInfoModal('warranty')}
-                  style={{
-                    background: 'transparent',
-                    color: '#ffffff',
-                    padding: '12px 24px',
-                    borderRadius: '9999px',
-                    fontSize: '0.88rem',
-                    fontWeight: 700,
-                    border: '1px solid rgba(255, 255, 255, 0.3)',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <ShieldCheck size={16} /> Garantia & Trocas
-                </button>
-
-                <a
-                  href="https://wa.me/244950752933?text=Ol%C3%A1%20AQUI%20TEM!%20Gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20produtos%20e%20agendamento."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    color: '#22c55e',
-                    fontSize: '0.88rem',
-                    fontWeight: 700,
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '10px 14px',
-                    borderRadius: '9999px',
-                    background: 'rgba(34, 197, 94, 0.1)',
-                    border: '1px solid rgba(34, 197, 94, 0.25)'
-                  }}
-                >
-                  <MessageCircle size={16} /> WhatsApp: +244 950 752 933
-                </a>
+              <div>
+                <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.84rem', marginBottom: '2px' }}>
+                  100% Selado & Genuíno
+                </div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.78rem', lineHeight: '1.45' }}>
+                  Artigos originais de fábrica na caixa, com número de série e garantia real de 7 dias para troca imediata.
+                </div>
               </div>
             </div>
 
-            {/* Right Showcase & Logistics Hub Card */}
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.02)',
-                borderRadius: '24px',
-                padding: '24px',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                backdropFilter: 'blur(12px)',
-                boxShadow: '0 16px 36px rgba(0, 0, 0, 0.3)'
-              }}
-            >
+            {/* Col 2 */}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
               <div
                 style={{
-                  position: 'relative',
-                  borderRadius: '18px',
-                  overflow: 'hidden',
-                  height: '240px',
-                  marginBottom: '20px',
-                  border: '1px solid rgba(255, 255, 255, 0.12)'
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '2px'
                 }}
               >
-                <img
-                  src="/flyer_showroom.jpg"
-                  alt="Centro Operacional AQUI TEM Luanda"
-                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-                  onError={(e) => {
-                    e.currentTarget.onerror = null;
-                    e.currentTarget.src = "/hero_banner_attendant.jpg";
-                  }}
-                />
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'linear-gradient(to top, rgba(7, 9, 14, 0.95) 0%, rgba(7, 9, 14, 0.3) 50%, transparent 100%)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'flex-end',
-                    padding: '20px'
-                  }}
-                >
-                  <span
-                    style={{
-                      background: '#ff6500',
-                      color: '#ffffff',
-                      fontSize: '0.72rem',
-                      fontWeight: 800,
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      width: 'fit-content',
-                      marginBottom: '6px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}
-                  >
-                    Centro de Distribuição
-                  </span>
-                  <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.05rem', marginBottom: '2px' }}>
-                    Hub de Logística e Despacho de Luanda
-                  </div>
-                  <div style={{ color: '#cbd5e1', fontSize: '0.82rem' }}>
-                    Avenida Fidel de Castro, Benfica — Zona Verde, Cabolombo
-                  </div>
+                <CreditCard size={14} color="#ff6500" />
+              </div>
+              <div>
+                <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.84rem', marginBottom: '2px' }}>
+                  Pagamento & Agendamento
+                </div>
+                <div style={{ color: '#cbd5e1', fontSize: '0.78rem', lineHeight: '1.45' }}>
+                  Pagamento seguro antecipado (Multicaixa Express ou IBAN) para reserva imediata e despacho da encomenda.
                 </div>
               </div>
+            </div>
 
-              {/* Clean White Hub Specifications */}
-              <div style={{ display: 'grid', gap: '10px', fontSize: '0.84rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                  <span style={{ color: '#94a3b8' }}>Horário Oficial:</span>
-                  <strong style={{ color: '#ffffff' }}>Segunda a Sábado • 08h00 – 19h00</strong>
+            {/* Col 3 */}
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+              <div
+                style={{
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginTop: '2px'
+                }}
+              >
+                <Truck size={14} color="#ff6500" />
+              </div>
+              <div>
+                <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.84rem', marginBottom: '2px' }}>
+                  Luanda & 18 Províncias
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                  <span style={{ color: '#94a3b8' }}>Atendimento:</span>
-                  <strong style={{ color: '#22c55e' }}>+244 950 752 933 (WhatsApp)</strong>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
-                  <span style={{ color: '#94a3b8' }}>E-mail Institucional:</span>
-                  <strong style={{ color: '#ffffff' }}>contacto@aquitem.ao</strong>
+                <div style={{ color: '#cbd5e1', fontSize: '0.78rem', lineHeight: '1.45' }}>
+                  Rotas agendadas porta-a-porta em Luanda em 24h a 48h e expedição aérea/rodoviária para todas as províncias.
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Bottom Micro-Bar: Location + Hours + Direct Contact */}
+          <div
+            style={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              paddingTop: '12px',
+              fontSize: '0.76rem',
+              color: '#cbd5e1'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <MapPin size={13} color="#ff6500" />
+              <span>Base Operacional: <strong style={{ color: '#ffffff' }}>Avenida Fidel de Castro, Benfica — Luanda</strong></span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+              <span>Horário: <strong style={{ color: '#ffffff' }}>Seg a Sáb: 08h00 – 19h00</strong></span>
+              <span style={{ color: 'rgba(255,255,255,0.2)' }}>•</span>
+              <span>Apoio: <strong style={{ color: '#22c55e' }}>+244 950 752 933</strong></span>
             </div>
           </div>
         </section>
