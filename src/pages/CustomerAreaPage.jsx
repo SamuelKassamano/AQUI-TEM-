@@ -34,7 +34,9 @@ import {
   getSavedCustomerProfile,
   saveCustomerProfile,
   getAbandonedCart,
-  clearAbandonedCart
+  clearAbandonedCart,
+  attachPaymentReceipt,
+  updateOrderStatus
 } from '../utils/customerOrders';
 import {
   getNotificationFeed,
@@ -55,6 +57,7 @@ export default function CustomerAreaPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searchError, setSearchError] = useState('');
+  const [receiptSuccessMsg, setReceiptSuccessMsg] = useState('');
 
   // Perfil do Cliente
   const [profile, setProfile] = useState(() => {
@@ -174,6 +177,35 @@ export default function CustomerAreaPage() {
   const handleEnablePush = async () => {
     const res = await requestBrowserNotificationPermission();
     setNotifPrefs(getNotificationPrefs());
+  };
+
+  // Confirmar Envio do Comprovativo
+  const handleConfirmReceiptSent = () => {
+    if (!selectedOrder) return;
+    const updated = attachPaymentReceipt(selectedOrder.id, 'Comprovativo enviado via WhatsApp (+244 950 752 933)');
+    if (updated) {
+      setSelectedOrder(updated);
+      setOrders(getLocalOrders());
+      setReceiptSuccessMsg('Comprovativo registado com sucesso! A nossa equipa financeira confere a entrada e desbloqueia a rota imediatamente.');
+      setTimeout(() => setReceiptSuccessMsg(''), 6000);
+    }
+  };
+
+  // Simular Desbloqueio da Rota em Tempo Recorde (Demonstração ao Vivo)
+  const handleToggleRouteDemo = (toRoute = true) => {
+    if (!selectedOrder) return;
+    const newStatus = toRoute ? 'rota' : 'pendente';
+    const driver = toRoute ? {
+      driverName: 'Mateus Domingos',
+      driverPhone: '+244 924 812 345',
+      vehicle: 'Toyota Starlet Prata (LD-44-82-AO)',
+      estimatedArrival: 'Hoje entre 14h00 e 16h30'
+    } : null;
+    const updated = updateOrderStatus(selectedOrder.id, newStatus, driver);
+    if (updated) {
+      setSelectedOrder(updated);
+      setOrders(getLocalOrders());
+    }
   };
 
   return (
@@ -480,6 +512,58 @@ export default function CustomerAreaPage() {
                     </div>
                   </div>
 
+                  {/* 🟢 ROTA DESBLOQUEADA EM TEMPO RECORDE (Quando Status é Rota) */}
+                  {(selectedOrder.status === 'rota' || (selectedOrder.driver && selectedOrder.status !== 'pendente')) && (
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.14) 0%, rgba(16, 185, 129, 0.06) 100%)',
+                        border: '1px solid #22c55e',
+                        borderRadius: '16px',
+                        padding: '20px',
+                        marginBottom: '26px',
+                        boxShadow: '0 0 25px rgba(34, 197, 94, 0.22)'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#22c55e', fontWeight: 800, fontSize: '1rem', marginBottom: '8px' }}>
+                        <Truck size={22} /> 🟢 ROTA DE ENTREGA DESBLOQUEADA EM TEMPO RECORDE!
+                      </div>
+                      <p style={{ color: '#e2e8f0', fontSize: '0.86rem', margin: '0 0 14px 0', lineHeight: '1.5' }}>
+                        O pagamento foi confirmado e a sua encomenda já se encontra na viatura em rota prioritária para o endereço indicado.
+                      </p>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '12px', background: 'rgba(0, 0, 0, 0.35)', padding: '14px', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Motorista Responsável</div>
+                          <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.92rem', marginTop: '2px' }}>{selectedOrder.driver?.driverName || 'Mateus Domingos'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Viatura Express</div>
+                          <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.92rem', marginTop: '2px' }}>{selectedOrder.driver?.vehicle || 'Toyota Starlet Prata (LD-44-82-AO)'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Previsão de Chegada</div>
+                          <div style={{ color: '#22c55e', fontWeight: 800, fontSize: '0.92rem', marginTop: '2px' }}>{selectedOrder.driver?.estimatedArrival || selectedOrder.deliveryZone?.estimatedTime || 'Hoje (Tempo Recorde)'}</div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <a
+                            href={`tel:${selectedOrder.driver?.driverPhone?.replace(/\s+/g, '') || '+244924812345'}`}
+                            style={{ background: '#22c55e', color: '#ffffff', textDecoration: 'none', padding: '7px 12px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                          >
+                            <Phone size={13} /> Ligar ao Motorista
+                          </a>
+                          <a
+                            href={`https://wa.me/${(selectedOrder.driver?.driverPhone || '244924812345').replace(/\D/g, '')}?text=Ol%C3%A1%20motorista%20da%20AQUI%20TEM,%20sou%20o%20cliente%20da%20encomenda%20%23${selectedOrder.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', textDecoration: 'none', padding: '7px 12px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '5px', border: '1px solid rgba(255, 255, 255, 0.2)' }}
+                          >
+                            <MessageCircle size={13} color="#22c55e" /> WhatsApp
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* 5-Step Visual Timeline */}
                   <div style={{ marginBottom: '32px' }}>
                     <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#ffffff', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -604,8 +688,62 @@ export default function CustomerAreaPage() {
                         </div>
                       </div>
 
-                      <div style={{ marginTop: '16px', background: 'rgba(255, 101, 0, 0.08)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255, 101, 0, 0.2)', fontSize: '0.78rem', color: '#cbd5e1' }}>
-                        💡 <strong>Envio de Comprovativo:</strong> Envie o comprovativo via WhatsApp (+244 950 752 933) com a referência <strong>#{selectedOrder.id}</strong> para desbloquear a rota em tempo recorde!
+                      <div style={{ marginTop: '16px', background: 'rgba(255, 101, 0, 0.08)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255, 101, 0, 0.2)', fontSize: '0.8rem', color: '#cbd5e1' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#ff8a3d', marginBottom: '6px' }}>
+                          <Clock size={15} /> Validação de Comprovativo & Rota Express
+                        </div>
+                        <p style={{ margin: '0 0 10px 0', fontSize: '0.78rem', lineHeight: '1.45' }}>
+                          Envie o comprovativo Multicaixa Express ou transferência bancária para o WhatsApp <strong>(+244 950 752 933)</strong> indicando a referência <strong>#{selectedOrder.id}</strong>. Assim que a nossa tesouraria confere a entrada na conta, a viatura é despachada e a rota em tempo recorde fica desbloqueada!
+                        </p>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
+                          <a
+                            href={`https://wa.me/244950752933?text=Ol%C3%A1%20AQUI%20TEM!%20Segue%20o%20comprovativo%20de%20pagamento%20da%20minha%20encomenda%20%23${selectedOrder.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{ background: '#25D366', color: '#ffffff', textDecoration: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <MessageCircle size={14} /> Enviar no WhatsApp
+                          </a>
+
+                          <button
+                            type="button"
+                            onClick={handleConfirmReceiptSent}
+                            style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.25)', padding: '8px 14px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <FileText size={14} color="#ff6500" /> Já enviei o Comprovativo
+                          </button>
+                        </div>
+
+                        {receiptSuccessMsg && (
+                          <div style={{ marginTop: '10px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#22c55e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 600 }}>
+                            ✓ {receiptSuccessMsg}
+                          </div>
+                        )}
+
+                        {/* Teste Rápido / Demonstração do Desbloqueio da Rota */}
+                        <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px dashed rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
+                            🧪 Teste de Rota em Tempo Recorde:
+                          </span>
+                          {selectedOrder.status !== 'rota' ? (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleRouteDemo(true)}
+                              style={{ background: 'rgba(34, 197, 94, 0.2)', border: '1px solid #22c55e', color: '#22c55e', padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              ⚡ Testar Desbloqueio da Rota
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleRouteDemo(false)}
+                              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
+                            >
+                              🔄 Repor Estado Inicial
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 

@@ -85,7 +85,7 @@ body {
   line-height: 1.55;
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -94,7 +94,7 @@ body {
 .app-container {
   width: 100%;
   max-width: 100vw;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 h1,
@@ -157,15 +157,17 @@ a {
   white-space: nowrap;
 }
 
-/* Balanced & Organized Header Navbar (White Bar) */
+/* Balanced & Organized Header Navbar (White Bar) - Permanently Sticky */
 .header-nav {
+  position: -webkit-sticky;
   position: sticky;
   top: 0;
-  z-index: 100;
-  background: var(--bg-glass);
+  z-index: 1000;
+  background: var(--bg-card);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-light);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   padding: 10px 0;
   transition: var(--transition-fast);
 }
@@ -2425,4 +2427,274 @@ a {
   line-height: 1.6;
   border-top: 1px solid var(--border-light);
   padding-top: 14px;
+}
+
+/* ==========================================================================
+   SOBRE A AQUI TEM ANGOLA - SEÇÃO SLIM, ULTRA-FINA & RESPONSIVA
+   ========================================================================== */
+.sobre-section-box {
+  background: linear-gradient(135deg, #090d16 0%, #05080e 100%);
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 20px 24px;
+  margin: 24px 0 32px 0;
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  position: relative;
+}
+
+.sobre-grid {
+  display: grid;
+  grid-template-columns: 1.25fr 0.75fr;
+  gap: 20px;
+  align-items: center;
+}
+
+.sobre-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ff8a3d;
+  margin-bottom: 6px;
+}
+
+.sobre-title {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.sobre-desc {
+  color: #ffffff;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  margin: 0;
+  font-weight: 400;
+}
+
+.sobre-micro-cols {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 14px;
+}
+
+.sobre-micro-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.sobre-micro-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.sobre-col-title {
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  margin-bottom: 2px;
+}
+
+.sobre-col-desc {
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.sobre-buttons-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.sobre-buttons-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.sobre-btn-outline {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: var(--transition-fast);
+}
+
+.sobre-btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.sobre-btn-whatsapp {
+  background: #ff6500;
+  color: #ffffff;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: var(--transition-fast);
+}
+
+.sobre-btn-whatsapp:hover {
+  background: #e55800;
+}
+
+.sobre-location-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.74rem;
+  color: #cbd5e1;
+}
+
+.sobre-img-box {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  height: 185px;
+  max-height: 185px;
+  background: #0d1322;
+}
+
+.sobre-img-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(6, 9, 17, 0.92) 0%, rgba(6, 9, 17, 0.2) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 12px;
+}
+
+/* Regras Mobile Específicas para Telemóvel (Ultra-Fino & Compacto) */
+@media (max-width: 768px) {
+  .sobre-section-box {
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    margin: 16px 0 24px 0 !important;
+  }
+
+  .sobre-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .sobre-badge {
+    font-size: 0.60rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .sobre-title {
+    font-size: 1.05rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .sobre-desc {
+    font-size: 0.76rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .sobre-micro-cols {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+    padding: 8px 0 !important;
+    margin-bottom: 10px !important;
+  }
+
+  .sobre-micro-item {
+    gap: 7px !important;
+  }
+
+  .sobre-micro-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .sobre-micro-icon svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+
+  .sobre-col-title {
+    font-size: 0.74rem !important;
+    margin-bottom: 1px !important;
+  }
+
+  .sobre-col-desc {
+    font-size: 0.68rem !important;
+    line-height: 1.3 !important;
+  }
+
+  .sobre-buttons-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .sobre-buttons-group {
+    display: flex !important;
+    gap: 6px !important;
+    width: 100% !important;
+  }
+
+  .sobre-btn-outline {
+    flex: 1 !important;
+    justify-content: center !important;
+    padding: 6px 8px !important;
+    font-size: 0.70rem !important;
+  }
+
+  .sobre-btn-whatsapp {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 7px 10px !important;
+    font-size: 0.74rem !important;
+  }
+
+  .sobre-location-tag {
+    justify-content: center !important;
+    font-size: 0.70rem !important;
+  }
+
+  .sobre-img-box {
+    height: 125px !important;
+    max-height: 125px !important;
+    border-radius: 10px !important;
+  }
 }

@@ -929,212 +929,71 @@ export default function App() {
         </section>
 
         {/* 🏬 Sobre a AQUI TEM (Design Compacto, Fino & Elegante com Imagem) */}
-        <section
-          id="sobre"
-          style={{
-            background: 'linear-gradient(135deg, #0b0f19 0%, #060911 100%)',
-            borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.09)',
-            padding: '22px 24px',
-            marginBottom: '32px',
-            color: '#ffffff',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
-            position: 'relative'
-          }}
-        >
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '22px',
-              alignItems: 'center'
-            }}
-          >
+        <section id="sobre" className="sobre-section-box">
+          <div className="sobre-grid">
             {/* Left Content Side */}
             <div style={{ minWidth: 0 }}>
               {/* Header row */}
-              <div style={{ marginBottom: '14px' }}>
-                <div
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    letterSpacing: '0.12em',
-                    textTransform: 'uppercase',
-                    color: '#ff8a3d',
-                    marginBottom: '6px'
-                  }}
-                >
+              <div style={{ marginBottom: '12px' }}>
+                <div className="sobre-badge">
                   <Sparkles size={12} color="#ff6500" /> AQUI TEM ANGOLA • DISTRIBUIÇÃO OFICIAL
                 </div>
-                <h2
-                  style={{
-                    fontSize: '1.3rem',
-                    fontWeight: 800,
-                    color: '#ffffff',
-                    margin: '0 0 6px 0',
-                    letterSpacing: '-0.02em',
-                    lineHeight: '1.25'
-                  }}
-                >
+                <h2 className="sobre-title">
                   Sobre a <span style={{ color: '#ff6500' }}>AQUI TEM</span> Angola
                 </h2>
-                <p
-                  style={{
-                    color: '#e2e8f0',
-                    fontSize: '0.85rem',
-                    lineHeight: '1.55',
-                    margin: 0,
-                    fontWeight: 400
-                  }}
-                >
+                <p className="sobre-desc">
                   A sua loja de confiança para tecnologia original e eletrodomésticos em Angola. Importação direta dos fabricantes oficiais, com stock real pronto para despacho e garantia real de fábrica.
                 </p>
               </div>
 
               {/* 3 Fine Micro-Columns */}
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                  gap: '12px',
-                  padding: '12px 0',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-                  borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-                  marginBottom: '14px'
-                }}
-              >
+              <div className="sobre-micro-cols">
                 {/* Col 1 */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <div
-                    style={{
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '6px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '2px'
-                    }}
-                  >
+                <div className="sobre-micro-item">
+                  <div className="sobre-micro-icon">
                     <ShieldCheck size={13} color="#ff6500" />
                   </div>
                   <div>
-                    <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.82rem', marginBottom: '2px' }}>
-                      100% Selado & Genuíno
-                    </div>
-                    <div style={{ color: '#cbd5e1', fontSize: '0.76rem', lineHeight: '1.4' }}>
-                      Produtos lacrados com garantia de troca de 7 dias.
-                    </div>
+                    <div className="sobre-col-title">100% Selado & Genuíno</div>
+                    <div className="sobre-col-desc">Produtos lacrados com garantia de troca de 7 dias.</div>
                   </div>
                 </div>
 
                 {/* Col 2 */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <div
-                    style={{
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '6px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '2px'
-                    }}
-                  >
+                <div className="sobre-micro-item">
+                  <div className="sobre-micro-icon">
                     <CreditCard size={13} color="#ff6500" />
                   </div>
                   <div>
-                    <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.82rem', marginBottom: '2px' }}>
-                      Pagamento & Agendamento
-                    </div>
-                    <div style={{ color: '#cbd5e1', fontSize: '0.76rem', lineHeight: '1.4' }}>
-                      Multicaixa Express ou IBAN para reserva e rota.
-                    </div>
+                    <div className="sobre-col-title">Pagamento & Agendamento</div>
+                    <div className="sobre-col-desc">Multicaixa Express ou IBAN para reserva e rota.</div>
                   </div>
                 </div>
 
                 {/* Col 3 */}
-                <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
-                  <div
-                    style={{
-                      width: '26px',
-                      height: '26px',
-                      borderRadius: '6px',
-                      background: 'rgba(255, 255, 255, 0.06)',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      marginTop: '2px'
-                    }}
-                  >
+                <div className="sobre-micro-item">
+                  <div className="sobre-micro-icon">
                     <Truck size={13} color="#ff6500" />
                   </div>
                   <div>
-                    <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.82rem', marginBottom: '2px' }}>
-                      Luanda & Províncias
-                    </div>
-                    <div style={{ color: '#cbd5e1', fontSize: '0.76rem', lineHeight: '1.4' }}>
-                      Rotas 24h/48h em Luanda e envio para todo o país.
-                    </div>
+                    <div className="sobre-col-title">Luanda & Províncias</div>
+                    <div className="sobre-col-desc">Rotas 24h/48h em Luanda e envio para todo o país.</div>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons + Location */}
-              <div
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '10px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="sobre-buttons-row">
+                <div className="sobre-buttons-group">
                   <button
                     onClick={() => setActiveInfoModal('stores')}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      color: '#ffffff',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '0.76rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}
+                    className="sobre-btn-outline"
                   >
                     <Store size={12} color="#ff6500" /> Apoio Oficial
                   </button>
                   <button
                     onClick={() => setActiveInfoModal('warranty')}
-                    style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      color: '#ffffff',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '0.76rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}
+                    className="sobre-btn-outline"
                   >
                     <ShieldCheck size={12} color="#22c55e" /> Garantia
                   </button>
@@ -1142,24 +1001,13 @@ export default function App() {
                     href="https://wa.me/244950752933?text=Ol%C3%A1%20AQUI%20TEM!%20Gostaria%20de%20informa%C3%A7%C3%B5es%20sobre%20produtos."
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{
-                      background: '#ff6500',
-                      color: '#ffffff',
-                      textDecoration: 'none',
-                      padding: '6px 12px',
-                      borderRadius: '6px',
-                      fontSize: '0.76rem',
-                      fontWeight: 700,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '5px'
-                    }}
+                    className="sobre-btn-whatsapp"
                   >
                     <MessageCircle size={12} /> WhatsApp: 950 752 933
                   </a>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.74rem', color: '#cbd5e1' }}>
+                <div className="sobre-location-tag">
                   <MapPin size={12} color="#ff6500" />
                   <span>Benfica — Luanda (08h–19h)</span>
                 </div>
@@ -1167,17 +1015,7 @@ export default function App() {
             </div>
 
             {/* Right Side: Elegant Compact Image Box */}
-            <div
-              style={{
-                position: 'relative',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                height: '190px',
-                maxHeight: '190px',
-                background: '#0d1322'
-              }}
-            >
+            <div className="sobre-img-box">
               <img
                 src="/flyer_showroom.jpg"
                 alt="Base Operacional AQUI TEM Luanda"
@@ -1192,17 +1030,7 @@ export default function App() {
                   e.currentTarget.src = "/flyer_appliances.jpg";
                 }}
               />
-              <div
-                style={{
-                  position: 'absolute',
-                  inset: 0,
-                  background: 'linear-gradient(to top, rgba(6, 9, 17, 0.9) 0%, rgba(6, 9, 17, 0.15) 55%, transparent 100%)',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-end',
-                  padding: '12px'
-                }}
-              >
+              <div className="sobre-img-overlay">
                 <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.82rem', lineHeight: '1.2' }}>
                   Base Operacional AQUI TEM
                 </div>
