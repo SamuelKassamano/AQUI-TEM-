@@ -18,7 +18,7 @@ export default function VoiceAssistantWelcome() {
   const currentText = lang === 'en' ? textEN : textPT;
   const audioSrc = lang === 'en' ? '/audio/welcome_en.mp3' : '/audio/welcome_pt.mp3';
 
-  // Stop any ongoing playback
+  // Stop all audio & speech
   const stopAll = useCallback(() => {
     if (audioRef.current) {
       try {
@@ -35,7 +35,7 @@ export default function VoiceAssistantWelcome() {
     setIsPlaying(false);
   }, []);
 
-  // Web Speech API execution (ensuring voices are ready)
+  // Web Speech API fallback
   const speakWithSynthesis = useCallback(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis || isMuted) return;
 
@@ -57,6 +57,7 @@ export default function VoiceAssistantWelcome() {
 
       utterance.onstart = () => {
         isSpeakingRef.current = true;
+        hasSpokenRef.current = true;
         setIsPlaying(true);
       };
       utterance.onend = () => {
@@ -75,15 +76,14 @@ export default function VoiceAssistantWelcome() {
     }
   }, [currentText, lang, isMuted]);
 
-  // Main automatic playback: runs MP3 studio neural voice, falls back immediately to Web Speech API
-  const startSpeakingAutomatically = useCallback(() => {
-    if (isMuted || isSpeakingRef.current) return;
+  // Main automatic playback trigger
+  const attemptPlay = useCallback((onSuccessCleanup) => {
+    if (isMuted || isSpeakingRef.current || hasSpokenRef.current) return;
 
-    // Try HTML5 Audio (studio neural voice)
     try {
       if (!audioRef.current) {
         audioRef.current = new Audio(audioSrc);
-      } else {
+      } else if (audioRef.current.src !== window.location.origin + audioSrc) {
         audioRef.current.src = audioSrc;
       }
 
@@ -94,13 +94,17 @@ export default function VoiceAssistantWelcome() {
         isSpeakingRef.current = true;
         hasSpokenRef.current = true;
         setIsPlaying(true);
+        if (typeof onSuccessCleanup === 'function') {
+          onSuccessCleanup();
+        }
       };
+
       audioRef.current.onended = () => {
         isSpeakingRef.current = false;
         setIsPlaying(false);
       };
+
       audioRef.current.onerror = () => {
-        // If MP3 fails, immediately speak with SpeechSynthesis
         speakWithSynthesis();
       };
 
@@ -111,10 +115,13 @@ export default function VoiceAssistantWelcome() {
             isSpeakingRef.current = true;
             hasSpokenRef.current = true;
             setIsPlaying(true);
+            if (typeof onSuccessCleanup === 'function') {
+              onSuccessCleanup();
+            }
           })
           .catch((err) => {
-            // If browser blocks audio.play(), immediately attempt Web Speech API without waiting for any click!
-            speakWithSynthesis();
+            // Autoplay with sound restricted by browser policy before first interaction.
+            // Do NOT remove listeners here so any tap/click anywhere immediately unlocks audio!
           });
       }
     } catch (err) {
@@ -122,62 +129,43 @@ export default function VoiceAssistantWelcome() {
     }
   }, [audioSrc, isMuted, speakWithSynthesis]);
 
-  // Global automatic triggers on page access
+  // Initialize automatic playback and listeners
   useEffect(() => {
     hasSpokenRef.current = false;
     isSpeakingRef.current = false;
 
-    // 1. Immediate trigger on component mount
-    const timer1 = setTimeout(() => {
-      startSpeakingAutomatically();
-    }, 150);
+    // 1. Attempt immediate 0ms playback on page load
+    attemptPlay();
 
-    // 2. Trigger on voice ready (Chrome populates getVoices asynchronously)
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        if (!hasSpokenRef.current && !isSpeakingRef.current) {
-          startSpeakingAutomatically();
-        }
-      };
-    }
-
-    // 3. Invisible passive trigger on ANY subtle mouse move, hover, scroll, focus, or touch
-    // (Notice: does NOT require clicking anything! Even moving the cursor triggers it instantly)
-    const passiveAutoTrigger = () => {
+    // 2. Fallback listeners for the very first interaction ANYWHERE on screen
+    const handleUserGesture = () => {
       if (!hasSpokenRef.current && !isSpeakingRef.current && !isMuted) {
-        startSpeakingAutomatically();
+        attemptPlay(cleanupListeners);
       }
-      removePassiveListeners();
     };
 
-    const removePassiveListeners = () => {
-      window.removeEventListener('mousemove', passiveAutoTrigger);
-      window.removeEventListener('pointermove', passiveAutoTrigger);
-      window.removeEventListener('mouseenter', passiveAutoTrigger);
-      window.removeEventListener('scroll', passiveAutoTrigger);
-      window.removeEventListener('focus', passiveAutoTrigger);
-      window.removeEventListener('touchstart', passiveAutoTrigger);
-      window.removeEventListener('wheel', passiveAutoTrigger);
-      window.removeEventListener('keydown', passiveAutoTrigger);
+    const cleanupListeners = () => {
+      document.removeEventListener('click', handleUserGesture, true);
+      document.removeEventListener('pointerdown', handleUserGesture, true);
+      document.removeEventListener('touchend', handleUserGesture, true);
+      document.removeEventListener('keydown', handleUserGesture, true);
+      window.removeEventListener('focus', handleUserGesture, true);
     };
 
-    window.addEventListener('mousemove', passiveAutoTrigger, { passive: true, once: true });
-    window.addEventListener('pointermove', passiveAutoTrigger, { passive: true, once: true });
-    window.addEventListener('mouseenter', passiveAutoTrigger, { passive: true, once: true });
-    window.addEventListener('scroll', passiveAutoTrigger, { passive: true, once: true });
-    window.addEventListener('focus', passiveAutoTrigger, { passive: true, once: true });
-    window.addEventListener('touchstart', passiveAutoTrigger, { passive: true, once: true });
-    window.addEventListener('wheel', passiveAutoTrigger, { passive: true, once: true });
-    window.addEventListener('keydown', passiveAutoTrigger, { passive: true, once: true });
+    // Capture phase listeners across entire document
+    document.addEventListener('click', handleUserGesture, { capture: true, passive: true });
+    document.addEventListener('pointerdown', handleUserGesture, { capture: true, passive: true });
+    document.addEventListener('touchend', handleUserGesture, { capture: true, passive: true });
+    document.addEventListener('keydown', handleUserGesture, { capture: true, passive: true });
+    window.addEventListener('focus', handleUserGesture, { capture: true, passive: true });
 
     return () => {
-      clearTimeout(timer1);
-      removePassiveListeners();
+      cleanupListeners();
       stopAll();
     };
-  }, [lang, startSpeakingAutomatically, stopAll]);
+  }, [lang, attemptPlay, stopAll]);
 
-  // Keep SpeechSynthesis alive (fixes Chrome 15-second speech synthesis pause bug)
+  // Chrome speech synthesis anti-stall heartbeat
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
     const interval = setInterval(() => {
@@ -189,14 +177,16 @@ export default function VoiceAssistantWelcome() {
     return () => clearInterval(interval);
   }, []);
 
-  // Toggle mute / unmute button
-  const toggleSound = () => {
+  // Manual mute/unmute button
+  const toggleSound = (e) => {
+    e.stopPropagation();
     if (isPlaying) {
       stopAll();
       setIsMuted(true);
     } else {
       setIsMuted(false);
-      startSpeakingAutomatically();
+      hasSpokenRef.current = false;
+      attemptPlay();
     }
   };
 
@@ -212,7 +202,7 @@ export default function VoiceAssistantWelcome() {
         gap: '8px'
       }}
     >
-      {/* Discreet Sound Button (no popup, no menu, automatic speech) */}
+      {/* Discreet Sound Pill Button */}
       <button
         type="button"
         onClick={toggleSound}
