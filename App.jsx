@@ -1222,7 +1222,7 @@ export default function App() {
                 }}
               >
                 <img
-                  src={getAssetUrl('/flyer_showroom.jpg')}
+                  src="/flyer_showroom.jpg"
                   alt="Centro Operacional AQUI TEM Luanda"
                   style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                   onError={(e) => {
