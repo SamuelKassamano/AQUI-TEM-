@@ -8,8 +8,9 @@ export default function VoiceAssistantWelcome() {
   const [isMuted, setIsMuted] = useState(false);
 
   const audioRef = useRef(null);
+  const fallbackAudioRef = useRef(null);
   const hasSpokenRef = useRef(false);
-  const audioUnlockedRef = useRef(false);
+  const cleanupListenersRef = useRef(null);
 
   // Exact welcome texts
   const textPT = "Olá, seja muito bem-vindo à nossa loja! É um prazer ter a sua visita. Explore a nossa variedade de produtos eletrónicos, eletrodomésticos e gadgets. Desejamos-lhe uma excelente experiência e boas compras, estamos aqui para ajudar no que precisar!";
@@ -24,6 +25,12 @@ export default function VoiceAssistantWelcome() {
       try {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
+      } catch (e) {}
+    }
+    if (fallbackAudioRef.current) {
+      try {
+        fallbackAudioRef.current.pause();
+        fallbackAudioRef.current.currentTime = 0;
       } catch (e) {}
     }
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -57,6 +64,7 @@ export default function VoiceAssistantWelcome() {
       utterance.onstart = () => {
         hasSpokenRef.current = true;
         setIsPlaying(true);
+        if (cleanupListenersRef.current) cleanupListenersRef.current();
       };
       utterance.onend = () => {
         setIsPlaying(false);
@@ -71,83 +79,99 @@ export default function VoiceAssistantWelcome() {
     }
   }, [currentText, lang, isMuted]);
 
-  // Play audio safely
-  const startPlayback = useCallback(() => {
+  // Main playback trigger
+  const playNow = useCallback(() => {
     if (isMuted || hasSpokenRef.current) return;
 
-    // Mobile AudioContext unlock helper
-    try {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass && !audioUnlockedRef.current) {
-        const audioCtx = new AudioContextClass();
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        audioUnlockedRef.current = true;
-      }
-    } catch (e) {}
-
     const el = audioRef.current;
-    if (!el) return;
-
-    el.volume = 1.0;
-
-    const playPromise = el.play();
-    if (playPromise !== undefined) {
-      playPromise
-        .then(() => {
-          hasSpokenRef.current = true;
-          setIsPlaying(true);
-        })
-        .catch((err) => {
-          // If browser policy blocked unprompted autoplay, fallback listeners will catch the first touch
-          // Do nothing here so it doesn't break
-        });
+    if (el) {
+      el.volume = 1.0;
+      const promise = el.play();
+      if (promise !== undefined) {
+        promise
+          .then(() => {
+            hasSpokenRef.current = true;
+            setIsPlaying(true);
+            if (cleanupListenersRef.current) cleanupListenersRef.current();
+          })
+          .catch((err) => {
+            // If DOM audio fails or blocked, try fallback Audio instance
+            try {
+              if (!fallbackAudioRef.current) {
+                fallbackAudioRef.current = new Audio(audioSrc);
+              }
+              fallbackAudioRef.current.volume = 1.0;
+              const fPromise = fallbackAudioRef.current.play();
+              if (fPromise !== undefined) {
+                fPromise
+                  .then(() => {
+                    hasSpokenRef.current = true;
+                    setIsPlaying(true);
+                    if (cleanupListenersRef.current) cleanupListenersRef.current();
+                  })
+                  .catch(() => {
+                    // Autoplay blocked by browser policy without gesture; keep listeners waiting for first touch/click
+                  });
+              }
+            } catch (e) {
+              // Keep listeners waiting
+            }
+          });
+      }
     }
-  }, [isMuted]);
+  }, [audioSrc, isMuted]);
 
-  // Main effect: attempt autoplay + background unlock on touch/click
+  // Initialize playback + background unlock
   useEffect(() => {
     hasSpokenRef.current = false;
 
-    // 1. Immediate execution on mount (desktop autoplay)
-    const timer = setTimeout(() => {
-      startPlayback();
-    }, 150);
+    // Load audio element
+    if (audioRef.current) {
+      try {
+        audioRef.current.load();
+      } catch (e) {}
+    }
 
-    // 2. Mobile and gesture unlock: triggered synchronously on the very first touch or click
-    const handleFirstGesture = () => {
+    // 1. Immediate attempt (succeeds on desktop when autoplay allowed)
+    playNow();
+    const t1 = setTimeout(playNow, 300);
+
+    // 2. Gesture unlock: triggers on first touch, click, scroll, tap
+    const handleGesture = () => {
       if (!hasSpokenRef.current && !isMuted) {
-        startPlayback();
+        playNow();
       }
-      cleanupGestureListeners();
     };
 
-    const cleanupGestureListeners = () => {
-      window.removeEventListener('touchstart', handleFirstGesture, true);
-      window.removeEventListener('touchend', handleFirstGesture, true);
-      window.removeEventListener('pointerdown', handleFirstGesture, true);
-      window.removeEventListener('click', handleFirstGesture, true);
-      window.removeEventListener('keydown', handleFirstGesture, true);
+    cleanupListenersRef.current = () => {
+      window.removeEventListener('pointerdown', handleGesture, true);
+      window.removeEventListener('touchstart', handleGesture, true);
+      window.removeEventListener('touchend', handleGesture, true);
+      window.removeEventListener('click', handleGesture, true);
+      window.removeEventListener('scroll', handleGesture, true);
+      window.removeEventListener('keydown', handleGesture, true);
     };
 
-    window.addEventListener('touchstart', handleFirstGesture, { capture: true, passive: true });
-    window.addEventListener('touchend', handleFirstGesture, { capture: true, passive: true });
-    window.addEventListener('pointerdown', handleFirstGesture, { capture: true, passive: true });
-    window.addEventListener('click', handleFirstGesture, { capture: true, passive: true });
-    window.addEventListener('keydown', handleFirstGesture, { capture: true, passive: true });
+    // Attach listeners with capture
+    window.addEventListener('pointerdown', handleGesture, { capture: true, passive: true });
+    window.addEventListener('touchstart', handleGesture, { capture: true, passive: true });
+    window.addEventListener('touchend', handleGesture, { capture: true, passive: true });
+    window.addEventListener('click', handleGesture, { capture: true, passive: true });
+    window.addEventListener('scroll', handleGesture, { capture: true, passive: true });
+    window.addEventListener('keydown', handleGesture, { capture: true, passive: true });
 
     return () => {
-      clearTimeout(timer);
-      cleanupGestureListeners();
+      clearTimeout(t1);
+      if (cleanupListenersRef.current) cleanupListenersRef.current();
       stopAll();
     };
-  }, [lang, startPlayback, stopAll, isMuted]);
+  }, [lang, playNow, stopAll, isMuted]);
 
-  // Handle audio element events
+  // Audio element events
   const handleAudioPlay = () => {
     hasSpokenRef.current = true;
     setIsPlaying(true);
+    if (cleanupListenersRef.current) cleanupListenersRef.current();
   };
 
   const handleAudioEnded = () => {
@@ -155,26 +179,34 @@ export default function VoiceAssistantWelcome() {
   };
 
   const handleAudioError = () => {
+    // If MP3 fails to load, fallback to SpeechSynthesis
     speakWithSynthesis();
   };
 
-  // Toggle sound manually
+  // Toggle sound
   const toggleSound = (e) => {
-    e.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
     if (isPlaying) {
       stopAll();
       setIsMuted(true);
     } else {
       setIsMuted(false);
       hasSpokenRef.current = false;
-      if (audioRef.current) {
-        audioRef.current.currentTime = 0;
-        audioRef.current.play().then(() => {
-          setIsPlaying(true);
-          hasSpokenRef.current = true;
-        }).catch(() => {
-          speakWithSynthesis();
-        });
+      const el = audioRef.current;
+      if (el) {
+        el.currentTime = 0;
+        el.play()
+          .then(() => {
+            setIsPlaying(true);
+            hasSpokenRef.current = true;
+          })
+          .catch(() => {
+            speakWithSynthesis();
+          });
       } else {
         speakWithSynthesis();
       }
@@ -193,7 +225,10 @@ export default function VoiceAssistantWelcome() {
         gap: '8px'
       }}
     >
-      {/* Native HTML5 Audio element mounted directly into DOM for full iOS/Android compatibility */}
+      {/* 
+        Native HTML5 Audio element mounted in the active render tree 
+        (NOT display: none, so mobile Safari & Chrome never deactivate or pause it)
+      */}
       <audio
         ref={audioRef}
         src={audioSrc}
@@ -204,7 +239,16 @@ export default function VoiceAssistantWelcome() {
         onPlay={handleAudioPlay}
         onEnded={handleAudioEnded}
         onError={handleAudioError}
-        style={{ display: 'none' }}
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '1px',
+          height: '1px',
+          opacity: 0.01,
+          pointerEvents: 'none',
+          zIndex: -9999
+        }}
       />
 
       {/* Discreet Sound Status Button */}
