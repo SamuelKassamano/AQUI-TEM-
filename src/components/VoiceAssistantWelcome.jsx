@@ -8,17 +8,18 @@ export default function VoiceAssistantWelcome() {
   const [isMuted, setIsMuted] = useState(false);
 
   const audioRef = useRef(null);
-  const userInteractedRef = useRef(false);
+  const hasSpokenRef = useRef(false);
+  const isSpeakingRef = useRef(false);
 
   // Exact welcome messages
-  const textPT = "Olá! Seja muito bem-vindo à nossa loja! É um prazer ter a sua visita. Explore a nossa variedade de produtos electrónicos, electrodomésticos e gadgets. Desejamos-lhe uma excelente experiência e boas compras! Estamos aqui para ajudar no que precisar";
+  const textPT = "Olá! Seja muito bem-vindo à nossa loja! É um prazer ter a sua visita. Explore a nossa variedade de produtos electrónicos, electrodomésticos e gadgets. Desejamos-lhe uma excelente experiência e boas compras! Estamos aqui para ajudar no que precisar.";
   const textEN = "Hello! Welcome to our store! It's a pleasure to have you here. Explore our wide range of electronics, home appliances, and gadgets. We wish you an excellent experience and happy shopping! We are here to help whenever you need.";
 
   const currentText = lang === 'en' ? textEN : textPT;
   const audioSrc = lang === 'en' ? '/audio/welcome_en.mp3' : '/audio/welcome_pt.mp3';
 
-  // Stop any playing sound
-  const stopAudio = useCallback(() => {
+  // Stop any ongoing playback
+  const stopAll = useCallback(() => {
     if (audioRef.current) {
       try {
         audioRef.current.pause();
@@ -30,14 +31,18 @@ export default function VoiceAssistantWelcome() {
         window.speechSynthesis.cancel();
       } catch (e) {}
     }
+    isSpeakingRef.current = false;
     setIsPlaying(false);
   }, []);
 
-  // Web Speech API fallback
+  // Web Speech API execution (ensuring voices are ready)
   const speakWithSynthesis = useCallback(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    if (typeof window === 'undefined' || !window.speechSynthesis || isMuted) return;
+
     try {
       window.speechSynthesis.cancel();
+      window.speechSynthesis.resume();
+
       const utterance = new SpeechSynthesisUtterance(currentText);
       utterance.lang = lang === 'en' ? 'en-US' : 'pt-PT';
       utterance.rate = 0.98;
@@ -50,98 +55,148 @@ export default function VoiceAssistantWelcome() {
       const femaleVoice = langVoices.find(v => femaleKeywords.some(k => (v.name || '').toLowerCase().includes(k))) || langVoices[0];
       if (femaleVoice) utterance.voice = femaleVoice;
 
-      utterance.onstart = () => setIsPlaying(true);
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
+      utterance.onstart = () => {
+        isSpeakingRef.current = true;
+        setIsPlaying(true);
+      };
+      utterance.onend = () => {
+        isSpeakingRef.current = false;
+        setIsPlaying(false);
+      };
+      utterance.onerror = () => {
+        isSpeakingRef.current = false;
+        setIsPlaying(false);
+      };
 
       window.speechSynthesis.speak(utterance);
     } catch (e) {
+      isSpeakingRef.current = false;
       setIsPlaying(false);
     }
-  }, [currentText, lang]);
+  }, [currentText, lang, isMuted]);
 
-  // Main play function: plays the studio AI audio directly
-  const playAudio = useCallback(() => {
-    if (isMuted) return;
+  // Main automatic playback: runs MP3 studio neural voice, falls back immediately to Web Speech API
+  const startSpeakingAutomatically = useCallback(() => {
+    if (isMuted || isSpeakingRef.current) return;
 
-    stopAudio();
-
+    // Try HTML5 Audio (studio neural voice)
     try {
-      const audio = new Audio(audioSrc);
-      audioRef.current = audio;
-      audio.volume = 1.0;
+      if (!audioRef.current) {
+        audioRef.current = new Audio(audioSrc);
+      } else {
+        audioRef.current.src = audioSrc;
+      }
 
-      audio.onplay = () => setIsPlaying(true);
-      audio.onended = () => setIsPlaying(false);
-      audio.onerror = () => {
-        // Fallback to browser SpeechSynthesis
+      audioRef.current.volume = 1.0;
+      audioRef.current.preload = 'auto';
+
+      audioRef.current.onplay = () => {
+        isSpeakingRef.current = true;
+        hasSpokenRef.current = true;
+        setIsPlaying(true);
+      };
+      audioRef.current.onended = () => {
+        isSpeakingRef.current = false;
+        setIsPlaying(false);
+      };
+      audioRef.current.onerror = () => {
+        // If MP3 fails, immediately speak with SpeechSynthesis
         speakWithSynthesis();
       };
 
-      const playPromise = audio.play();
+      const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise
           .then(() => {
+            isSpeakingRef.current = true;
+            hasSpokenRef.current = true;
             setIsPlaying(true);
           })
-          .catch(() => {
-            // Autoplay delayed by browser policy: register one-shot gesture listeners
-            const unlockAndPlay = () => {
-              if (!userInteractedRef.current && !isMuted) {
-                userInteractedRef.current = true;
-                audio.play().then(() => setIsPlaying(true)).catch(() => speakWithSynthesis());
-              }
-              cleanup();
-            };
-
-            const cleanup = () => {
-              window.removeEventListener('pointerdown', unlockAndPlay);
-              window.removeEventListener('click', unlockAndPlay);
-              window.removeEventListener('touchstart', unlockAndPlay);
-              window.removeEventListener('scroll', unlockAndPlay);
-              window.removeEventListener('keydown', unlockAndPlay);
-            };
-
-            window.addEventListener('pointerdown', unlockAndPlay, { passive: true, once: true });
-            window.addEventListener('click', unlockAndPlay, { passive: true, once: true });
-            window.addEventListener('touchstart', unlockAndPlay, { passive: true, once: true });
-            window.addEventListener('scroll', unlockAndPlay, { passive: true, once: true });
-            window.addEventListener('keydown', unlockAndPlay, { passive: true, once: true });
+          .catch((err) => {
+            // If browser blocks audio.play(), immediately attempt Web Speech API without waiting for any click!
+            speakWithSynthesis();
           });
       }
     } catch (err) {
       speakWithSynthesis();
     }
-  }, [audioSrc, isMuted, stopAudio, speakWithSynthesis]);
+  }, [audioSrc, isMuted, speakWithSynthesis]);
 
-  // Trigger automatically when page loads or when language changes
+  // Global automatic triggers on page access
   useEffect(() => {
-    userInteractedRef.current = false;
+    hasSpokenRef.current = false;
+    isSpeakingRef.current = false;
 
-    // Trigger immediate automatic speech
-    const timer = setTimeout(() => {
-      playAudio();
-    }, 400);
+    // 1. Immediate trigger on component mount
+    const timer1 = setTimeout(() => {
+      startSpeakingAutomatically();
+    }, 150);
+
+    // 2. Trigger on voice ready (Chrome populates getVoices asynchronously)
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        if (!hasSpokenRef.current && !isSpeakingRef.current) {
+          startSpeakingAutomatically();
+        }
+      };
+    }
+
+    // 3. Invisible passive trigger on ANY subtle mouse move, hover, scroll, focus, or touch
+    // (Notice: does NOT require clicking anything! Even moving the cursor triggers it instantly)
+    const passiveAutoTrigger = () => {
+      if (!hasSpokenRef.current && !isSpeakingRef.current && !isMuted) {
+        startSpeakingAutomatically();
+      }
+      removePassiveListeners();
+    };
+
+    const removePassiveListeners = () => {
+      window.removeEventListener('mousemove', passiveAutoTrigger);
+      window.removeEventListener('pointermove', passiveAutoTrigger);
+      window.removeEventListener('mouseenter', passiveAutoTrigger);
+      window.removeEventListener('scroll', passiveAutoTrigger);
+      window.removeEventListener('focus', passiveAutoTrigger);
+      window.removeEventListener('touchstart', passiveAutoTrigger);
+      window.removeEventListener('wheel', passiveAutoTrigger);
+      window.removeEventListener('keydown', passiveAutoTrigger);
+    };
+
+    window.addEventListener('mousemove', passiveAutoTrigger, { passive: true, once: true });
+    window.addEventListener('pointermove', passiveAutoTrigger, { passive: true, once: true });
+    window.addEventListener('mouseenter', passiveAutoTrigger, { passive: true, once: true });
+    window.addEventListener('scroll', passiveAutoTrigger, { passive: true, once: true });
+    window.addEventListener('focus', passiveAutoTrigger, { passive: true, once: true });
+    window.addEventListener('touchstart', passiveAutoTrigger, { passive: true, once: true });
+    window.addEventListener('wheel', passiveAutoTrigger, { passive: true, once: true });
+    window.addEventListener('keydown', passiveAutoTrigger, { passive: true, once: true });
 
     return () => {
-      clearTimeout(timer);
-      stopAudio();
+      clearTimeout(timer1);
+      removePassiveListeners();
+      stopAll();
     };
-  }, [lang]);
+  }, [lang, startSpeakingAutomatically, stopAll]);
+
+  // Keep SpeechSynthesis alive (fixes Chrome 15-second speech synthesis pause bug)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return;
+    const interval = setInterval(() => {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Toggle mute / unmute button
   const toggleSound = () => {
     if (isPlaying) {
-      stopAudio();
+      stopAll();
       setIsMuted(true);
     } else {
       setIsMuted(false);
-      userInteractedRef.current = true;
-      if (audioRef.current) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => speakWithSynthesis());
-      } else {
-        playAudio();
-      }
+      startSpeakingAutomatically();
     }
   };
 
@@ -157,7 +212,7 @@ export default function VoiceAssistantWelcome() {
         gap: '8px'
       }}
     >
-      {/* Discreet Sound Button (No menu, no permission prompt) */}
+      {/* Discreet Sound Button (no popup, no menu, automatic speech) */}
       <button
         type="button"
         onClick={toggleSound}
