@@ -1537,16 +1537,18 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
   },
   {
     "id": "f8a8008b-8888-5008-a008-000000000059",
-    "sku": "AT-ORA-OSW-805N",
-    "slug": "smartwatch-oraimo-watch-5-lite-osw-804-hd",
+    "sku": "AT-ORA-508",
+    "slug": "escova-dentes-eletrica-oraimo-smartdent-c2-508",
     "slugAliases": [
-      "oraimo-watch-fit-508",
-      "oraimo-osw-805n"
+      "oraimo-smartdent-c2",
+      "oraimo-508",
+      "escova-eletrica-oraimo-508",
+      "smartwatch-oraimo-watch-5-lite-osw-804-hd"
     ],
-    "name": "Smartwatch Oraimo Watch 5 Lite OSW-804 Ecrã HD 2.01\" Chamadas Bluetooth",
+    "name": "Escova de Dentes Elétrica Sónica Inteligente Oraimo SmartDent C2 (Modelo 508)",
     "brand": "Oraimo",
-    "category": "Smartwatches",
-    "sourceName": "Fornecedor Oficial Oraimo Wearables (Watch Fit OSW-805N)",
+    "category": "Acessórios & Casa",
+    "sourceName": "Fornecedor Oficial Oraimo Personal Care (SmartDent C2 Electric Toothbrush 508)",
     "referenceCostKz": 16900,
     "shippingKz": 4000,
     "totalCostKz": 20900,
@@ -1557,9 +1559,9 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     "stock": 25,
     "rating": 4.8,
     "reviews_count": 51,
-    "image": "/products/oraimo-smartwatch-watch-fit-508.png",
-    "seoTitle": "Smartwatch Fitness Oraimo Watch Fit com Notificações | AQUI TEM ANGOLA",
-    "seoDescription": "Acompanhe passos, batimentos cardíacos, sono e treinos com o relógio inteligente Oraimo Watch Fit na AQUI TEM Angola."
+    "image": "/products/oraimo-smartdent-c2-508.png",
+    "seoTitle": "Escova de Dentes Elétrica Sónica Oraimo SmartDent C2 | AQUI TEM ANGOLA",
+    "seoDescription": "Escova de dentes elétrica sónica Oraimo SmartDent C2 com 40.000 vibrações por minuto, 5 modos de escovagem e bateria para 30 dias na AQUI TEM Angola."
   },
   {
     "id": "f9a9009c-9999-5009-a009-000000000060",
@@ -1647,7 +1649,7 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
       "oraimo-watch-4-plus",
       "oraimo-osw-824"
     ],
-    "name": "Smartwatch Oraimo Watch Nova 2R Lite OSW-824 Ecrã AMOLED 1.43\" com Chamadas Bluetooth",
+    "name": "Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã HD 2.01\" com Chamadas Bluetooth",
     "brand": "Oraimo",
     "category": "Smartwatches",
     "sourceName": "Fornecedor Oficial Oraimo Wearables (Watch 4 Plus OSW-824)",
@@ -1673,7 +1675,7 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
       "oraimo-watch-nova",
       "oraimo-osw-833n"
     ],
-    "name": "Relógio Inteligente Oraimo Watch Muse 2 OSW-833N Rose Gold com Display AMOLED",
+    "name": "Smartwatch Oraimo Watch Nova OSW-833N Rose Gold com Ecrã AMOLED 1.43\"",
     "brand": "Oraimo",
     "category": "Smartwatches",
     "sourceName": "Fornecedor Oficial Oraimo Wearables (Watch Nova OSW-833N Rose Gold)",
@@ -1699,7 +1701,7 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
       "oraimo-watch-er",
       "oraimo-osw-814s"
     ],
-    "name": "Smartwatch Redondo Oraimo Watch Nova 2 Air OSW-814S Display AMOLED Always-On",
+    "name": "Smartwatch Redondo Oraimo Watch ER OSW-814S com Ecrã AMOLED Always-On",
     "brand": "Oraimo",
     "category": "Smartwatches",
     "sourceName": "Fornecedor Oficial Oraimo Wearables (Watch ER Round AMOLED OSW-814S)",
@@ -1803,7 +1805,7 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
       "oraimo-soundflow-obs-680",
       "coluna-oraimo-soundflow"
     ],
-    "name": "Coluna Bluetooth 360° Oraimo SpaceBox Active OBS-680 com Show de Luzes RGB e Graves",
+    "name": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves",
     "brand": "Oraimo",
     "category": "Áudio & Som",
     "sourceName": "Fornecedor Oficial Oraimo Audio (SoundFlow 360 Speaker OBS-680)",

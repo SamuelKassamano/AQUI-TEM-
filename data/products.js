@@ -796,10 +796,10 @@ export const PRODUCTS = [
     "rating": 4.8,
     "reviews_count": 19,
     "badge": "FUTURISTA",
-    "image_url": "/products/fones-tws-bluetooth.jpg",
-    "image": "/products/fones-tws-bluetooth.jpg",
+    "image_url": "/products/oraimo-spacebuds-neo-otw323.png",
+    "image": "/products/oraimo-spacebuds-neo-otw323.png",
     "images": [
-      "/products/fones-tws-bluetooth.jpg"
+      "/products/oraimo-spacebuds-neo-otw323.png"
     ],
     "description": "Fones TWS Bluetooth Oraimo SpaceBuds Lite com design espacial transparente moderno, graves potentes e chamadas limpas com redução de ruído.",
     "highlights": [
@@ -840,10 +840,10 @@ export const PRODUCTS = [
     "rating": 4.8,
     "reviews_count": 22,
     "badge": "NECKBAND",
-    "image_url": "/products/fones-tws-bluetooth.jpg",
-    "image": "/products/fones-tws-bluetooth.jpg",
+    "image_url": "/products/oraimo-necklace-neo-oeb-310.png",
+    "image": "/products/oraimo-necklace-neo-oeb-310.png",
     "images": [
-      "/products/fones-tws-bluetooth.jpg"
+      "/products/oraimo-necklace-neo-oeb-310.png"
     ],
     "description": "Fones de ouvido neckband com suporte de pescoço Oraimo Necklace Lite. Até 30 horas de autonomia contínua, graves HavyBass e vibração para chamadas recebidas.",
     "highlights": [
@@ -884,10 +884,10 @@ export const PRODUCTS = [
     "rating": 4.8,
     "reviews_count": 14,
     "badge": "COMPACTO",
-    "image_url": "/products/smartwatch.jpg",
-    "image": "/products/smartwatch.jpg",
+    "image_url": "/products/redmi-watch-3-active.png",
+    "image": "/products/redmi-watch-3-active.png",
     "images": [
-      "/products/smartwatch.jpg"
+      "/products/redmi-watch-3-active.png"
     ],
     "description": "Smartwatch X-Watch Prisma com ecrã de 1.4 polegadas, design moderno curvo, monitorização de passos, batimentos cardíacos e notificações de mensagens no pulso.",
     "highlights": [
@@ -2794,15 +2794,17 @@ export const PRODUCTS = [
     "created_at": "2026-11-09T22:00:00.000Z",
     "isNewAddition": true,
     "whiteBg": true,
-    "name": "Smartwatch Oraimo Watch 5 Lite OSW-804 Ecrã HD 2.01\" Chamadas Bluetooth",
-    "slug": "smartwatch-oraimo-watch-5-lite-osw-804-hd",
+    "name": "Escova de Dentes Elétrica Sónica Inteligente Oraimo SmartDent C2 (Modelo 508)",
+    "slug": "escova-dentes-eletrica-oraimo-smartdent-c2-508",
     "slugAliases": [
-      "oraimo-watch-fit-508",
-      "oraimo-osw-805n"
+      "oraimo-smartdent-c2",
+      "oraimo-508",
+      "escova-eletrica-oraimo-508",
+      "smartwatch-oraimo-watch-5-lite-osw-804-hd"
     ],
-    "sku": "AT-ORA-OSW-805N",
+    "sku": "AT-ORA-508",
     "brand": "Oraimo",
-    "category": "Smartwatches",
+    "category": "Acessórios & Casa",
     "stock": 25,
     "active": true,
     "price": 25125,
@@ -2811,35 +2813,45 @@ export const PRODUCTS = [
     "rating": 4.8,
     "reviews_count": 51,
     "badge": "ORAIMO ORIGINAL",
-    "image_url": "/products/oraimo-smartwatch-watch-fit-508.png",
-    "image": "/products/oraimo-smartwatch-watch-fit-508.png",
-    "fallbackImage": "/products/oraimo-smartwatch-watch-fit-508.png",
+    "image_url": "/products/oraimo-smartdent-c2-508.png",
+    "image": "/products/oraimo-smartdent-c2-508.png",
+    "fallbackImage": "/products/oraimo-smartdent-c2-508.png",
     "images": [
-      "/products/oraimo-smartwatch-watch-fit-508.png"
+      "/products/oraimo-smartdent-c2-508.png"
     ],
-    "description": "Smartwatch Fitness Oraimo Watch Fit com Monitor de Saúde e Notificações original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "description": "A Escova de Dentes Elétrica Inteligente Sónica Oraimo SmartDent C2 (Modelo 508) proporciona uma higiene bucal avançada de nível profissional em Angola. Equipada com motor sónico de alto rendimento que produz até 40.000 vibrações por minuto, remove com máxima eficácia a placa bacteriana sem agredir as gengivas. Conta com 5 modos inteligentes de escovagem (Clean, White, Polish, Gum Care e Sensitive), temporizador inteligente de 2 minutos com pausas a cada 30 segundos para troca de quadrante, cerdas suaves DuPont em corte W e bateria com autonomia prolongada de até 30 dias com uma única carga.",
     "highlights": [
-      "Garantia oficial e autenticidade 100% comprovada Oraimo",
-      "Desempenho de alta eficiência e acabamento premium",
-      "Compatibilidade universal e alta durabilidade no uso diário",
-      "Entrega rápida e segura em Luanda e províncias"
+      "Motor sónico de alta velocidade com até 40.000 vibrações por minuto",
+      "5 modos inteligentes de escovagem para todas as necessidades bucais",
+      "Temporizador inteligente de 2 minutos com alerta a cada 30 segundos",
+      "Cerdas suaves DuPont com corte anatómico em W para proteção das gengivas",
+      "Bateria recarregável com autonomia de até 30 dias com uma só carga",
+      "Classificação IPX7 à prova d'água para uso seguro no duche"
     ],
     "features": [
-      "Tecnologia inteligente desenvolvida para máxima longevidade",
-      "Proteção contra sobretensão e aquecimento"
+      "Tecnologia sónica profunda que remove até 10x mais placa bacteriana",
+      "Carregamento prático via cabo USB compatível com qualquer adaptador"
     ],
     "specifications": {
       "Marca": "Oraimo",
-      "Modelo": "AT-ORA-OSW-805N",
-      "Garantia": "12 Meses Oficial",
+      "Modelo": "SmartDent C2 (Modelo 508 / OPC-508)",
+      "Vibrações": "Até 40.000 VPM (vibrações sónicas por minuto)",
+      "Modos de Escovagem": "5 Modos (Clean, White, Polish, Gum Care, Sensitive)",
+      "Temporizador": "2 minutos com alerta de troca de quadrante a cada 30s",
+      "Cerdas": "DuPont suaves com corte em W",
+      "Autonomia": "Até 30 dias com uma única carga",
+      "À Prova de Água": "IPX7 à prova de água total",
+      "Garantia": "12 Meses Oficial Oraimo",
       "Origem": "Distribuição Autorizada Oficial"
     },
     "packageContent": [
-      "1 Smartwatch Fitness Oraimo Watch Fit com Monitor de Saúde e Notificações",
+      "1 Escova de Dentes Elétrica Inteligente Oraimo SmartDent C2",
+      "Cabeças de escovagem sobressalentes DuPont",
+      "1 Cabo de Carregamento USB",
       "1 Manual do Usuário e Certificado de Garantia Oraimo"
     ],
-    "seoTitle": "Smartwatch Fitness Oraimo Watch Fit com Notificações | AQUI TEM ANGOLA",
-    "seoDescription": "Acompanhe passos, batimentos cardíacos, sono e treinos com o relógio inteligente Oraimo Watch Fit na AQUI TEM Angola."
+    "seoTitle": "Escova de Dentes Elétrica Sónica Oraimo SmartDent C2 | AQUI TEM ANGOLA",
+    "seoDescription": "Escova de dentes elétrica sónica Oraimo SmartDent C2 com 40.000 vibrações por minuto, 5 modos de escovagem e bateria para 30 dias na AQUI TEM Angola."
   },
   {
     "id": "f9a9009c-9999-5009-a009-000000000060",
@@ -3006,11 +3018,12 @@ export const PRODUCTS = [
     "created_at": "2026-11-09T22:00:00.000Z",
     "isNewAddition": true,
     "whiteBg": true,
-    "name": "Smartwatch Oraimo Watch Nova 2R Lite OSW-824 Ecrã AMOLED 1.43\" com Chamadas Bluetooth",
+    "name": "Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã HD 2.01\" com Chamadas Bluetooth",
     "slug": "smartwatch-oraimo-watch-4-plus-osw-824-hd-2-01",
     "slugAliases": [
       "oraimo-watch-4-plus",
-      "oraimo-osw-824"
+      "oraimo-osw-824",
+      "smartwatch-oraimo-watch-nova-2r-lite"
     ],
     "sku": "AT-ORA-OSW-824",
     "brand": "Oraimo",
@@ -3031,9 +3044,10 @@ export const PRODUCTS = [
     ],
     "description": "Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã HD 2.01\" com Chamadas Bluetooth original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
     "highlights": [
+      "Ecrã HD gigante de 2.01 polegadas com alta definição e nitidez",
+      "Chamadas telefónicas por Bluetooth com microfone e altifalante integrados",
+      "Mais de 100 modos desportivos e monitorização de saúde 24 horas",
       "Garantia oficial e autenticidade 100% comprovada Oraimo",
-      "Desempenho de alta eficiência e acabamento premium",
-      "Compatibilidade universal e alta durabilidade no uso diário",
       "Entrega rápida e segura em Luanda e províncias"
     ],
     "features": [
@@ -3042,12 +3056,17 @@ export const PRODUCTS = [
     ],
     "specifications": {
       "Marca": "Oraimo",
-      "Modelo": "AT-ORA-OSW-824",
+      "Modelo": "Watch 4 Plus (OSW-824)",
+      "Ecrã": "2.01\" HD Ultra Amplo (240x282)",
+      "Chamadas": "Bluetooth HD com cancelamento de ruído",
+      "Bateria": "Até 7 dias de autonomia",
+      "Resistência": "Classificação IP68",
       "Garantia": "12 Meses Oficial",
       "Origem": "Distribuição Autorizada Oficial"
     },
     "packageContent": [
-      "1 Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã HD 2.01\" com Chamadas Bluetooth",
+      "1 Smartwatch Oraimo Watch 4 Plus OSW-824",
+      "1 Cabo de Carregamento Magnético",
       "1 Manual do Usuário e Certificado de Garantia Oraimo"
     ],
     "seoTitle": "Smartwatch Oraimo Watch 4 Plus OSW-824 Ecrã 2.01\" | AQUI TEM ANGOLA",
@@ -3059,11 +3078,12 @@ export const PRODUCTS = [
     "created_at": "2026-11-09T22:00:00.000Z",
     "isNewAddition": true,
     "whiteBg": true,
-    "name": "Relógio Inteligente Oraimo Watch Muse 2 OSW-833N Rose Gold com Display AMOLED",
+    "name": "Smartwatch Oraimo Watch Nova OSW-833N Rose Gold com Ecrã AMOLED 1.43\"",
     "slug": "relogio-inteligente-oraimo-watch-nova-osw-833n-rose-gold",
     "slugAliases": [
       "oraimo-watch-nova",
-      "oraimo-osw-833n"
+      "oraimo-osw-833n",
+      "relogio-inteligente-oraimo-watch-muse-2"
     ],
     "sku": "AT-ORA-OSW-833N",
     "brand": "Oraimo",
@@ -3082,25 +3102,31 @@ export const PRODUCTS = [
     "images": [
       "/products/oraimo-watch-nova-osw-833n.png"
     ],
-    "description": "Relógio Inteligente Oraimo Watch Nova OSW-833N Rose Gold com Display AMOLED original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "description": "Smartwatch Oraimo Watch Nova OSW-833N Rose Gold com Ecrã AMOLED 1.43\" original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com acabamento sofisticado em ouro rosa, display de cores vivas e conectividade Bluetooth avançada.",
     "highlights": [
+      "Acabamento luxuoso em tom Rose Gold ideal para uso social e profissional",
+      "Ecrã AMOLED de 1.43 polegadas com alto brilho e definição",
+      "Chamadas telefónicas nítidas via Bluetooth diretamente no pulso",
       "Garantia oficial e autenticidade 100% comprovada Oraimo",
-      "Desempenho de alta eficiência e acabamento premium",
-      "Compatibilidade universal e alta durabilidade no uso diário",
       "Entrega rápida e segura em Luanda e províncias"
     ],
     "features": [
-      "Tecnologia inteligente desenvolvida para máxima longevidade",
-      "Proteção contra sobretensão e aquecimento"
+      "Monitor de frequência cardíaca, oxigénio no sangue e sono profundo",
+      "Mais de 100 modalidades de treino e mostradores personalizáveis"
     ],
     "specifications": {
       "Marca": "Oraimo",
-      "Modelo": "AT-ORA-OSW-833N",
+      "Modelo": "Watch Nova (OSW-833N Rose Gold)",
+      "Ecrã": "1.43\" AMOLED Alta Resolução",
+      "Conectividade": "Bluetooth 5.2 para chamadas e dados",
+      "Autonomia": "Até 7 dias de uso regular",
+      "Resistência": "Classificação IP68 à prova de poeira e água",
       "Garantia": "12 Meses Oficial",
       "Origem": "Distribuição Autorizada Oficial"
     },
     "packageContent": [
-      "1 Relógio Inteligente Oraimo Watch Nova OSW-833N Rose Gold com Display AMOLED",
+      "1 Smartwatch Oraimo Watch Nova OSW-833N Rose Gold",
+      "1 Cabo de Carregamento Magnético",
       "1 Manual do Usuário e Certificado de Garantia Oraimo"
     ],
     "seoTitle": "Smartwatch Oraimo Watch Nova OSW-833N Rose Gold | AQUI TEM ANGOLA",
@@ -3112,11 +3138,12 @@ export const PRODUCTS = [
     "created_at": "2026-11-09T22:00:00.000Z",
     "isNewAddition": true,
     "whiteBg": true,
-    "name": "Smartwatch Redondo Oraimo Watch Nova 2 Air OSW-814S Display AMOLED Always-On",
+    "name": "Smartwatch Redondo Oraimo Watch ER OSW-814S com Ecrã AMOLED Always-On",
     "slug": "smartwatch-redondo-oraimo-watch-er-osw-814s-amoled",
     "slugAliases": [
       "oraimo-watch-er",
-      "oraimo-osw-814s"
+      "oraimo-osw-814s",
+      "smartwatch-oraimo-watch-nova-2-air"
     ],
     "sku": "AT-ORA-OSW-814S",
     "brand": "Oraimo",
@@ -3135,25 +3162,31 @@ export const PRODUCTS = [
     "images": [
       "/products/oraimo-watch-er-osw-814s.png"
     ],
-    "description": "Smartwatch Redondo Oraimo Watch ER OSW-814S Display AMOLED Always-On original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "description": "Smartwatch Redondo Oraimo Watch ER OSW-814S com Ecrã AMOLED Always-On original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com acabamento circular clássico em metal, ecrã AMOLED vibrante de alta resolução e chamadas Bluetooth.",
     "highlights": [
+      "Mostrador circular clássico elegante com moldura metálica refinada",
+      "Ecrã AMOLED com função Always-On Display de baixo consumo",
+      "Chamadas telefónicas por Bluetooth com áudio claro e microfone HD",
       "Garantia oficial e autenticidade 100% comprovada Oraimo",
-      "Desempenho de alta eficiência e acabamento premium",
-      "Compatibilidade universal e alta durabilidade no uso diário",
       "Entrega rápida e segura em Luanda e províncias"
     ],
     "features": [
-      "Tecnologia inteligente desenvolvida para máxima longevidade",
-      "Proteção contra sobretensão e aquecimento"
+      "Monitor de saúde abrangente com sensor óptico avançado",
+      "Resistência IP68 à prova de água e poeira"
     ],
     "specifications": {
       "Marca": "Oraimo",
-      "Modelo": "AT-ORA-OSW-814S",
+      "Modelo": "Watch ER (OSW-814S)",
+      "Formato": "Circular Redondo Clássico",
+      "Ecrã": "1.43\" AMOLED Always-On (466x466)",
+      "Chamadas": "Bluetooth HD",
+      "Autonomia": "Até 7 dias",
       "Garantia": "12 Meses Oficial",
       "Origem": "Distribuição Autorizada Oficial"
     },
     "packageContent": [
-      "1 Smartwatch Redondo Oraimo Watch ER OSW-814S Display AMOLED Always-On",
+      "1 Smartwatch Redondo Oraimo Watch ER OSW-814S",
+      "1 Cabo de Carregamento Magnético",
       "1 Manual do Usuário e Certificado de Garantia Oraimo"
     ],
     "seoTitle": "Smartwatch Redondo Oraimo Watch ER OSW-814S AMOLED | AQUI TEM ANGOLA",
@@ -3324,11 +3357,12 @@ export const PRODUCTS = [
     "created_at": "2026-11-09T22:00:00.000Z",
     "isNewAddition": true,
     "whiteBg": true,
-    "name": "Coluna Bluetooth 360° Oraimo SpaceBox Active OBS-680 com Show de Luzes RGB e Graves",
+    "name": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves",
     "slug": "coluna-bluetooth-360-oraimo-soundflow-obs-680-rgb",
     "slugAliases": [
       "oraimo-soundflow-obs-680",
-      "coluna-oraimo-soundflow"
+      "coluna-oraimo-soundflow",
+      "coluna-bluetooth-360-oraimo-spacebox-active"
     ],
     "sku": "AT-ORA-OBS-680",
     "brand": "Oraimo",
@@ -3347,25 +3381,32 @@ export const PRODUCTS = [
     "images": [
       "/products/oraimo-soundflow-obs-680-black.png"
     ],
-    "description": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com os mais altos padrões de durabilidade, desempenho e eficiência energética.",
+    "description": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves original Oraimo, com garantia oficial, qualidade premium e entrega rápida em Luanda. Desenvolvido com áudio imersivo surround de 360 graus, iluminação dinâmica multicolorida sincronizada com o ritmo da música e graves profundos HavyBass.",
     "highlights": [
+      "Som surround imersivo de 360 graus que preenche todo o ambiente",
+      "Show de luzes LED RGB pulsantes sincronizadas com a batida",
+      "Tecnologia HavyBass para graves impactantes e sem distorção",
+      "Resistência à água IPX5 ideal para festas na piscina e exteriores",
       "Garantia oficial e autenticidade 100% comprovada Oraimo",
-      "Desempenho de alta eficiência e acabamento premium",
-      "Compatibilidade universal e alta durabilidade no uso diário",
       "Entrega rápida e segura em Luanda e províncias"
     ],
     "features": [
-      "Tecnologia inteligente desenvolvida para máxima longevidade",
-      "Proteção contra sobretensão e aquecimento"
+      "Conexão Bluetooth 5.0 estável de longo alcance",
+      "Bateria de longa duração para muitas horas de reprodução contínua"
     ],
     "specifications": {
       "Marca": "Oraimo",
-      "Modelo": "AT-ORA-OBS-680",
+      "Modelo": "SoundFlow (OBS-680)",
+      "Áudio": "Surround 360° HavyBass",
+      "Iluminação": "Anel de Luzes LED RGB dinâmico",
+      "Impermeabilidade": "IPX5",
       "Garantia": "12 Meses Oficial",
       "Origem": "Distribuição Autorizada Oficial"
     },
     "packageContent": [
-      "1 Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 com Show de Luzes RGB e Graves",
+      "1 Coluna Bluetooth 360° Oraimo SoundFlow OBS-680",
+      "1 Cabo de Carregamento USB-C",
+      "1 Cabo Auxiliar de Áudio",
       "1 Manual do Usuário e Certificado de Garantia Oraimo"
     ],
     "seoTitle": "Coluna Bluetooth 360° Oraimo SoundFlow OBS-680 RGB | AQUI TEM ANGOLA",
