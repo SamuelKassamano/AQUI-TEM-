@@ -9,16 +9,16 @@ export default function VoiceAssistantWelcome() {
 
   const audioRef = useRef(null);
   const hasSpokenRef = useRef(false);
-  const isSpeakingRef = useRef(false);
+  const audioUnlockedRef = useRef(false);
 
-  // Exact welcome messages
-  const textPT = "Olá! Seja muito bem-vindo à nossa loja! É um prazer ter a sua visita. Explore a nossa variedade de produtos electrónicos, electrodomésticos e gadgets. Desejamos-lhe uma excelente experiência e boas compras! Estamos aqui para ajudar no que precisar.";
-  const textEN = "Hello! Welcome to our store! It's a pleasure to have you here. Explore our wide range of electronics, home appliances, and gadgets. We wish you an excellent experience and happy shopping! We are here to help whenever you need.";
+  // Exact welcome texts
+  const textPT = "Olá, seja muito bem-vindo à nossa loja! É um prazer ter a sua visita. Explore a nossa variedade de produtos eletrónicos, eletrodomésticos e gadgets. Desejamos-lhe uma excelente experiência e boas compras, estamos aqui para ajudar no que precisar!";
+  const textEN = "Hello, welcome to our store! It is a pleasure to have you here. Explore our wide range of electronics, home appliances, and gadgets. We wish you an excellent experience and happy shopping, we are here to help whenever you need!";
 
   const currentText = lang === 'en' ? textEN : textPT;
   const audioSrc = lang === 'en' ? '/audio/welcome_en.mp3' : '/audio/welcome_pt.mp3';
 
-  // Stop all audio & speech
+  // Stop all audio & synthesis
   const stopAll = useCallback(() => {
     if (audioRef.current) {
       try {
@@ -31,7 +31,6 @@ export default function VoiceAssistantWelcome() {
         window.speechSynthesis.cancel();
       } catch (e) {}
     }
-    isSpeakingRef.current = false;
     setIsPlaying(false);
   }, []);
 
@@ -44,140 +43,122 @@ export default function VoiceAssistantWelcome() {
       window.speechSynthesis.resume();
 
       const utterance = new SpeechSynthesisUtterance(currentText);
-      utterance.lang = lang === 'en' ? 'en-US' : 'pt-PT';
-      utterance.rate = 0.98;
-      utterance.pitch = 1.15;
+      utterance.lang = lang === 'en' ? 'en-US' : 'pt-BR';
+      utterance.rate = 1.05;
+      utterance.pitch = 1.1;
 
       const voices = window.speechSynthesis.getVoices() || [];
       const prefix = lang === 'en' ? 'en' : 'pt';
-      const femaleKeywords = ['maria', 'luciana', 'francisca', 'joana', 'helena', 'raquel', 'fernanda', 'camila', 'female', 'mulher', 'jenny', 'samantha', 'zira', 'victoria'];
+      const femaleKeywords = ['francisca', 'luciana', 'maria', 'leticia', 'fernanda', 'camila', 'helena', 'jenny', 'samantha', 'zira', 'victoria', 'female'];
       const langVoices = voices.filter(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(prefix));
       const femaleVoice = langVoices.find(v => femaleKeywords.some(k => (v.name || '').toLowerCase().includes(k))) || langVoices[0];
       if (femaleVoice) utterance.voice = femaleVoice;
 
       utterance.onstart = () => {
-        isSpeakingRef.current = true;
         hasSpokenRef.current = true;
         setIsPlaying(true);
       };
       utterance.onend = () => {
-        isSpeakingRef.current = false;
         setIsPlaying(false);
       };
       utterance.onerror = () => {
-        isSpeakingRef.current = false;
         setIsPlaying(false);
       };
 
       window.speechSynthesis.speak(utterance);
     } catch (e) {
-      isSpeakingRef.current = false;
       setIsPlaying(false);
     }
   }, [currentText, lang, isMuted]);
 
-  // Main automatic playback trigger
-  const attemptPlay = useCallback((onSuccessCleanup) => {
-    if (isMuted || isSpeakingRef.current || hasSpokenRef.current) return;
+  // Play audio safely
+  const startPlayback = useCallback(() => {
+    if (isMuted || hasSpokenRef.current) return;
 
+    // Mobile AudioContext unlock helper
     try {
-      if (!audioRef.current) {
-        audioRef.current = new Audio(audioSrc);
-      } else if (audioRef.current.src !== window.location.origin + audioSrc) {
-        audioRef.current.src = audioSrc;
-      }
-
-      audioRef.current.volume = 1.0;
-      audioRef.current.preload = 'auto';
-
-      audioRef.current.onplay = () => {
-        isSpeakingRef.current = true;
-        hasSpokenRef.current = true;
-        setIsPlaying(true);
-        if (typeof onSuccessCleanup === 'function') {
-          onSuccessCleanup();
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (AudioContextClass && !audioUnlockedRef.current) {
+        const audioCtx = new AudioContextClass();
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
         }
-      };
-
-      audioRef.current.onended = () => {
-        isSpeakingRef.current = false;
-        setIsPlaying(false);
-      };
-
-      audioRef.current.onerror = () => {
-        speakWithSynthesis();
-      };
-
-      const playPromise = audioRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            isSpeakingRef.current = true;
-            hasSpokenRef.current = true;
-            setIsPlaying(true);
-            if (typeof onSuccessCleanup === 'function') {
-              onSuccessCleanup();
-            }
-          })
-          .catch((err) => {
-            // Autoplay with sound restricted by browser policy before first interaction.
-            // Do NOT remove listeners here so any tap/click anywhere immediately unlocks audio!
-          });
+        audioUnlockedRef.current = true;
       }
-    } catch (err) {
-      speakWithSynthesis();
-    }
-  }, [audioSrc, isMuted, speakWithSynthesis]);
+    } catch (e) {}
 
-  // Initialize automatic playback and listeners
+    const el = audioRef.current;
+    if (!el) return;
+
+    el.volume = 1.0;
+
+    const playPromise = el.play();
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          hasSpokenRef.current = true;
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          // If browser policy blocked unprompted autoplay, fallback listeners will catch the first touch
+          // Do nothing here so it doesn't break
+        });
+    }
+  }, [isMuted]);
+
+  // Main effect: attempt autoplay + background unlock on touch/click
   useEffect(() => {
     hasSpokenRef.current = false;
-    isSpeakingRef.current = false;
 
-    // 1. Attempt immediate 0ms playback on page load
-    attemptPlay();
+    // 1. Immediate execution on mount (desktop autoplay)
+    const timer = setTimeout(() => {
+      startPlayback();
+    }, 150);
 
-    // 2. Fallback listeners for the very first interaction ANYWHERE on screen
-    const handleUserGesture = () => {
-      if (!hasSpokenRef.current && !isSpeakingRef.current && !isMuted) {
-        attemptPlay(cleanupListeners);
+    // 2. Mobile and gesture unlock: triggered synchronously on the very first touch or click
+    const handleFirstGesture = () => {
+      if (!hasSpokenRef.current && !isMuted) {
+        startPlayback();
       }
+      cleanupGestureListeners();
     };
 
-    const cleanupListeners = () => {
-      document.removeEventListener('click', handleUserGesture, true);
-      document.removeEventListener('pointerdown', handleUserGesture, true);
-      document.removeEventListener('touchend', handleUserGesture, true);
-      document.removeEventListener('keydown', handleUserGesture, true);
-      window.removeEventListener('focus', handleUserGesture, true);
+    const cleanupGestureListeners = () => {
+      window.removeEventListener('touchstart', handleFirstGesture, true);
+      window.removeEventListener('touchend', handleFirstGesture, true);
+      window.removeEventListener('pointerdown', handleFirstGesture, true);
+      window.removeEventListener('click', handleFirstGesture, true);
+      window.removeEventListener('keydown', handleFirstGesture, true);
     };
 
-    // Capture phase listeners across entire document
-    document.addEventListener('click', handleUserGesture, { capture: true, passive: true });
-    document.addEventListener('pointerdown', handleUserGesture, { capture: true, passive: true });
-    document.addEventListener('touchend', handleUserGesture, { capture: true, passive: true });
-    document.addEventListener('keydown', handleUserGesture, { capture: true, passive: true });
-    window.addEventListener('focus', handleUserGesture, { capture: true, passive: true });
+    window.addEventListener('touchstart', handleFirstGesture, { capture: true, passive: true });
+    window.addEventListener('touchend', handleFirstGesture, { capture: true, passive: true });
+    window.addEventListener('pointerdown', handleFirstGesture, { capture: true, passive: true });
+    window.addEventListener('click', handleFirstGesture, { capture: true, passive: true });
+    window.addEventListener('keydown', handleFirstGesture, { capture: true, passive: true });
 
     return () => {
-      cleanupListeners();
+      clearTimeout(timer);
+      cleanupGestureListeners();
       stopAll();
     };
-  }, [lang, attemptPlay, stopAll]);
+  }, [lang, startPlayback, stopAll, isMuted]);
 
-  // Chrome speech synthesis anti-stall heartbeat
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-    const interval = setInterval(() => {
-      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
-        window.speechSynthesis.pause();
-        window.speechSynthesis.resume();
-      }
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+  // Handle audio element events
+  const handleAudioPlay = () => {
+    hasSpokenRef.current = true;
+    setIsPlaying(true);
+  };
 
-  // Manual mute/unmute button
+  const handleAudioEnded = () => {
+    setIsPlaying(false);
+  };
+
+  const handleAudioError = () => {
+    speakWithSynthesis();
+  };
+
+  // Toggle sound manually
   const toggleSound = (e) => {
     e.stopPropagation();
     if (isPlaying) {
@@ -186,7 +167,17 @@ export default function VoiceAssistantWelcome() {
     } else {
       setIsMuted(false);
       hasSpokenRef.current = false;
-      attemptPlay();
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().then(() => {
+          setIsPlaying(true);
+          hasSpokenRef.current = true;
+        }).catch(() => {
+          speakWithSynthesis();
+        });
+      } else {
+        speakWithSynthesis();
+      }
     }
   };
 
@@ -202,7 +193,21 @@ export default function VoiceAssistantWelcome() {
         gap: '8px'
       }}
     >
-      {/* Discreet Sound Pill Button */}
+      {/* Native HTML5 Audio element mounted directly into DOM for full iOS/Android compatibility */}
+      <audio
+        ref={audioRef}
+        src={audioSrc}
+        preload="auto"
+        playsInline
+        webkit-playsinline="true"
+        x-webkit-airplay="allow"
+        onPlay={handleAudioPlay}
+        onEnded={handleAudioEnded}
+        onError={handleAudioError}
+        style={{ display: 'none' }}
+      />
+
+      {/* Discreet Sound Status Button */}
       <button
         type="button"
         onClick={toggleSound}
@@ -220,7 +225,9 @@ export default function VoiceAssistantWelcome() {
           fontSize: '12px',
           fontWeight: 700,
           backdropFilter: 'blur(8px)',
-          transition: 'all 0.2s ease'
+          transition: 'all 0.2s ease',
+          userSelect: 'none',
+          WebkitTapHighlightColor: 'transparent'
         }}
         title={
           isPlaying
