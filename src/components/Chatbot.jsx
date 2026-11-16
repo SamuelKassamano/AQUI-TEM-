@@ -458,37 +458,50 @@ export default function Chatbot() {
   };
 
   return (
-    <div style={{ position: 'fixed', bottom: '24px', right: '24px', zIndex: 3000 }}>
+    <div style={{ position: 'fixed', bottom: '20px', right: '20px', zIndex: 3000 }}>
       {!isOpen ? (
         <button
           onClick={() => setIsOpen(true)}
           style={{
-            background: 'linear-gradient(135deg, #FF6500, #F37021)',
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #FF6500 0%, #EA580C 100%)',
             color: '#FFF',
-            padding: '14px 20px',
-            borderRadius: '30px',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(255, 101, 0, 0.4)',
+            boxShadow: '0 4px 16px rgba(255, 101, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12)',
             display: 'flex',
             alignItems: 'center',
-            gap: '10px',
-            fontWeight: 800,
-            fontSize: '0.95rem',
-            transition: 'transform 0.2s ease, boxShadow 0.2s ease'
+            justifyContent: 'center',
+            position: 'relative',
+            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+            padding: 0
           }}
-          onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.04)')}
-          onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 101, 0, 0.45), 0 3px 8px rgba(0, 0, 0, 0.18)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0) scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 16px rgba(255, 101, 0, 0.35), 0 2px 6px rgba(0, 0, 0, 0.12)';
+          }}
+          title="Assistente IA - Dúvidas, Stock e Compras"
+          aria-label="Abrir Chat com a Assistente IA"
         >
-          <MessageCircle size={22} />
-          <span>Assistente IA</span>
+          <MessageCircle size={22} color="#FFFFFF" strokeWidth={2.2} />
+          {/* Subtle online status indicator */}
           <span
             style={{
-              width: '8px',
-              height: '8px',
+              position: 'absolute',
+              top: '2px',
+              right: '2px',
+              width: '10px',
+              height: '10px',
               borderRadius: '50%',
-              background: '#4ADE80',
-              boxShadow: '0 0 0 3px rgba(74, 222, 128, 0.3)'
+              background: '#22C55E',
+              border: '2px solid #FFFFFF',
+              boxShadow: '0 0 4px rgba(34, 197, 94, 0.6)'
             }}
           />
         </button>
