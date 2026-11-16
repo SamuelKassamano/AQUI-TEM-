@@ -452,8 +452,8 @@ export default function App() {
                       <strong>🚚 {lang === 'en' ? 'Scheduled Delivery & Payment' : 'Entregas & Formas de Pagamento'}:</strong>
                       <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '4px' }}>
                         {lang === 'en'
-                          ? 'Deliveries in Luanda and other provinces of Angola by appointment. Payment accepted via Multicaixa, Cash, and Payment on Delivery.'
-                          : 'Entregas em Luanda e outras províncias de Angola mediante agendamento. Aceitamos Multicaixa, Dinheiro/Cash e Pagamento na entrega.'}
+                          ? 'Deliveries in Luanda and other provinces of Angola by appointment. Secure upfront payment accepted via Multicaixa Express or Bank Transfer (IBAN) for stock confirmation and route scheduling.'
+                          : 'Entregas em Luanda e outras províncias de Angola mediante agendamento. Pagamento seguro antecipado via Multicaixa Express ou Transferência Bancária (IBAN) para confirmação de stock e agendamento da rota.'}
                       </div>
                     </div>
                   </div>
@@ -908,43 +908,43 @@ export default function App() {
           )}
         </section>
 
-        {/* 🏬 Sobre a AQUI TEM Section (Página Inicial - Design Fino & Letras Brancas) */}
+        {/* 🏬 Sobre a AQUI TEM Section (Página Inicial - Design Fino, Minimalista & Letras Brancas) */}
         <section
           id="sobre"
           style={{
-            background: 'linear-gradient(135deg, #090d16 0%, #0f172a 60%, #161f33 100%)',
-            borderRadius: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            padding: '36px 36px 40px',
-            marginBottom: '40px',
+            background: 'linear-gradient(180deg, #07090e 0%, #0c111d 50%, #07090e 100%)',
+            borderRadius: '28px',
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            padding: '48px 40px',
+            marginBottom: '48px',
             color: '#ffffff',
-            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.4)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
             position: 'relative',
             overflow: 'hidden'
           }}
         >
-          {/* Subtle Ambient Glows */}
+          {/* Subtle Ambient Light Accents */}
           <div
             style={{
               position: 'absolute',
-              top: '-15%',
+              top: '-20%',
               right: '-10%',
-              width: '450px',
-              height: '450px',
-              background: 'radial-gradient(circle, rgba(255, 101, 0, 0.18) 0%, transparent 70%)',
-              filter: 'blur(50px)',
+              width: '500px',
+              height: '500px',
+              background: 'radial-gradient(circle, rgba(255, 101, 0, 0.15) 0%, transparent 65%)',
+              filter: 'blur(70px)',
               pointerEvents: 'none'
             }}
           />
           <div
             style={{
               position: 'absolute',
-              bottom: '-20%',
+              bottom: '-25%',
               left: '-10%',
-              width: '400px',
-              height: '400px',
-              background: 'radial-gradient(circle, rgba(30, 92, 158, 0.2) 0%, transparent 70%)',
-              filter: 'blur(50px)',
+              width: '450px',
+              height: '450px',
+              background: 'radial-gradient(circle, rgba(255, 255, 255, 0.05) 0%, transparent 65%)',
+              filter: 'blur(70px)',
               pointerEvents: 'none'
             }}
           />
@@ -952,8 +952,8 @@ export default function App() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '36px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '44px',
               alignItems: 'center',
               position: 'relative',
               zIndex: 2
@@ -961,192 +961,211 @@ export default function App() {
           >
             {/* Left Content Column */}
             <div style={{ minWidth: 0 }}>
-              {/* Fine Badge */}
+              {/* Ultra-Fine Badge */}
               <div
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '8px',
-                  color: '#ff8a3d',
-                  fontWeight: 700,
-                  fontSize: '0.78rem',
+                  color: '#ffffff',
+                  fontWeight: 600,
+                  fontSize: '0.74rem',
                   textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                  background: 'rgba(255, 101, 0, 0.12)',
-                  border: '1px solid rgba(255, 101, 0, 0.3)',
-                  padding: '5px 14px',
+                  letterSpacing: '0.12em',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.18)',
+                  padding: '6px 16px',
                   borderRadius: '9999px',
-                  marginBottom: '16px'
+                  marginBottom: '20px'
                 }}
               >
-                <Sparkles size={14} color="#ff6500" /> AQUI TEM ANGOLA • DISTRIBUIÇÃO & IMPORTAÇÃO OFICIAL
+                <Sparkles size={13} color="#ff6500" /> AQUI TEM ANGOLA • DISTRIBUIÇÃO & IMPORTAÇÃO OFICIAL
               </div>
 
-              {/* White Headline */}
+              {/* Pure White Headline */}
               <h2
                 style={{
-                  fontSize: 'clamp(1.7rem, 2.6vw, 2.3rem)',
-                  fontWeight: 900,
+                  fontSize: 'clamp(2rem, 3.2vw, 2.6rem)',
+                  fontWeight: 800,
                   color: '#ffffff',
-                  marginBottom: '14px',
+                  marginBottom: '18px',
                   lineHeight: '1.2',
-                  letterSpacing: '-0.02em'
+                  letterSpacing: '-0.03em'
                 }}
               >
-                Sobre a <span style={{ background: 'linear-gradient(135deg, #FF6500 0%, #FFA155 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>AQUI TEM</span> Angola
+                Sobre a <span style={{ color: '#ff6500' }}>AQUI TEM</span> Angola
               </h2>
 
-              {/* White Paragraphs */}
+              {/* Pure White / Bright Paragraphs */}
+              <p
+                style={{
+                  color: '#ffffff',
+                  fontSize: '1.02rem',
+                  lineHeight: '1.75',
+                  marginBottom: '14px',
+                  fontWeight: 400
+                }}
+              >
+                A <strong>AQUI TEM</strong> é a sua plataforma de tecnologia e comércio moderno de referência em Angola. Selecionamos o que há de mais recente em inovação mundial diretamente dos fabricantes oficiais, assegurando qualidade genuína sem inflações ou intermediários.
+              </p>
+
               <p
                 style={{
                   color: '#e2e8f0',
                   fontSize: '0.94rem',
-                  lineHeight: '1.7',
-                  marginBottom: '12px',
-                  fontWeight: 400
+                  lineHeight: '1.75',
+                  marginBottom: '28px',
+                  fontWeight: 300
                 }}
               >
-                A <strong>AQUI TEM</strong> é a sua loja de confiança em Angola. Nascemos com a missão de transformar o comércio tecnológico em Luanda e em todo o país, proporcionando acesso direto às mais recentes inovações mundiais sem intermediários desnecessários.
+                Operamos com stock real pronto para despacho e especialização comprovada na linha oficial <strong>Oraimo</strong> (fones sem fios, smartwatches, powerbanks e cabos reforçados), além de cúpulas de vigilância inteligente, eletrodomésticos para o lar e tecnologia empresarial.
               </p>
 
-              <p
-                style={{
-                  color: '#cbd5e1',
-                  fontSize: '0.9rem',
-                  lineHeight: '1.65',
-                  marginBottom: '22px'
-                }}
-              >
-                Trabalhamos exclusivamente com stock real de artigos 100% originais e selados de fábrica. Somos especialistas na linha oficial <strong>Oraimo</strong> (fones sem fios, smartwatches, escovas sónicas, powerbanks e cabos ultra-resistentes), além de utilidades inteligentes e tecnologia para a sua residência ou empresa.
-              </p>
-
-              {/* 4 Fine Cards Grid */}
+              {/* Ultra-Fine Metrics Bar */}
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                  gridTemplateColumns: 'repeat(4, 1fr)',
                   gap: '12px',
-                  marginBottom: '26px'
+                  padding: '16px 0',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                  marginBottom: '30px'
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>100%</div>
+                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Selado de Fábrica</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>24h-48h</div>
+                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Despacho Rápido</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ffffff', letterSpacing: '-0.02em' }}>18</div>
+                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Províncias</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ff6500', letterSpacing: '-0.02em' }}>Zero</div>
+                  <div style={{ fontSize: '0.72rem', color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: '2px' }}>Réplicas / Cópias</div>
+                </div>
+              </div>
+
+              {/* 4 Fine Minimal Luxury Cards */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+                  gap: '14px',
+                  marginBottom: '32px'
                 }}
               >
                 {/* Pillar 1 */}
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255, 255, 255, 0.09)',
-                    backdropFilter: 'blur(8px)'
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    padding: '16px 18px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
                   }}
                 >
-                  <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '0.86rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(34, 197, 94, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e' }}>
-                      <ShieldCheck size={14} />
-                    </div>
-                    100% Selado na Caixa
+                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <ShieldCheck size={16} color="#ff6500" />
+                    Produtos 100% Originais
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.5' }}>
-                    Zero réplicas. Selo de fábrica, número de série e garantia real de 7 dias para troca imediata.
+                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
+                    Artigos lacrados de fábrica com selo de autenticidade, número de série e garantia de troca rápida.
                   </div>
                 </div>
 
                 {/* Pillar 2 */}
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255, 255, 255, 0.09)',
-                    backdropFilter: 'blur(8px)'
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    padding: '16px 18px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
                   }}
                 >
-                  <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '0.86rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255, 101, 0, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ff6500' }}>
-                      <CreditCard size={14} />
-                    </div>
+                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CreditCard size={16} color="#ff6500" />
                     Pagamento & Agendamento
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.5' }}>
-                    Pagamento antecipado seguro via Express ou IBAN para confirmação de stock e agendamento da rota.
+                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
+                    Pagamento seguro antecipado via Express ou IBAN para reserva do artigo e agendamento da entrega.
                   </div>
                 </div>
 
                 {/* Pillar 3 */}
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255, 255, 255, 0.09)',
-                    backdropFilter: 'blur(8px)'
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    padding: '16px 18px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
                   }}
                 >
-                  <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '0.86rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
-                      <Truck size={14} />
-                    </div>
-                    Entregas Luanda & Províncias
+                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <Truck size={16} color="#ff6500" />
+                    Rotas Luanda & Províncias
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.5' }}>
-                    Agendamento em 24h a 48h em Luanda e expedição segura para as 18 províncias de Angola.
+                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
+                    Despacho porta-a-porta na grande Luanda e expedição monitorada para as 18 províncias de Angola.
                   </div>
                 </div>
 
                 {/* Pillar 4 */}
                 <div
                   style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    border: '1px solid rgba(255, 255, 255, 0.09)',
-                    backdropFilter: 'blur(8px)'
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    padding: '16px 18px',
+                    borderRadius: '16px',
+                    border: '1px solid rgba(255, 255, 255, 0.08)'
                   }}
                 >
-                  <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '0.86rem', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(168, 85, 247, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a855f7' }}>
-                      <MessageCircle size={14} />
-                    </div>
-                    Apoio Humanizado Dedicado
+                  <div style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.9rem', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <MessageCircle size={16} color="#ff6500" />
+                    Suporte Oficial WhatsApp
                   </div>
-                  <div style={{ fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.5' }}>
-                    Equipa local em Luanda com suporte pré e pós-venda direto no WhatsApp (+244 950 752 933).
+                  <div style={{ fontSize: '0.82rem', color: '#cbd5e1', lineHeight: '1.55' }}>
+                    Atendimento humanizado direto por consultores locais prontos para esclarecer e apoiar.
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: '14px', flexWrap: 'wrap', alignItems: 'center' }}>
                 <button
                   onClick={() => setActiveInfoModal('stores')}
                   style={{
-                    background: 'linear-gradient(135deg, #FF6500 0%, #EA580C 100%)',
+                    background: '#ff6500',
                     color: '#ffffff',
-                    padding: '10px 20px',
+                    padding: '12px 24px',
                     borderRadius: '9999px',
-                    fontSize: '0.86rem',
+                    fontSize: '0.88rem',
                     fontWeight: 700,
                     border: 'none',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(255, 101, 0, 0.35)',
-                    transition: 'opacity 0.2s ease'
+                    boxShadow: '0 4px 16px rgba(255, 101, 0, 0.35)',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <Store size={15} /> Lojas & Apoio Oficial
+                  <Store size={16} /> Lojas & Apoio Oficial
                 </button>
 
                 <button
                   onClick={() => setActiveInfoModal('warranty')}
                   style={{
-                    background: 'rgba(255, 255, 255, 0.08)',
+                    background: 'transparent',
                     color: '#ffffff',
-                    padding: '10px 20px',
+                    padding: '12px 24px',
                     borderRadius: '9999px',
-                    fontSize: '0.86rem',
+                    fontSize: '0.88rem',
                     fontWeight: 700,
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -1154,7 +1173,7 @@ export default function App() {
                     transition: 'all 0.2s ease'
                   }}
                 >
-                  <ShieldCheck size={15} /> Garantia & Trocas
+                  <ShieldCheck size={16} /> Garantia & Trocas
                 </button>
 
                 <a
@@ -1162,17 +1181,20 @@ export default function App() {
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{
-                    color: '#25D366',
-                    fontSize: '0.85rem',
+                    color: '#22c55e',
+                    fontSize: '0.88rem',
                     fontWeight: 700,
                     textDecoration: 'none',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
-                    marginLeft: '4px'
+                    padding: '10px 14px',
+                    borderRadius: '9999px',
+                    background: 'rgba(34, 197, 94, 0.1)',
+                    border: '1px solid rgba(34, 197, 94, 0.25)'
                   }}
                 >
-                  <MessageCircle size={15} /> Falar no WhatsApp (+244 950 752 933)
+                  <MessageCircle size={16} /> WhatsApp: +244 950 752 933
                 </a>
               </div>
             </div>
@@ -1180,21 +1202,21 @@ export default function App() {
             {/* Right Showcase & Logistics Hub Card */}
             <div
               style={{
-                background: 'rgba(255, 255, 255, 0.03)',
-                borderRadius: '20px',
-                padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                backdropFilter: 'blur(10px)',
-                boxShadow: '0 12px 30px rgba(0, 0, 0, 0.25)'
+                background: 'rgba(255, 255, 255, 0.02)',
+                borderRadius: '24px',
+                padding: '24px',
+                border: '1px solid rgba(255, 255, 255, 0.12)',
+                backdropFilter: 'blur(12px)',
+                boxShadow: '0 16px 36px rgba(0, 0, 0, 0.3)'
               }}
             >
               <div
                 style={{
                   position: 'relative',
-                  borderRadius: '16px',
+                  borderRadius: '18px',
                   overflow: 'hidden',
-                  height: '220px',
-                  marginBottom: '16px',
+                  height: '240px',
+                  marginBottom: '20px',
                   border: '1px solid rgba(255, 255, 255, 0.12)'
                 }}
               >
@@ -1211,11 +1233,11 @@ export default function App() {
                   style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(to top, rgba(9, 13, 22, 0.9) 0%, rgba(9, 13, 22, 0.2) 60%, transparent 100%)',
+                    background: 'linear-gradient(to top, rgba(7, 9, 14, 0.95) 0%, rgba(7, 9, 14, 0.3) 50%, transparent 100%)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'flex-end',
-                    padding: '16px'
+                    padding: '20px'
                   }}
                 >
                   <span
@@ -1224,36 +1246,37 @@ export default function App() {
                       color: '#ffffff',
                       fontSize: '0.72rem',
                       fontWeight: 800,
-                      padding: '3px 8px',
-                      borderRadius: '8px',
+                      padding: '4px 10px',
+                      borderRadius: '6px',
                       width: 'fit-content',
-                      marginBottom: '4px',
-                      textTransform: 'uppercase'
+                      marginBottom: '6px',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
                     }}
                   >
-                    Base Operacional
+                    Centro de Distribuição
                   </span>
-                  <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '0.98rem' }}>
-                    Centro de Logística e Despacho de Luanda
+                  <div style={{ color: '#ffffff', fontWeight: 800, fontSize: '1.05rem', marginBottom: '2px' }}>
+                    Hub de Logística e Despacho de Luanda
                   </div>
-                  <div style={{ color: '#cbd5e1', fontSize: '0.78rem' }}>
-                    Avenida Fidel de Castro, Benfica — Zona Verde (Cabolombo)
+                  <div style={{ color: '#cbd5e1', fontSize: '0.82rem' }}>
+                    Avenida Fidel de Castro, Benfica — Zona Verde, Cabolombo
                   </div>
                 </div>
               </div>
 
               {/* Clean White Hub Specifications */}
-              <div style={{ display: 'grid', gap: '8px', fontSize: '0.82rem', color: '#cbd5e1' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+              <div style={{ display: 'grid', gap: '10px', fontSize: '0.84rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                   <span style={{ color: '#94a3b8' }}>Horário Oficial:</span>
-                  <strong style={{ color: '#ffffff' }}>Seg a Sáb: 08h00 – 19h00</strong>
+                  <strong style={{ color: '#ffffff' }}>Segunda a Sábado • 08h00 – 19h00</strong>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                   <span style={{ color: '#94a3b8' }}>Atendimento:</span>
-                  <strong style={{ color: '#25D366' }}>+244 950 752 933 (WhatsApp)</strong>
+                  <strong style={{ color: '#22c55e' }}>+244 950 752 933 (WhatsApp)</strong>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                  <span style={{ color: '#94a3b8' }}>E-mail:</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                  <span style={{ color: '#94a3b8' }}>E-mail Institucional:</span>
                   <strong style={{ color: '#ffffff' }}>contacto@aquitem.ao</strong>
                 </div>
               </div>
@@ -1584,7 +1607,7 @@ export default function App() {
 
             {/* Line 3: Copyright, Payment & Location */}
             <div className="footer-line-bottom">
-              <span>© {new Date().getFullYear()} AQUI TEM • {t('allRightsReserved')} • Multicaixa / Dinheiro / Pagamento na Entrega • Avenida Fidel de Castro, Benfica - Zona Verde, Cabolombo, Luanda - Angola</span>
+              <span>© {new Date().getFullYear()} AQUI TEM • {t('allRightsReserved')} • Pagamento Antecipado Seguro (Multicaixa Express / IBAN) • Avenida Fidel de Castro, Benfica - Zona Verde, Cabolombo, Luanda - Angola</span>
             </div>
           </div>
         </footer>

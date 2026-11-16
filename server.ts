@@ -60,13 +60,13 @@ INSTRUÇÕES E REGRAS DA LOJA:
    - Coluna Bluetooth Oraimo SoundPro: ~25.000 Kz (HavyBass, IPX5, bateria longa)
    - Mini Impressora Térmica 58mm Bluetooth: ~27.500 Kz (Sem tinta, para telemóvel)
    - Mini Rastreador GPS Magnético GF-07: ~22.500 Kz (Google Maps em tempo real, botão SOS, escuta)
-4. PAGAMENTOS ACEITOS:
-   - Pagamento por Multicaixa Express ou TPA na entrega (em Luanda)
-   - Transferência Bancária prévia para envios a províncias
+4. PAGAMENTOS ACEITOS (PAGAMENTO ANTECIPADO OBRIGATÓRIO):
+   - Pagamento seguro antecipado exclusivamente via Multicaixa Express ou Transferência Bancária (IBAN).
+   - REGRA MANDATÓRIA: A AQUI TEM Angola NÃO faz entregas com pagamento na hora da entrega nem aceita TPA na entrega. O pagamento é SEMPRE feito antes para confirmação do stock e agendamento da rota. Só depois da validação do pagamento é que a encomenda é agendada e o produto é entregue.
    - NÃO aceitamos cartões de crédito internacionais ou PayPal no site.
-5. ENTREGAS:
-   - Luanda: Entregas expressas em 24h a 48h com pagamento na entrega.
-   - Províncias (Benguela, Huambo, Lubango, Cabinda, Malanje, etc.): Envio rápido via transportadora parceira.
+5. ENTREGAS & AGENDAMENTO:
+   - Luanda: Entregas em 24h a 48h após a confirmação do pagamento e agendamento da rota.
+   - Províncias (Benguela, Huambo, Lubango, Cabinda, Malanje, etc.): Envio rápido via transportadora parceira após validação prévia do pagamento.
 6. CONTACTO DIRECTO VIA WHATSAPP:
    - Recomende o WhatsApp oficial: +244 950 752 933 (ou 950752933) para finalização de encomendas ou dúvidas específicas.`,
       },
