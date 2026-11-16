@@ -766,7 +766,7 @@ export const TESTIMONIALS = [
     "rating": 5,
     "satisfactionRate": 98,
     "date": "Há 1 dia",
-    "comment": "Produto Hub USB-C Oraimo Smart 7 em 1 Multiportas HDMI e SD excelente! Qualidade original comprovada, entrega rápida em Luanda com pagamento por multicaixa na entrega.",
+    "comment": "Produto Hub USB-C Oraimo Smart 7 em 1 Multiportas HDMI e SD excelente! Qualidade original comprovada, entrega rápida em Luanda com agendamento imediato após pagamento seguro por Multicaixa Express.",
     "likes": 40,
     "verified": true
   },
@@ -1066,7 +1066,7 @@ export const TESTIMONIALS = [
     "rating": 5,
     "satisfactionRate": 98,
     "date": "Há 1 dia",
-    "comment": "Produto Capa Protetora Magnética MagSafe Anti-Impacto para iPhone excelente! Qualidade original comprovada, entrega rápida em Luanda com pagamento por multicaixa na entrega.",
+    "comment": "Produto Capa Protetora Magnética MagSafe Anti-Impacto para iPhone excelente! Qualidade original comprovada, entrega rápida em Luanda com agendamento imediato após pagamento seguro por Multicaixa Express.",
     "likes": 35,
     "verified": true
   },

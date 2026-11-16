@@ -579,7 +579,7 @@ export const OFFICIAL_NEW_PRODUCTS_PRICING = [
     "reviews_count": 87,
     "image": "/products/fones-tws-bluetooth.jpg",
     "seoTitle": "Fones TWS Bluetooth Oraimo FreePods Som HD e Graves Potentes | AQUI TEM ANGOLA",
-    "seoDescription": "Compre Fones TWS Bluetooth Oraimo FreePods originais com cancelamento de ruído, 40h de bateria e entrega rápida na AQUI TEM Angola. Pague na entrega em Luanda."
+    "seoDescription": "Compre Fones TWS Bluetooth Oraimo FreePods originais com cancelamento de ruído, 40h de bateria e entrega rápida na AQUI TEM Angola. Entrega rápida e segura em Luanda e províncias."
   },
   {
     "id": "250bfc74-fc6b-4c1a-867e-984b33a0ab06",

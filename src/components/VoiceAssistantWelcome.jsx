@@ -1,9 +1,13 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Volume2, VolumeX } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
+const WELCOME_SESSION_KEY = 'aquitem_voice_welcomed_v1';
+
 export default function VoiceAssistantWelcome() {
   const { lang } = useLanguage();
+  const location = useLocation();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
 
@@ -18,6 +22,22 @@ export default function VoiceAssistantWelcome() {
 
   const currentText = lang === 'en' ? textEN : textPT;
   const audioSrc = lang === 'en' ? '/audio/welcome_en.mp3' : '/audio/welcome_pt.mp3';
+
+  // Check if voice already played in this browser session
+  const hasWelcomedThisSession = () => {
+    try {
+      return sessionStorage.getItem(WELCOME_SESSION_KEY) === 'true';
+    } catch (e) {
+      return false;
+    }
+  };
+
+  // Mark session so it never speaks automatically again on other pages or returns
+  const markWelcomedInSession = () => {
+    try {
+      sessionStorage.setItem(WELCOME_SESSION_KEY, 'true');
+    } catch (e) {}
+  };
 
   // Stop all audio & synthesis
   const stopAll = useCallback(() => {
@@ -64,6 +84,7 @@ export default function VoiceAssistantWelcome() {
       utterance.onstart = () => {
         hasSpokenRef.current = true;
         setIsPlaying(true);
+        markWelcomedInSession();
         if (cleanupListenersRef.current) cleanupListenersRef.current();
       };
       utterance.onend = () => {
@@ -92,6 +113,7 @@ export default function VoiceAssistantWelcome() {
           .then(() => {
             hasSpokenRef.current = true;
             setIsPlaying(true);
+            markWelcomedInSession();
             if (cleanupListenersRef.current) cleanupListenersRef.current();
           })
           .catch((err) => {
@@ -107,10 +129,11 @@ export default function VoiceAssistantWelcome() {
                   .then(() => {
                     hasSpokenRef.current = true;
                     setIsPlaying(true);
+                    markWelcomedInSession();
                     if (cleanupListenersRef.current) cleanupListenersRef.current();
                   })
                   .catch(() => {
-                    // Autoplay blocked by browser policy without gesture; keep listeners waiting for first touch/click
+                    // Waiting for first user gesture
                   });
               }
             } catch (e) {
@@ -121,8 +144,17 @@ export default function VoiceAssistantWelcome() {
     }
   }, [audioSrc, isMuted]);
 
-  // Initialize playback + background unlock
+  // Initialize playback + background unlock ONLY ON THE HOME PAGE and ONLY ONCE
   useEffect(() => {
+    // If not on Home page ("/") or if already welcomed in this session, do NOT auto-play!
+    const isHomePage = location.pathname === '/' || location.pathname === '';
+    const alreadyWelcomed = hasWelcomedThisSession();
+
+    if (!isHomePage || alreadyWelcomed) {
+      // Don't auto-trigger speech on secondary pages
+      return;
+    }
+
     hasSpokenRef.current = false;
 
     // Load audio element
@@ -132,13 +164,13 @@ export default function VoiceAssistantWelcome() {
       } catch (e) {}
     }
 
-    // 1. Immediate attempt (succeeds on desktop when autoplay allowed)
+    // 1. Immediate attempt on Home page
     playNow();
     const t1 = setTimeout(playNow, 300);
 
-    // 2. Gesture unlock: triggers on first touch, click, scroll, tap
+    // 2. Gesture unlock: triggers on first touch, click, scroll, tap on Home page
     const handleGesture = () => {
-      if (!hasSpokenRef.current && !isMuted) {
+      if (!hasSpokenRef.current && !isMuted && !hasWelcomedThisSession()) {
         playNow();
       }
     };
@@ -165,12 +197,18 @@ export default function VoiceAssistantWelcome() {
       if (cleanupListenersRef.current) cleanupListenersRef.current();
       stopAll();
     };
-  }, [lang, playNow, stopAll, isMuted]);
+  }, [location.pathname, lang, playNow, stopAll, isMuted]);
+
+  // Handle route change: when user navigates away from any page, stop current audio
+  useEffect(() => {
+    stopAll();
+  }, [location.pathname, stopAll]);
 
   // Audio element events
   const handleAudioPlay = () => {
     hasSpokenRef.current = true;
     setIsPlaying(true);
+    markWelcomedInSession();
     if (cleanupListenersRef.current) cleanupListenersRef.current();
   };
 
@@ -183,7 +221,7 @@ export default function VoiceAssistantWelcome() {
     speakWithSynthesis();
   };
 
-  // Toggle sound
+  // Toggle sound manually (user can still click to hear anytime)
   const toggleSound = (e) => {
     if (e) {
       e.preventDefault();
@@ -203,6 +241,7 @@ export default function VoiceAssistantWelcome() {
           .then(() => {
             setIsPlaying(true);
             hasSpokenRef.current = true;
+            markWelcomedInSession();
           })
           .catch(() => {
             speakWithSynthesis();

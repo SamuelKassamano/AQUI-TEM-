@@ -42,11 +42,11 @@ const FAQ_DATA = [
     items: [
       {
         q: 'Quais são as formas de pagamento aceites?',
-        a: 'Aceitamos Multicaixa Express e Transferência Bancária.'
+        a: 'Aceitamos pagamentos antecipados e seguros através de Multicaixa Express (rápido e prático pelo telemóvel), Transferência Bancária Imediata (IBAN) e Depósito Bancário.'
       },
       {
         q: 'Posso pagar apenas no momento da entrega?',
-        a: 'Todos os pedidos devem ser pagos via Multicaixa Express ou Transferência Bancária.'
+        a: 'Não. Na AQUI TEM, os pagamentos são realizados com antecedência para que possamos confirmar a reserva do produto em stock e efetuar o agendamento seguro da rota de entrega. Somente após a confirmação do pagamento é que o produto é agendado e despachado para a sua morada.'
       },
       {
         q: 'Há desconto para pagamento a pronto?',

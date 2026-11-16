@@ -92,10 +92,10 @@ export default function Chatbot() {
       return {
         text:
           '🚚 **Entregas Rápidas AQUI TEM Angola:**\n\n' +
-          '• **Luanda (Ao Domicílio ou Escritório):** Entrega rápida em **24h a 48h** (ou no mesmo dia mediante agendamento).\n' +
+          '• **Luanda (Ao Domicílio ou Escritório):** Entrega rápida em **24h a 48h** após a confirmação do pagamento e agendamento.\n' +
           '• **Taxa em Luanda:** Taxa fixa de **3.000 Kz** (e **Entrega Grátis** em compras acima de 150.000 Kz!).\n' +
           '• **18 Províncias de Angola:** Enviamos com segurança via transportadora ou carga aérea com entrega entre **2 a 5 dias úteis**.\n' +
-          '• **Pagamento na Entrega:** Em Luanda, pode conferir o produto na hora e pagar diretamente ao estafeta!',
+          '• **Política de Agendamento:** O pagamento é feito antecipadamente (Multicaixa Express ou Transferência Bancária IBAN) para podermos confirmar a encomenda e agendar a sua entrega com total segurança.',
         products: []
       };
     }
@@ -116,12 +116,14 @@ export default function Chatbot() {
     ) {
       return {
         text:
-          '💳 **Formas de Pagamento Seguras:**\n\n' +
-          '1. **TPA Multicaixa na Entrega** (levamos o terminal até si em Luanda).\n' +
-          '2. **Multicaixa Express** no ato da recepção.\n' +
-          '3. **Transferência Bancária Imediata (IBAN)** ou depósito.\n' +
-          '4. **Numerário (Kwanzas)** na entrega.\n\n' +
-          '🎁 **Dica Especial:** Utilize o cupom **`AQUITEM10`** no carrinho ou escolha pagamento a pronto no checkout para ganhar **10% de desconto**!',
+          '💳 **Pagamento Seguro & Agendamento da Entrega:**\n\n' +
+          'Na **AQUI TEM**, os pagamentos são efetuados antes para podermos confirmar o stock e agendar a rota de entrega com toda a segurança:\n\n' +
+          '1. **Multicaixa Express** (instantâneo e seguro pelo telemóvel).\n' +
+          '2. **Transferência Bancária (IBAN)** com envio do comprovativo.\n' +
+          '3. **Depósito Bancário**.\n\n' +
+          '📌 **Como funciona o agendamento?**\n' +
+          'Após efetuar o pagamento e enviar o comprovativo no WhatsApp, a nossa equipa agenda imediatamente o dia e período de entrega no seu domicílio ou escritório em Luanda (24h a 48h) ou expedição para as províncias.\n\n' +
+          '🎁 **Dica Especial:** Utilize o cupom **`AQUITEM10`** no carrinho para obter **10% de desconto**!',
         products: []
       };
     }
@@ -141,8 +143,8 @@ export default function Chatbot() {
         text:
           '🛡️ **Garantia & Autenticidade Oficial:**\n\n' +
           '• **100% Originais e Selados:** Trabalhamos diretamente com distribuidores oficiais (Oraimo, Tuya, Defender, BMX, Kapbom).\n' +
-          '• **Garantia de Troca Direta:** Todos os artigos contam com **7 dias de garantia para troca imediata** em caso de qualquer defeito de fabrico.\n' +
-          '• **Verificação na Entrega:** Em Luanda, pode abrir e verificar o seu equipamento no momento da entrega com total transparência.',
+          '• **Garantia de Troca Direta:** Todos os artigos contam com **7 dias de garantia para troca imediata** em caso de qualquer defeito de fabrico comprovado.\n' +
+          '• **Qualidade Assegurada:** Todos os produtos são entregues selados na embalagem original de fábrica com todos os acessórios inclusos.',
         products: []
       };
     }
@@ -310,7 +312,7 @@ export default function Chatbot() {
             `✅ **${p.name}** está disponível para pronta entrega!\n\n` +
             `• **Preço Oficial:** **${priceStr}**\n` +
             `• **Marca:** ${p.brand || 'Original'} • **Stock:** ${p.stock} unidades\n` +
-            `• **Entrega em Luanda:** 24h–48h (Pagamento por TPA na entrega disponível).\n\n` +
+            `• **Entrega em Luanda:** 24h–48h com agendamento após confirmação de pagamento.\n\n` +
             `Pode abrir a página do produto ou adicioná-lo diretamente ao carrinho abaixo:`,
           products: [p]
         };
@@ -378,7 +380,7 @@ export default function Chatbot() {
         'Posso ajudar imediatamente com:\n' +
         '• **Preços e Stock:** Fones TWS Oraimo, Smartwatches, Air Fryer 6L, Fogão de Indução, Mini Projetor, Câmaras Wi-Fi, Power Banks e Acessórios.\n' +
         '• **Entregas:** 24h–48h em Luanda (3.000 Kz) e envio para todas as províncias.\n' +
-        '• **Pagamentos:** TPA Multicaixa na entrega, Express ou Transferência.\n\n' +
+        '• **Pagamento & Agendamento:** Pagamento antecipado seguro por Multicaixa Express ou Transferência IBAN.\n\n' +
         'Veja alguns dos nossos campeões de vendas abaixo ou diga-me qual produto procura:',
       products: featured
     };

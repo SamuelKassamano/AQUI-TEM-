@@ -108,7 +108,7 @@ export const PRODUCTS = [
       "1 Guia do utilizador e certificado de garantia oficial"
     ],
     "seoTitle": "Fones TWS Bluetooth Oraimo FreePods Som HD e Graves Potentes | AQUI TEM ANGOLA",
-    "seoDescription": "Compre Fones TWS Bluetooth Oraimo FreePods originais com cancelamento de ruído, 40h de bateria e entrega rápida na AQUI TEM Angola. Pague na entrega em Luanda.",
+    "seoDescription": "Compre Fones TWS Bluetooth Oraimo FreePods originais com cancelamento de ruído, 40h de bateria e entrega rápida na AQUI TEM Angola. Entrega rápida e segura em Luanda e províncias.",
     "seoKeywords": "fones tws bluetooth, fones oraimo angola, freepods lite luanda, auscultadores sem fio, comprar fones luanda, aqui tem angola"
   },
   {
@@ -3444,7 +3444,7 @@ export const ADVANTAGES = [
   {
     icon: 'CreditCard',
     title: 'Pagamento Seguro',
-    subtitle: 'TPA Multicaixa na entrega ou transferência'
+    subtitle: 'Multicaixa Express ou transferência bancária'
   },
   {
     icon: 'MessageCircle',
