@@ -56,6 +56,10 @@ export default function Footer() {
           <Link to="/perguntas-frequentes" className="footer-link-item">
             Perguntas Frequentes
           </Link>
+          <span className="footer-dot">•</span>
+          <Link to="/cliente" className="footer-link-item" style={{ color: '#ff6500', fontWeight: 700 }}>
+            Área do Cliente & Rastreio
+          </Link>
         </div>
 
         {/* Line 3: Informações operacionais, localização e pagamento */}

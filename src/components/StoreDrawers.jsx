@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ShoppingBag,
@@ -10,13 +10,21 @@ import {
   Send,
   MessageCircle,
   Heart,
-  ExternalLink
+  ExternalLink,
+  Mail,
+  Truck,
+  MapPin,
+  ShieldCheck,
+  CreditCard
 } from 'lucide-react';
 import { useStore } from '../context/StoreContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useCRM } from '../context/CRMContext';
 import { getTranslatedProduct } from '../utils/productTranslations';
 import { createSlug } from '../utils/slug';
+import { DELIVERY_ZONES, getDeliveryZoneById } from '../utils/deliveryRates';
+import { createAndSaveOrder, getSavedCustomerProfile, saveAbandonedCart } from '../utils/customerOrders';
+import { addNotificationToFeed } from '../utils/notificationSystem';
 
 
 export default function StoreDrawers() {
@@ -51,18 +59,38 @@ export default function StoreDrawers() {
     formatPriceKz
   } = useStore();
 
+  const savedProfile = getSavedCustomerProfile();
+
   const [checkoutForm, setCheckoutForm] = useState({
-    name: '',
-    phone: '',
-    address: '',
-    city: 'Luanda',
-    paymentMethod: 'Transferência Bancária',
+    name: savedProfile?.name || '',
+    phone: savedProfile?.phone || '',
+    email: savedProfile?.email || '',
+    address: savedProfile?.address || '',
+    city: savedProfile?.city || 'Luanda',
+    deliveryZoneId: 'luanda-central',
+    paymentMethod: 'Multicaixa Express',
     notes: ''
   });
 
-  const checkoutItems = directCheckoutItem ? [directCheckoutItem] : cart;
+  // Salvar carrinho automaticamente para recuperação
+  useEffect(() => {
+    if (cart.length > 0) {
+      saveAbandonedCart(cart, checkoutForm);
+    }
+  }, [cart, checkoutForm]);
 
-  const handleWhatsAppCheckoutSubmit = (e) => {
+  const checkoutItems = directCheckoutItem ? [directCheckoutItem] : cart;
+  const isSingle = Boolean(directCheckoutItem) && checkoutItems.length === 1;
+
+  // Cálculo automático de entrega
+  const selectedDeliveryZone = getDeliveryZoneById(checkoutForm.deliveryZoneId);
+  const deliveryFee = Number(selectedDeliveryZone?.fee ?? 2000);
+  const itemsSubtotal = isSingle
+    ? getEffectivePrice(checkoutItems[0]) * (Number(checkoutItems[0].quantity) || 1)
+    : finalTotal;
+  const grandTotal = itemsSubtotal + deliveryFee;
+
+  const handleWhatsAppCheckoutSubmit = async (e) => {
     e.preventDefault();
 
     if (!checkoutForm.name.trim() || !checkoutForm.address.trim()) {
@@ -74,14 +102,40 @@ export default function StoreDrawers() {
       return;
     }
 
+    if (!checkoutForm.email.trim() || !checkoutForm.email.includes('@')) {
+      showToast(
+        lang === 'en'
+          ? 'Please enter a valid email address for order tracking and notifications.'
+          : 'Por favor, insira o seu e-mail para rastreio da encomenda e notificações.'
+      );
+      return;
+    }
+
     const itemsToOrder = checkoutItems.length > 0 ? checkoutItems : cart;
     if (itemsToOrder.length === 0) {
       showToast(lang === 'en' ? 'Your cart is empty.' : 'O seu carrinho está vazio.');
       return;
     }
 
+    // Registar e salvar a encomenda com código único (ex: AQT-9482)
+    const orderRecord = await createAndSaveOrder({
+      customer: checkoutForm,
+      items: itemsToOrder,
+      subtotal: itemsSubtotal,
+      deliveryZone: selectedDeliveryZone,
+      paymentMethod: checkoutForm.paymentMethod,
+      notes: checkoutForm.notes
+    });
+
+    // Adicionar notificação in-app
+    addNotificationToFeed({
+      type: 'order',
+      title: `📦 Encomenda ${orderRecord.id} Registada!`,
+      message: `A sua encomenda de ${formatPriceKz(grandTotal, lang)} foi criada. Acompanhe a entrega na Área do Cliente.`,
+      link: `/cliente?tracking=${orderRecord.id}`
+    });
+
     let message = '';
-    const isSingle = itemsToOrder.length === 1;
 
     if (isSingle) {
       const single = getTranslatedProduct(itemsToOrder[0], lang);
@@ -89,59 +143,67 @@ export default function StoreDrawers() {
       const qty = Number(single.quantity) || 1;
       const itemTotal = unitPrice * qty;
 
-      message = `Olá AQUI TEM!\n\n`;
-      message += `Quero fazer um pedido:\n\n`;
-      message += `Produto:\n${single.name}\n\n`;
-      message += `Quantidade:\n${qty}\n\n`;
-      message += `Preço:\n${formatPriceKz(itemTotal, lang)}\n\n`;
-      message += `Nome:\n${checkoutForm.name.trim()}\n\n`;
-      message += `Telefone:\n${checkoutForm.phone.trim() || '+244 950 752 933'}\n\n`;
-      message += `Endereço:\n${checkoutForm.address.trim()}\n\n`;
-      message += `Província:\n${checkoutForm.city.trim() || 'Luanda'}\n\n`;
-      message += `Método de pagamento:\n${checkoutForm.paymentMethod}`;
+      message = `Olá AQUI TEM! 👋\n\n`;
+      message += `Quero finalizar a encomenda *#${orderRecord.id}*:\n\n`;
+      message += `🛍️ *Produto:* ${single.name}\n`;
+      message += `🔢 *Quantidade:* ${qty}\n`;
+      message += `💰 *Subtotal Artigo:* ${formatPriceKz(itemTotal, lang)}\n`;
+      message += `🚚 *Zona de Entrega:* ${selectedDeliveryZone.name}\n`;
+      message += `📦 *Taxa de Entrega:* ${deliveryFee === 0 ? 'GRÁTIS' : formatPriceKz(deliveryFee, lang)} (${selectedDeliveryZone.estimatedTime})\n\n`;
+      message += `💵 *TOTAL GERAL A PAGAR:* ${formatPriceKz(grandTotal, lang)}\n\n`;
+      message += `👤 *DADOS DO COMPRADOR:*\n`;
+      message += `• Nome: ${checkoutForm.name.trim()}\n`;
+      message += `• Telemóvel/WhatsApp: ${checkoutForm.phone.trim()}\n`;
+      message += `• E-mail: ${checkoutForm.email.trim()}\n`;
+      message += `• Endereço: ${checkoutForm.address.trim()}\n`;
+      message += `• Província: ${checkoutForm.city.trim() || 'Luanda'}\n`;
+      message += `• Pagamento: ${checkoutForm.paymentMethod}\n`;
       if (checkoutForm.notes.trim()) {
-        message += `\n\nObservações:\n${checkoutForm.notes.trim()}`;
+        message += `• Observações: ${checkoutForm.notes.trim()}\n`;
       }
+      message += `\n📍 *Acompanhar Pedido na Área do Cliente:*\nhttps://loja.aqui-tem.vercel.app/cliente?tracking=${orderRecord.id}\n\n`;
+      message += `Aguardo as coordenadas de pagamento (Multicaixa Express / IBAN) para envio do comprovativo e despacho!`;
     } else {
-      message = `Olá AQUI TEM!\n\n`;
-      message += `Quero fazer este pedido:\n\n`;
+      message = `Olá AQUI TEM! 👋\n\n`;
+      message += `Quero finalizar a encomenda *#${orderRecord.id}*:\n\n`;
 
       itemsToOrder.forEach((rawItem, idx) => {
         const item = getTranslatedProduct(rawItem, lang);
         const unitPrice = getEffectivePrice(item);
         const qty = Number(item.quantity) || 1;
-        message += `${idx + 1}. ${item.name}\n`;
-        message += `Quantidade: ${qty}\n`;
-        message += `Preço: ${formatPriceKz(unitPrice * qty, lang)}\n\n`;
+        message += `${idx + 1}. *${item.name}* (x${qty}) — ${formatPriceKz(unitPrice * qty, lang)}\n`;
       });
 
-      message += `TOTAL: ${formatPriceKz(finalTotal, lang)}\n\n`;
-      message += `Nome:\n${checkoutForm.name.trim()}\n\n`;
-      message += `Telefone:\n${checkoutForm.phone.trim() || '+244 950 752 933'}\n\n`;
-      message += `Endereço:\n${checkoutForm.address.trim()}\n\n`;
-      message += `Província:\n${checkoutForm.city.trim() || 'Luanda'}\n\n`;
-      message += `Pagamento:\n${checkoutForm.paymentMethod}`;
+      message += `\n📊 *Subtotal dos Artigos:* ${formatPriceKz(itemsSubtotal, lang)}\n`;
+      message += `🚚 *Zona de Entrega:* ${selectedDeliveryZone.name}\n`;
+      message += `📦 *Taxa de Entrega:* ${deliveryFee === 0 ? 'GRÁTIS' : formatPriceKz(deliveryFee, lang)} (${selectedDeliveryZone.estimatedTime})\n\n`;
+      message += `💵 *TOTAL GERAL A PAGAR:* ${formatPriceKz(grandTotal, lang)}\n\n`;
+      message += `👤 *DADOS DO COMPRADOR:*\n`;
+      message += `• Nome: ${checkoutForm.name.trim()}\n`;
+      message += `• Telemóvel/WhatsApp: ${checkoutForm.phone.trim()}\n`;
+      message += `• E-mail: ${checkoutForm.email.trim()}\n`;
+      message += `• Endereço: ${checkoutForm.address.trim()}\n`;
+      message += `• Província: ${checkoutForm.city.trim() || 'Luanda'}\n`;
+      message += `• Pagamento: ${checkoutForm.paymentMethod}\n`;
       if (checkoutForm.notes.trim()) {
-        message += `\n\nObservações:\n${checkoutForm.notes.trim()}`;
+        message += `• Observações: ${checkoutForm.notes.trim()}\n`;
       }
+      message += `\n📍 *Acompanhar Pedido na Área do Cliente:*\nhttps://loja.aqui-tem.vercel.app/cliente?tracking=${orderRecord.id}\n\n`;
+      message += `Aguardo as coordenadas de pagamento (Multicaixa Express / IBAN) para envio do comprovativo e despacho!`;
     }
 
     const encodedMessage = encodeURIComponent(message);
     const phoneNumber = '244950752933';
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
 
-    const computedTotal = isSingle
-      ? getEffectivePrice(itemsToOrder[0]) * (Number(itemsToOrder[0].quantity) || 1)
-      : finalTotal;
-
     captureLead({
       name: checkoutForm.name.trim(),
       phone: checkoutForm.phone.trim() || '950752933',
-      city: checkoutForm.city.trim() || 'Luanda',
+      city: `${checkoutForm.city.trim() || 'Luanda'} (${selectedDeliveryZone.shortName})`,
       address: checkoutForm.address.trim() || 'Angola',
       productName: itemsToOrder.map(i => i.name).join(', ') || 'Pedido AQUI TEM',
-      totalValue: computedTotal,
-      notes: `Pagamento: ${checkoutForm.paymentMethod}${checkoutForm.notes ? ` | Obs: ${checkoutForm.notes}` : ''}`
+      totalValue: grandTotal,
+      notes: `Código: ${orderRecord.id} | Email: ${checkoutForm.email} | Frete: ${deliveryFee} Kz | Pagamento: ${checkoutForm.paymentMethod}${checkoutForm.notes ? ` | Obs: ${checkoutForm.notes}` : ''}`
     });
 
     const a = document.createElement('a');
@@ -533,6 +595,50 @@ export default function StoreDrawers() {
                 />
               </div>
 
+              {/* Campo de E-mail Obrigatório para Rastreio & Notificações */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>E-mail do Comprador *</span>
+                  <span style={{ fontSize: '0.72rem', color: '#ff6500', fontWeight: 600 }}>Rastreio & Notificações</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  placeholder="Ex: seuemail@gmail.com"
+                  className="form-input"
+                  value={checkoutForm.email}
+                  onChange={e => setCheckoutForm({ ...checkoutForm, email: e.target.value })}
+                />
+              </div>
+
+              {/* Cálculo Automático de Entrega em Angola */}
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span>Zona de Entrega (Cálculo Automático) *</span>
+                  <span style={{ fontSize: '0.74rem', color: '#22c55e', fontWeight: 700 }}>
+                    {deliveryFee === 0 ? 'Frete Grátis' : formatPriceKz(deliveryFee, lang)}
+                  </span>
+                </label>
+                <select
+                  className="form-input"
+                  value={checkoutForm.deliveryZoneId}
+                  onChange={e => {
+                    const zone = getDeliveryZoneById(e.target.value);
+                    setCheckoutForm({
+                      ...checkoutForm,
+                      deliveryZoneId: e.target.value,
+                      city: zone.region === 'Províncias' ? zone.shortName : 'Luanda'
+                    });
+                  }}
+                >
+                  {DELIVERY_ZONES.map(z => (
+                    <option key={z.id} value={z.id}>
+                      {z.name} — {z.fee === 0 ? 'GRÁTIS' : `${z.fee.toLocaleString()} Kz`} ({z.estimatedTime})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div className="form-group">
                 <label className="form-label">{t('deliveryAddress')} *</label>
                 <input
@@ -550,26 +656,14 @@ export default function StoreDrawers() {
               </div>
 
               <div className="form-group">
-                <label className="form-label">{t('provinceCity')} *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ex: Luanda"
-                  className="form-input"
-                  value={checkoutForm.city}
-                  onChange={e => setCheckoutForm({ ...checkoutForm, city: e.target.value })}
-                />
-              </div>
-
-              <div className="form-group">
                 <label className="form-label">{t('paymentMethod')}</label>
                 <select
                   className="form-input"
                   value={checkoutForm.paymentMethod}
                   onChange={e => setCheckoutForm({ ...checkoutForm, paymentMethod: e.target.value })}
                 >
-                  <option value="Transferência Bancária">{t('bankTransfer')}</option>
-                  <option value="Multicaixa Express">{t('multicaixaExpress')}</option>
+                  <option value="Multicaixa Express">{t('multicaixaExpress') || 'Multicaixa Express'}</option>
+                  <option value="Transferência Bancária">{t('bankTransfer') || 'Transferência Bancária (IBAN)'}</option>
                 </select>
               </div>
 
@@ -585,7 +679,29 @@ export default function StoreDrawers() {
                 />
               </div>
 
-              <button type="submit" className="btn-whatsapp-checkout" style={{ marginTop: '18px' }}>
+              {/* Resumo Transparente com Cálculo Automático */}
+              <div style={{ background: 'var(--bg-light)', padding: '14px 16px', borderRadius: '12px', margin: '14px 0', border: '1px solid var(--border-light)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '5px' }}>
+                  <span>Subtotal dos Produtos:</span>
+                  <strong style={{ color: 'var(--text-main)' }}>{formatPriceKz(itemsSubtotal, lang)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--primary-orange)', fontWeight: 600, marginBottom: '6px' }}>
+                  <span>Taxa de Entrega ({selectedDeliveryZone.shortName}):</span>
+                  <strong>{deliveryFee === 0 ? 'GRÁTIS' : formatPriceKz(deliveryFee, lang)}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-main)', paddingTop: '8px', borderTop: '1px solid var(--border-light)' }}>
+                  <span>TOTAL A PAGAR:</span>
+                  <span style={{ color: '#22c55e' }}>{formatPriceKz(grandTotal, lang)}</span>
+                </div>
+              </div>
+
+              {/* Aviso de Pagamento Antecipado e Rastreio */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.76rem', color: 'var(--text-muted)', marginBottom: '16px', background: 'rgba(255, 101, 0, 0.06)', padding: '8px 12px', borderRadius: '8px', border: '1px solid rgba(255, 101, 0, 0.15)' }}>
+                <ShieldCheck size={16} color="#ff6500" style={{ flexShrink: 0 }} />
+                <span>Pagamento seguro antecipado (Express / IBAN). Confirmação imediata, envio de fatura e agendamento da entrega.</span>
+              </div>
+
+              <button type="submit" className="btn-whatsapp-checkout">
                 <Send size={20} /> {t('sendOrderWhatsApp')}
               </button>
             </form>

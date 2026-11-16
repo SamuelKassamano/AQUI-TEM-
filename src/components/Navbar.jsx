@@ -23,7 +23,8 @@ import {
   MapPin,
   MessageCircle,
   Users,
-  BarChart3
+  BarChart3,
+  User
 } from 'lucide-react';
 
 import LanguageSelector from './LanguageSelector';
@@ -66,7 +67,8 @@ export default function Navbar() {
     { label: t('navSolutions') || 'Soluções', path: '/solucoes' },
     { label: t('navHowItWorks') || 'Como Funciona', path: '/como-funciona' },
     { label: t('navContact') || 'Contactos', path: '/contactos' },
-    { label: t('navFaq') || 'Perguntas Frequentes', path: '/perguntas-frequentes' }
+    { label: t('navFaq') || 'Perguntas Frequentes', path: '/perguntas-frequentes' },
+    { label: 'Área do Cliente', path: '/cliente', badge: 'Rastreio' }
   ];
 
   const isActive = (path) => {
@@ -137,6 +139,15 @@ export default function Navbar() {
             >
               {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
             </button>
+
+            <Link
+              to="/cliente"
+              className="nav-btn nav-btn-icon"
+              title="Área do Cliente & Rastreio"
+              style={{ textDecoration: 'none' }}
+            >
+              <User size={16} />
+            </Link>
 
             <button
               className="nav-btn nav-btn-icon"

@@ -15,6 +15,7 @@ import ContactPage from './src/pages/ContactPage.jsx';
 import FAQPage from './src/pages/FAQPage.jsx';
 import ProductPage from './src/pages/ProductPage.jsx';
 import AdminPage from './src/pages/AdminPage.jsx';
+import CustomerAreaPage from './src/pages/CustomerAreaPage.jsx';
 
 // Error Boundary to prevent white screen crashes
 class ErrorBoundary extends React.Component {
@@ -76,6 +77,12 @@ ReactDOM.createRoot(document.getElementById('root')).render(
 
                 {/* 7. Perguntas Frequentes (FAQ & Dúvidas) */}
                 <Route path="/perguntas-frequentes" element={<FAQPage />} />
+
+                {/* 8. Área do Cliente & Rastreamento de Encomendas */}
+                <Route path="/cliente" element={<CustomerAreaPage />} />
+                <Route path="/minha-conta" element={<CustomerAreaPage />} />
+                <Route path="/rastreio" element={<CustomerAreaPage />} />
+                <Route path="/consultar-pedido" element={<CustomerAreaPage />} />
 
                 {/* Páginas Individuais de Produtos */}
                 <Route path="/produto/:slug" element={<ProductPage />} />

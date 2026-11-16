@@ -34,7 +34,8 @@ import {
   BarChart3,
   Lock,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  User
 } from 'lucide-react';
 import { CATEGORIES, ADVANTAGES, HERO_BANNER_FALLBACK, HERO_COVER_IMAGES } from './data/products';
 import { PRODUCT_VIDEOS } from './src/data/videos';
@@ -236,6 +237,15 @@ export default function App() {
                 {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
               </button>
 
+              <Link
+                to="/cliente"
+                className="nav-btn nav-btn-icon"
+                title="Área do Cliente & Rastreio"
+                style={{ textDecoration: 'none' }}
+              >
+                <User size={16} />
+              </Link>
+
               <button
                 className="nav-btn nav-btn-icon"
                 onClick={() => setIsWishlistOpen(true)}
@@ -340,6 +350,15 @@ export default function App() {
                   onClick={() => setIsSideMenuOpen(false)}
                 >
                   <ShieldCheck size={15} /> Perguntas Frequentes
+                </Link>
+
+                <Link
+                  to="/cliente"
+                  className="category-chip"
+                  style={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', background: 'rgba(255, 101, 0, 0.08)', color: '#ff6500', fontWeight: 700 }}
+                  onClick={() => setIsSideMenuOpen(false)}
+                >
+                  <User size={15} /> Área do Cliente & Rastreio
                 </Link>
 
                 <button
@@ -1509,6 +1528,10 @@ export default function App() {
               <span className="footer-dot">•</span>
               <Link to="/perguntas-frequentes" className="footer-link-item">
                 Perguntas Frequentes
+              </Link>
+              <span className="footer-dot">•</span>
+              <Link to="/cliente" className="footer-link-item" style={{ color: '#ff6500', fontWeight: 700 }}>
+                Área do Cliente
               </Link>
               <span className="footer-dot">•</span>
               <Link to="/admin" className="footer-link-item" style={{ textDecoration: 'none' }}>
