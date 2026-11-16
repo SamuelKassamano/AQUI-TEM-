@@ -210,11 +210,12 @@ export default function CustomerAreaPage() {
 
   return (
     <Layout>
-      <div style={{ background: '#07090e', color: '#ffffff', minHeight: '85vh', padding: '36px 16px 64px' }}>
+      <div className="client-portal-wrapper" style={{ background: '#07090e', color: '#ffffff', minHeight: '85vh', padding: '36px 16px 64px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           
           {/* Header da Área do Cliente */}
           <div
+            className="client-portal-header"
             style={{
               background: 'linear-gradient(135deg, #0d121f 0%, #080c14 100%)',
               borderRadius: '20px',

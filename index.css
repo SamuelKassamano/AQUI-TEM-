@@ -2698,3 +2698,431 @@ a {
     border-radius: 10px !important;
   }
 }
+
+/* ==========================================================================
+   SISTEMA DE DESIGN ULTRA-FINO, COMPACTO & PROFISSIONAL PARA MÓVEL (TODAS AS PÁGINAS)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* 1. Escala Base do Navegador em Telemóveis */
+  html {
+    font-size: 14.5px !important;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* 2. Contentores e Espaçamento de Todas as Páginas */
+  .app-container {
+    width: 100% !important;
+    max-width: 100vw !important;
+    overflow-x: clip !important;
+  }
+
+  main {
+    min-height: 60vh !important;
+  }
+
+  .page-content-wrapper {
+    padding: 0 10px 28px !important;
+  }
+
+  /* Hero Headers de Todas as Páginas (/produtos, /sobre, /solucoes, /como-funciona, /contactos, /faq) */
+  .page-hero,
+  section[style*="linear-gradient"][style*="padding"] {
+    padding: 16px 12px 18px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .page-hero-title,
+  h1[style*="fontSize: 'clamp"],
+  h1[style*="fontSize: clamp"],
+  h1 {
+    font-size: clamp(1.15rem, 5vw, 1.38rem) !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.02em !important;
+    margin-bottom: 4px !important;
+  }
+
+  .page-hero-sub,
+  p[style*="fontSize: 'clamp"],
+  p[style*="fontSize: clamp"] {
+    font-size: 0.76rem !important;
+    line-height: 1.4 !important;
+    margin-bottom: 6px !important;
+  }
+
+  .page-breadcrumbs,
+  nav[style*="fontSize: '0.82rem'"],
+  nav[style*="fontSize: '0.85rem'"] {
+    font-size: 0.70rem !important;
+    margin-bottom: 8px !important;
+    gap: 4px !important;
+  }
+
+  /* Redução de Padding em Containers Inline com espaçamentos grandes */
+  div[style*="padding: 56px"],
+  div[style*="padding: 48px"],
+  div[style*="padding: 44px"],
+  div[style*="padding: 40px"],
+  div[style*="padding: 36px"],
+  div[style*="padding: 28px"],
+  div[style*="padding: 24px"],
+  section[style*="padding: 56px"],
+  section[style*="padding: 48px"],
+  section[style*="padding: 44px"],
+  section[style*="padding: 40px"],
+  section[style*="padding: 36px"],
+  section[style*="padding: 28px"] {
+    padding: 12px 10px !important;
+  }
+
+  /* 3. Cards e Grids das Páginas Institucionais */
+  .feature-grid-3,
+  .about-main-grid,
+  .about-features-grid,
+  .about-gallery-grid {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .feature-card {
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+  }
+
+  .feature-card-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .feature-card-icon svg {
+    width: 14px !important;
+    height: 14px !important;
+  }
+
+  .feature-card h4 {
+    font-size: 0.88rem !important;
+    margin-bottom: 3px !important;
+  }
+
+  .feature-card p {
+    font-size: 0.74rem !important;
+    line-height: 1.35 !important;
+    margin-bottom: 6px !important;
+  }
+
+  /* 4. Vitrine e Catálogo de Produtos (/ e /produtos) */
+  .products-section {
+    margin: 10px auto 18px !important;
+    padding: 0 8px !important;
+  }
+
+  .section-header {
+    margin-bottom: 10px !important;
+  }
+
+  .section-title {
+    font-size: 0.98rem !important;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  .product-card {
+    border-radius: 10px !important;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .product-img-wrapper {
+    height: 130px !important;
+    min-height: 130px !important;
+    max-height: 130px !important;
+  }
+
+  .product-badge {
+    top: 5px !important;
+    left: 5px !important;
+    font-size: 0.50rem !important;
+    padding: 2px 5px !important;
+    border-radius: 4px !important;
+  }
+
+  .product-body {
+    padding: 7px 8px 9px !important;
+  }
+
+  .product-category {
+    font-size: 0.56rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  .product-name {
+    font-size: 0.72rem !important;
+    line-height: 1.18 !important;
+    height: 2.35em !important;
+    margin-bottom: 4px !important;
+    font-weight: 600 !important;
+  }
+
+  .rating-row {
+    font-size: 0.60rem !important;
+    margin-bottom: 4px !important;
+    gap: 3px !important;
+  }
+
+  .rating-row svg {
+    width: 10px !important;
+    height: 10px !important;
+  }
+
+  .product-price-box {
+    margin-bottom: 6px !important;
+  }
+
+  .old-price {
+    font-size: 0.58rem !important;
+  }
+
+  .current-price {
+    font-size: 0.84rem !important;
+    font-weight: 800 !important;
+  }
+
+  .pix-price {
+    font-size: 0.56rem !important;
+  }
+
+  .product-actions {
+    gap: 4px !important;
+  }
+
+  .btn-add-cart {
+    padding: 5px 6px !important;
+    font-size: 0.66rem !important;
+    border-radius: 6px !important;
+    height: 28px !important;
+  }
+
+  .btn-view-details {
+    padding: 5px !important;
+    border-radius: 6px !important;
+    height: 28px !important;
+    width: 28px !important;
+  }
+
+  /* 5. Área do Cliente (/cliente, /rastreio) */
+  .client-portal-wrapper,
+  div[style*="minHeight: '85vh'"] {
+    padding: 12px 8px 36px !important;
+  }
+
+  .client-portal-header,
+  div[style*="linear-gradient(135deg, #0d121f"] {
+    padding: 14px 12px !important;
+    border-radius: 12px !important;
+    margin-bottom: 12px !important;
+    gap: 10px !important;
+  }
+
+  /* 6. Modais & Gavetas (Carrinho, Checkout, Detalhes) */
+  .cart-drawer,
+  .checkout-drawer {
+    width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  .cart-header {
+    padding: 10px 14px !important;
+  }
+
+  .cart-header h3 {
+    font-size: 0.95rem !important;
+  }
+
+  .cart-body {
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+  .cart-item {
+    gap: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .cart-item-img {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 6px !important;
+  }
+
+  .cart-item-title {
+    font-size: 0.74rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .cart-item-price {
+    font-size: 0.78rem !important;
+    margin-top: 2px !important;
+  }
+
+  .qty-controls {
+    gap: 4px !important;
+    padding: 1px 6px !important;
+    margin-top: 4px !important;
+  }
+
+  .qty-btn {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 0.68rem !important;
+  }
+
+  .cart-footer {
+    padding: 10px 12px !important;
+  }
+
+  .cart-summary-row {
+    font-size: 0.72rem !important;
+    margin-bottom: 3px !important;
+  }
+
+  .cart-summary-total {
+    font-size: 0.86rem !important;
+    padding-top: 6px !important;
+    margin-top: 6px !important;
+  }
+
+  .btn-whatsapp-checkout {
+    padding: 8px 12px !important;
+    font-size: 0.76rem !important;
+    border-radius: 8px !important;
+  }
+
+  .modal-overlay {
+    padding: 6px !important;
+  }
+
+  .modal-content {
+    padding: 12px 10px !important;
+    border-radius: 12px !important;
+    max-height: 94vh !important;
+    width: 96% !important;
+  }
+
+  .modal-product-detail .modal-img-col img,
+  .modal-product-img {
+    max-height: 150px !important;
+  }
+
+  .modal-details-col h2 {
+    font-size: 1.05rem !important;
+  }
+
+  /* 7. Formulários e Inputs Gerais */
+  .form-group {
+    margin-bottom: 10px !important;
+  }
+
+  .form-label {
+    font-size: 0.72rem !important;
+    margin-bottom: 3px !important;
+  }
+
+  .form-input,
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 0.78rem !important;
+    padding: 6px 10px !important;
+    height: 34px !important;
+    border-radius: 6px !important;
+  }
+
+  textarea.form-input,
+  textarea {
+    height: auto !important;
+    min-height: 60px !important;
+  }
+
+  /* 8. Página de Produto Individual (/produto/:slug) */
+  .modal-spec-pill {
+    font-size: 0.62rem !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+  }
+
+  .modal-desc-text {
+    font-size: 0.74rem !important;
+    line-height: 1.4 !important;
+  }
+
+  /* 9. FAQ Accordion & Contact Form */
+  .faq-accordion-header {
+    padding: 10px 12px !important;
+    font-size: 0.82rem !important;
+  }
+
+  .faq-accordion-body {
+    padding: 0 12px 10px !important;
+    font-size: 0.75rem !important;
+    line-height: 1.42 !important;
+  }
+
+  /* 10. Rodapé Minimalista Ultra-Fino */
+  .footer {
+    padding: 8px 0 6px !important;
+  }
+
+  .footer-container {
+    padding: 0 8px !important;
+    gap: 3px !important;
+  }
+
+  .footer-logo-png {
+    height: 18px !important;
+  }
+
+  .footer-line-main,
+  .footer-line-links {
+    gap: 3px 8px !important;
+    line-height: 1.3 !important;
+  }
+
+  .footer-slogan-text,
+  .footer-wa-inline,
+  .footer-link-item {
+    font-size: 0.64rem !important;
+  }
+
+  .footer-line-bottom {
+    font-size: 0.56rem !important;
+    line-height: 1.25 !important;
+    padding-top: 2px !important;
+  }
+}
+
+/* Telas Pequenas (iPhone SE e semelhantes < 400px) */
+@media (max-width: 400px) {
+  html {
+    font-size: 13.5px !important;
+  }
+
+  .product-img-wrapper {
+    height: 115px !important;
+    min-height: 115px !important;
+  }
+
+  .current-price {
+    font-size: 0.78rem !important;
+  }
+
+  .hero-img-container {
+    height: 105px !important;
+  }
+}

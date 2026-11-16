@@ -38,6 +38,7 @@ export default function AboutPage() {
     <Layout>
       {/* Premium Hero Banner */}
       <section
+        className="page-hero about-hero-section"
         style={{
           background: 'linear-gradient(135deg, #0b1120 0%, #0f172a 50%, #1e293b 100%)',
           color: '#ffffff',
