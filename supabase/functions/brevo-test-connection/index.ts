@@ -1,6 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Cabeçalhos CORS padrão para suportar requisições web seguras e preflight
+// Cabeçalhos CORS padrão para permitir requisições e preflight seguros
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -13,9 +13,9 @@ Deno.serve(async (req: Request) => {
     return new Response('ok', { headers: corsHeaders });
   }
 
-  // 2. Leitura segura do corpo do pedido (CORRECÇÃO DO SyntaxError em JSON.parse)
-  // O teste de ligação não necessita de corpo. Se o corpo for vazio ou inválido,
-  // NUNCA chamamos req.json() directamente para evitar "Unexpected end of JSON input".
+  // 2. Leitura segura do corpo do pedido (Tratamento robusto contra SyntaxError)
+  // O teste de conexão não exige corpo. Caso venha vazio ou sem corpo,
+  // nunca invocamos req.json() directamente, evitando 'Unexpected end of JSON input'.
   let _requestPayload: Record<string, unknown> | null = null;
   try {
     const rawBody = await req.text();
@@ -23,13 +23,12 @@ Deno.serve(async (req: Request) => {
       _requestPayload = JSON.parse(rawBody);
     }
   } catch (_parseErr) {
-    // Se o corpo enviado não for JSON válido ou estiver mal formatado,
-    // não lançamos excepção 500; ignoramos com segurança pois o teste não depende de parâmetros do corpo.
+    // Se o corpo não for JSON válido, ignora com segurança sem interromper o fluxo
     _requestPayload = null;
   }
 
   try {
-    // 3. Validação do Cabeçalho de Autorização (JWT Bearer)
+    // 3. Validação do Cabeçalho de Autorização (Bearer JWT)
     const authHeader = req.headers.get('Authorization');
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return new Response(
@@ -45,7 +44,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 4. Verificação de Variáveis de Configuração do Supabase
+    // 4. Verificação de Variáveis de Ambiente do Supabase (Apenas Servidor)
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -55,7 +54,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: false,
           category: 'configuration',
-          message: 'Erro de configuração interna: Variáveis do Supabase não inicializadas.'
+          message: 'Erro interno de configuração: Variáveis do Supabase não encontradas no servidor.'
         }),
         {
           status: 500,
@@ -64,7 +63,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 5. Validação da Autenticação do Utilizador (Supabase Auth)
+    // 5. Validação da Sessão do Utilizador (Supabase Auth)
     const supabaseUserClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: { Authorization: authHeader }
@@ -93,47 +92,15 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 6. Restrição Exclusiva a Administradores
-    let isUserAdmin = false;
-
-    if (supabaseServiceRoleKey) {
-      const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
-        auth: { persistSession: false }
-      });
-
-      // Validação por registo na tabela de administradores (admin_users)
-      const { data: adminRecord } = await adminClient
-        .from('admin_users')
-        .select('id, role')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (adminRecord && ['admin', 'super_admin', 'manager'].includes(adminRecord.role)) {
-        isUserAdmin = true;
-      } else {
-        // Validação secundária por app_metadata / user_metadata
-        const metaRole = user.app_metadata?.role || user.user_metadata?.role;
-        if (metaRole === 'admin' || metaRole === 'super_admin' || user.email === 'samuelkassamano2004@gmail.com') {
-          isUserAdmin = true;
-        } else {
-          // Se a tabela admin_users ainda não contiver registos atribuídos
-          const { count } = await adminClient.from('admin_users').select('*', { count: 'exact', head: true });
-          if (count === 0 || count === null) {
-            isUserAdmin = true;
-          }
-        }
-      }
-    } else {
-      const metaRole = user.app_metadata?.role || user.user_metadata?.role;
-      isUserAdmin = metaRole === 'admin' || metaRole === 'super_admin' || user.role === 'authenticated';
-    }
-
-    if (!isUserAdmin) {
+    // 6. Autorização Administrativa Segura (FAIL-CLOSED)
+    // Validação estrita e exclusiva contra a tabela public.admin_users
+    // Nunca concede acesso por email em hardcode, tabela vazia ou papel 'authenticated' genérico
+    if (!supabaseServiceRoleKey) {
       return new Response(
         JSON.stringify({
           success: false,
           category: 'authorization',
-          message: 'Acesso restrito: Apenas administradores autorizados têm permissão para testar a integração.'
+          message: 'Acesso restrito: Chave de verificação administrativa não configurada no servidor.'
         }),
         {
           status: 403,
@@ -142,7 +109,35 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 7. Obtenção e Validação do Segredo BREVO_API_KEY
+    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: { persistSession: false }
+    });
+
+    const { data: adminRecord, error: adminQueryError } = await adminClient
+      .from('admin_users')
+      .select('id, role')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    // Se houver erro de consulta, registo não encontrado ou role inválida -> FAIL CLOSED (403)
+    const allowedRoles = ['admin', 'super_admin', 'manager'];
+    const isUserAdmin = !adminQueryError && adminRecord && allowedRoles.includes(adminRecord.role);
+
+    if (!isUserAdmin) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          category: 'authorization',
+          message: 'Acesso restrito: O utilizador não possui privilégios de administrador registados.'
+        }),
+        {
+          status: 403,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      );
+    }
+
+    // 7. Obtenção Segura de BREVO_API_KEY a partir dos Segredos do Supabase
     const brevoApiKey = Deno.env.get('BREVO_API_KEY');
 
     if (!brevoApiKey || brevoApiKey.trim() === '') {
@@ -150,7 +145,7 @@ Deno.serve(async (req: Request) => {
         JSON.stringify({
           success: false,
           category: 'configuration',
-          message: 'A chave secreta BREVO_API_KEY não se encontra configurada nos Segredos do Supabase.'
+          message: 'A chave BREVO_API_KEY não se encontra configurada nos Segredos do Supabase.'
         }),
         {
           status: 500,
@@ -159,8 +154,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // 8. Comunicação com a API Oficial do Brevo (Exclusivamente no Servidor)
-    // Pedido GET https://api.brevo.com/v3/account com cabeçalho api-key
+    // 8. Comunicação com a API Oficial do Brevo (Exclusiva no Servidor)
+    // GET https://api.brevo.com/v3/account com cabeçalho api-key
     const brevoResponse = await fetch('https://api.brevo.com/v3/account', {
       method: 'GET',
       headers: {
