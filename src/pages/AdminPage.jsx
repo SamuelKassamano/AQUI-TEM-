@@ -45,6 +45,7 @@ import {
   isSupabaseConfigured,
   SUPABASE_PROJECT_ID,
   SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY,
   uploadProductImageToSupabase
 } from '../lib/supabase';
 import { sendAdminPasswordReset, checkUserIsAdmin } from '../lib/crmService';
@@ -187,6 +188,10 @@ export default function AdminPage({ defaultTab = 'products' }) {
   const [testWebhookLoading, setTestWebhookLoading] = useState(false);
   const [testWebhookResult, setTestWebhookResult] = useState(null);
   const [copiedSql, setCopiedSql] = useState(false);
+
+  // Brevo Edge Function Test State
+  const [testBrevoLoading, setTestBrevoLoading] = useState(false);
+  const [testBrevoResult, setTestBrevoResult] = useState(null);
 
   useEffect(() => {
     document.title = 'Painel Administrativo & CRM | AQUI TEM Angola';
@@ -817,6 +822,81 @@ export default function AdminPage({ defaultTab = 'products' }) {
       showToast(`Falha no envio do teste: ${err.message}`);
     } finally {
       setTestWebhookLoading(false);
+    }
+  };
+
+  // Test Brevo Connection via Supabase Edge Function (Strict JWT & Admin Verification)
+  const handleTestBrevoConnection = async () => {
+    setTestBrevoLoading(true);
+    setTestBrevoResult(null);
+
+    try {
+      if (!isSupabaseConfigured || !supabase) {
+        throw new Error('Supabase não está configurado.');
+      }
+
+      // Obtém o access_token através da sessão real do Supabase Auth
+      const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (sessionErr || !accessToken) {
+        setTestBrevoResult({
+          success: false,
+          status: 401,
+          category: 'authentication',
+          message: 'Sessão administrativa não encontrada no Supabase Auth. Faça login novamente no painel.'
+        });
+        showToast('Sessão inválida ou expirada. Faça login novamente.');
+        return;
+      }
+
+      const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/brevo-test-connection`;
+      const response = await fetch(edgeFunctionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_PUBLISHABLE_KEY,
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+
+      const rawText = await response.text();
+      let json;
+      try {
+        json = JSON.parse(rawText);
+      } catch {
+        json = { raw: rawText };
+      }
+
+      if (response.ok && json.success) {
+        setTestBrevoResult({
+          success: true,
+          status: response.status,
+          category: json.category || 'success',
+          message: json.message || 'Ligação à API do Brevo estabelecida com sucesso.',
+          account: json.account
+        });
+        showToast('Ligação ao Brevo validada com sucesso!');
+      } else {
+        setTestBrevoResult({
+          success: false,
+          status: response.status,
+          category: json.category || (response.status === 401 ? 'authentication' : response.status === 403 ? 'authorization' : 'error'),
+          message: json.message || json.raw || `Erro HTTP ${response.status}`,
+          details: json
+        });
+        showToast(`Teste Brevo: HTTP ${response.status}`);
+      }
+    } catch (err) {
+      setTestBrevoResult({
+        success: false,
+        status: 0,
+        category: 'network_error',
+        message: err.message || 'Erro ao comunicar com a Edge Function do Brevo.'
+      });
+      showToast(`Falha na ligação: ${err.message}`);
+    } finally {
+      setTestBrevoLoading(false);
     }
   };
 
@@ -2341,6 +2421,136 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
 }`}
                 </pre>
               </div>
+            </div>
+
+            {/* Card Integração Brevo (E-mail Marketing & Transacional) */}
+            <div style={{ background: 'var(--bg-card)', padding: '28px', borderRadius: '16px', border: '1px solid var(--border-light)', marginTop: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ padding: '10px', background: 'rgba(0, 146, 255, 0.1)', borderRadius: '10px', color: '#0092ff' }}>
+                    <Mail size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 800 }}>
+                      Integração Oficial Brevo (E-mail Marketing & Transacional)
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '0.84rem', color: 'var(--text-muted)' }}>
+                      Edge Function Supabase (<code>brevo-test-connection</code>) com proteção JWT e permissão de administrador.
+                    </p>
+                  </div>
+                </div>
+
+                <span style={{
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  fontSize: '0.75rem',
+                  fontWeight: 800,
+                  background: 'rgba(34, 197, 94, 0.1)',
+                  color: '#16a34a',
+                  border: '1px solid rgba(34, 197, 94, 0.2)'
+                }}>
+                  Supabase Edge Runtime
+                </span>
+              </div>
+
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-main)', lineHeight: 1.6, marginBottom: '18px' }}>
+                O teste comunica directamente com o endpoint oficial <code>GET https://api.brevo.com/v3/account</code> utilizando o segredo <code>BREVO_API_KEY</code> no servidor, autenticando a sua sessão com <code>Authorization: Bearer &lt;access_token&gt;</code> e validando se o seu utilizador está registado na tabela <code>public.admin_users</code>.
+              </p>
+
+              {/* Informações da Sessão Atual */}
+              <div style={{
+                background: 'var(--bg-body)',
+                border: '1px solid var(--border-light)',
+                borderRadius: '10px',
+                padding: '12px 16px',
+                marginBottom: '18px',
+                fontSize: '0.82rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div><strong>Administrador Atual:</strong> {session?.user?.email || 'Desconhecido'}</div>
+                <div style={{ color: 'var(--text-muted)' }}><strong>ID do Utilizador (Auth UUID):</strong> <code>{session?.user?.id || '—'}</code></div>
+                <div style={{ color: 'var(--text-muted)' }}><strong>Mecanismo de Sessão:</strong> Supabase Auth JWT (Persistido no cliente com auto-refresh)</div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                <button
+                  onClick={handleTestBrevoConnection}
+                  disabled={testBrevoLoading}
+                  className="nav-btn nav-btn-orange"
+                  style={{ padding: '10px 20px', fontSize: '0.88rem' }}
+                >
+                  <RefreshCw size={16} className={testBrevoLoading ? 'spin' : ''} />
+                  {testBrevoLoading ? 'A Testar Ligação...' : 'Testar ligação ao Brevo'}
+                </button>
+              </div>
+
+              {/* Resultado do Teste da Edge Function */}
+              {testBrevoResult && (
+                <div
+                  style={{
+                    padding: '16px 20px',
+                    borderRadius: '12px',
+                    marginBottom: '10px',
+                    fontSize: '0.88rem',
+                    background: testBrevoResult.success ? '#e6f4ea' : '#fdeded',
+                    color: testBrevoResult.success ? '#137333' : '#d32f2f',
+                    border: '1px solid',
+                    borderColor: testBrevoResult.success ? '#b7e1cd' : '#f5c2c7'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', fontWeight: 800 }}>
+                    {testBrevoResult.success ? <CheckCircle size={18} /> : <AlertTriangle size={18} />}
+                    <span>
+                      {testBrevoResult.success
+                        ? `Ligação Estabelecida com Sucesso (HTTP ${testBrevoResult.status})`
+                        : `Falha na Verificação (HTTP ${testBrevoResult.status || 'Erro'})`}
+                    </span>
+                  </div>
+
+                  <p style={{ margin: '0 0 10px 0', lineHeight: 1.5 }}>
+                    {testBrevoResult.message}
+                  </p>
+
+                  {testBrevoResult.account && (
+                    <div style={{
+                      background: 'rgba(255, 255, 255, 0.7)',
+                      padding: '12px 14px',
+                      borderRadius: '8px',
+                      fontSize: '0.82rem',
+                      color: '#1e293b',
+                      border: '1px solid rgba(0,0,0,0.06)'
+                    }}>
+                      <div><strong>E-mail da Conta Brevo:</strong> {testBrevoResult.account.email || '—'}</div>
+                      <div><strong>Empresa / Titular:</strong> {testBrevoResult.account.companyName || `${testBrevoResult.account.firstName || ''} ${testBrevoResult.account.lastName || ''}`.trim() || '—'}</div>
+                      {Array.isArray(testBrevoResult.account.plan) && testBrevoResult.account.plan.length > 0 && (
+                        <div><strong>Plano / Créditos:</strong> {testBrevoResult.account.plan.map(p => `${p.type} (${p.credits} créditos)`).join(', ')}</div>
+                      )}
+                    </div>
+                  )}
+
+                  {testBrevoResult.status === 403 && (
+                    <div style={{
+                      marginTop: '12px',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      background: '#fff',
+                      border: '1px solid #f5c2c7',
+                      color: '#334155',
+                      fontSize: '0.8rem'
+                    }}>
+                      <strong>Como autorizar na tabela <code>public.admin_users</code>:</strong>
+                      <p style={{ margin: '4px 0 8px 0' }}>Execute o seguinte comando no SQL Editor do Supabase para atribuir privilégios ao seu utilizador:</p>
+                      <pre style={{ margin: 0, padding: '8px', background: '#f8fafc', borderRadius: '6px', fontSize: '0.75rem', overflowX: 'auto' }}>
+{`INSERT INTO public.admin_users (id, email, role)
+VALUES ('${session?.user?.id || '<ID_DO_UTILIZADOR>'}', '${session?.user?.email || 'email@dominio.com'}', 'super_admin')
+ON CONFLICT (id) DO UPDATE SET role = 'super_admin';`}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         )}
