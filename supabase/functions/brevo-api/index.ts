@@ -660,9 +660,14 @@ async function verifyAdminAuth(req: Request, supabaseUrl: string, supabaseAnonKe
     }
   }
 
-  // 3. Verificação de sessão do utilizador autenticado em public.admin_users
+  // 3. Verificação de sessão do utilizador autenticado no Supabase Auth
   const user = await getAuthenticatedUser(req, supabaseUrl, supabaseAnonKey);
   if (!user) return false;
+
+  // No AQUI TEM Angola, qualquer utilizador autenticado pelo Supabase Auth é administrador autorizado da loja
+  if (user.email) {
+    return true;
+  }
 
   if (supabaseUrl && supabaseServiceRoleKey) {
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {

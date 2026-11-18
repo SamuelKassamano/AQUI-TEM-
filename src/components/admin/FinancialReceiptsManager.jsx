@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   FileText,
   CheckCircle,
@@ -26,7 +26,12 @@ import {
   RefreshCw,
   Eye,
   ChevronRight,
-  AlertCircle
+  AlertCircle,
+  Image as ImageIcon,
+  FolderOpen,
+  Maximize2,
+  Check,
+  Upload
 } from 'lucide-react';
 import { calculateEstimatedDeliveryDate } from '../../utils/angolaLocations';
 import { updateOrderStatus } from '../../utils/customerOrders';
@@ -41,7 +46,7 @@ export default function FinancialReceiptsManager({
   showToast = () => {}
 }) {
   // Navegação interna do módulo
-  // Abas: visao-geral | novos | pendentes | aprovados | rejeitados | auditoria | relatorios
+  // Abas: visao-geral | novos | pendentes | aprovados | rejeitados | armazenamento | auditoria | relatorios
   const [activeTab, setActiveTab] = useState('visao-geral');
 
   // Filtros Globais
@@ -54,6 +59,13 @@ export default function FinancialReceiptsManager({
   const [selectedReceiptLead, setSelectedReceiptLead] = useState(null);
   const [documentSignedUrl, setDocumentSignedUrl] = useState(null);
   const [loadingSignedUrl, setLoadingSignedUrl] = useState(false);
+
+  // Armazenamento & Galeria de Comprovativos
+  const [galleryFilter, setGalleryFilter] = useState('all'); // 'all' | 'images' | 'pdfs'
+  const [gallerySearch, setGallerySearch] = useState('');
+  const [galleryStatusFilter, setGalleryStatusFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected'
+  const [cachedSignedUrls, setCachedSignedUrls] = useState({});
+  const [loadingGalleryUrls, setLoadingGalleryUrls] = useState(false);
 
   // Modal de Aprovação com Confirmação Explícita
   const [approvingLead, setApprovingLead] = useState(null);
@@ -99,9 +111,21 @@ export default function FinancialReceiptsManager({
       const deliveryFee = Math.max(Number(lead.deliveryFee || 3000), 3000);
       const trackingNumber = lead.trackingNumber || lead.tracking_number || `AQT-TRK-${orderCode}`;
 
+      // Extração resiliente de e-mail a partir das notas
+      let customerEmail = lead.email || '';
+      if (!customerEmail || !customerEmail.includes('@')) {
+        const match = notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (match && match[1]) customerEmail = match[1].trim();
+      }
+
+      const storagePath = lead.receiptStoragePath || lead.receipt_storage_path || null;
+      const fileName = lead.receiptFileName || (storagePath ? storagePath.split('/').pop() : 'Comprovativo Bancário');
+      const isPdf = Boolean((storagePath && storagePath.toLowerCase().endsWith('.pdf')) || (fileName && fileName.toLowerCase().endsWith('.pdf')));
+
       return {
         ...lead,
         orderCode,
+        email: customerEmail,
         hasReceipt,
         isApproved,
         isRejected,
@@ -111,8 +135,9 @@ export default function FinancialReceiptsManager({
         deliveryFee,
         trackingNumber,
         history,
-        storagePath: lead.receiptStoragePath || lead.receipt_storage_path || null,
-        fileName: lead.receiptFileName || (lead.receipt_storage_path ? lead.receipt_storage_path.split('/').pop() : 'Comprovativo Bancário'),
+        storagePath,
+        fileName,
+        isPdf,
         uploadedAt: lead.receiptUploadedAt || lead.receipt_uploaded_at || lead.createdAt
       };
     }).filter(item => item.hasReceipt || item.isPending || item.isApproved || item.isRejected);
@@ -226,6 +251,73 @@ export default function FinancialReceiptsManager({
   }, [receiptOrders, activeTab, paymentMethodFilter, datePeriodFilter, searchQuery, sortOrder]);
 
   // ---------------------------------------------------------------------------
+  // PROCESSAMENTO EXCLUSIVO DA GALERIA & ARMAZENAMENTO DE COMPROVATIVOS
+  // ---------------------------------------------------------------------------
+  const galleryOrders = useMemo(() => {
+    return receiptOrders.filter(ord => {
+      // Filtrar registos com comprovativo anexado ou pendente de validação
+      const hasDoc = ord.hasReceipt || Boolean(ord.storagePath);
+      if (!hasDoc) return false;
+
+      // Filtro por Formato (Imagens vs PDFs)
+      if (galleryFilter === 'images' && ord.isPdf) return false;
+      if (galleryFilter === 'pdfs' && !ord.isPdf) return false;
+
+      // Filtro por Estado Financeiro
+      if (galleryStatusFilter === 'pending' && !ord.isPending) return false;
+      if (galleryStatusFilter === 'approved' && !ord.isApproved) return false;
+      if (galleryStatusFilter === 'rejected' && !ord.isRejected) return false;
+
+      // Pesquisa interna na Galeria
+      if (gallerySearch.trim()) {
+        const q = gallerySearch.toLowerCase().trim();
+        const code = (ord.orderCode || '').toLowerCase();
+        const name = (ord.name || '').toLowerCase();
+        const phone = (ord.phone || '').toLowerCase();
+        const email = (ord.email || '').toLowerCase();
+        const file = (ord.fileName || '').toLowerCase();
+        return code.includes(q) || name.includes(q) || phone.includes(q) || email.includes(q) || file.includes(q);
+      }
+
+      return true;
+    });
+  }, [receiptOrders, galleryFilter, galleryStatusFilter, gallerySearch]);
+
+  // Pré-geração e cache de URLs assinados seguros para a Galeria
+  useEffect(() => {
+    if (activeTab === 'armazenamento') {
+      const pendingFetch = galleryOrders.filter(o => o.storagePath && !cachedSignedUrls[o.storagePath]);
+      if (pendingFetch.length > 0) {
+        setLoadingGalleryUrls(true);
+        pendingFetch.forEach(async (ord) => {
+          try {
+            if (supabase?.storage) {
+              const { data: signRes } = await supabase.storage
+                .from('payment-receipts')
+                .createSignedUrl(ord.storagePath, 3600);
+              if (signRes?.signedUrl) {
+                setCachedSignedUrls(prev => ({ ...prev, [ord.storagePath]: signRes.signedUrl }));
+                return;
+              }
+            }
+            if (supabase?.functions) {
+              const { data: fnRes } = await supabase.functions.invoke('receipt-access', {
+                body: { action: 'get-signed-url', orderCode: ord.orderCode, storagePath: ord.storagePath, expiresIn: 3600 }
+              });
+              if (fnRes?.signedUrl) {
+                setCachedSignedUrls(prev => ({ ...prev, [ord.storagePath]: fnRes.signedUrl }));
+              }
+            }
+          } catch (_e) {
+          } finally {
+            setLoadingGalleryUrls(false);
+          }
+        });
+      }
+    }
+  }, [activeTab, galleryOrders, cachedSignedUrls]);
+
+  // ---------------------------------------------------------------------------
   // CONSULTA DE URL ASSINADO SEGURO NO BACKEND (Storage Privado payment-receipts)
   // ---------------------------------------------------------------------------
   const handleFetchSignedUrl = useCallback(async (order) => {
@@ -234,24 +326,39 @@ export default function FinancialReceiptsManager({
       setLoadingSignedUrl(true);
       setDocumentSignedUrl(null);
 
-      if (!supabase?.functions) {
-        throw new Error('Supabase client não configurado.');
-      }
+      // 1. Tentar Edge Function oficial
+      if (supabase?.functions) {
+        const { data, error } = await supabase.functions.invoke('receipt-access', {
+          body: {
+            action: 'get-signed-url',
+            orderCode: order.orderCode,
+            storagePath: order.storagePath,
+            expiresIn: 3600 // 60 minutos de acesso autorizado
+          }
+        });
 
-      const { data, error } = await supabase.functions.invoke('receipt-access', {
-        body: {
-          action: 'get-signed-url',
-          orderCode: order.orderCode,
-          storagePath: order.storagePath,
-          expiresIn: 3600 // 60 minutos de acesso autorizado
+        if (!error && data?.success && data?.signedUrl) {
+          setDocumentSignedUrl(data.signedUrl);
+          if (order.storagePath) {
+            setCachedSignedUrls(prev => ({ ...prev, [order.storagePath]: data.signedUrl }));
+          }
+          return;
         }
-      });
-
-      if (error || !data?.success || !data?.signedUrl) {
-        throw new Error(data?.message || error?.message || 'Não foi possível gerar acesso seguro ao ficheiro.');
       }
 
-      setDocumentSignedUrl(data.signedUrl);
+      // 2. Fallback resiliente para client direto Supabase Storage
+      if (supabase?.storage && order.storagePath) {
+        const { data: directData } = await supabase.storage
+          .from('payment-receipts')
+          .createSignedUrl(order.storagePath, 3600);
+        if (directData?.signedUrl) {
+          setDocumentSignedUrl(directData.signedUrl);
+          setCachedSignedUrls(prev => ({ ...prev, [order.storagePath]: directData.signedUrl }));
+          return;
+        }
+      }
+
+      throw new Error('Não foi possível gerar acesso seguro ao documento no bucket payment-receipts.');
     } catch (err) {
       showToast(`Erro no acesso ao comprovativo: ${err.message}`);
     } finally {
@@ -309,13 +416,14 @@ export default function FinancialReceiptsManager({
       }
 
       // 4. Envio de e-mail transaccional automático pelo Brevo
-      if (lead.email && lead.email.includes('@')) {
+      const customerEmail = lead.email || (lead.notes ? (lead.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || lead.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '');
+      if (customerEmail && customerEmail.includes('@')) {
         const orderDateStr = lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO');
         const prodPrice = Number(lead.productPrice || lead.totalValue);
 
         sendBrevoTransactionalEmail({
           templateType: 'payment_confirmed',
-          to: lead.email,
+          to: customerEmail,
           recipientName: lead.name,
           orderData: {
             id: lead.orderCode,
@@ -330,7 +438,7 @@ export default function FinancialReceiptsManager({
               quantity: 1
             }],
             customerPhone: lead.phone,
-            customerEmail: lead.email,
+            customerEmail: customerEmail,
             province: lead.city || 'Luanda',
             municipality: lead.city || 'Luanda',
             address: lead.address,
@@ -350,6 +458,86 @@ export default function FinancialReceiptsManager({
       }
     } catch (err) {
       showToast(`Erro ao aprovar pagamento: ${err.message}`);
+    } finally {
+      setIsProcessingApproval(false);
+    }
+  };
+
+  // ---------------------------------------------------------------------------
+  // TRANSIÇÃO DE ESTADOS LOGÍSTICOS & DISPARO DE E-MAILS TRANSACCIONAIS BREVO
+  // Modelos Oficiais:
+  // - Encomenda Agendada -> payment_confirmed
+  // - Em Preparação -> order_processing
+  // - Em Rota -> order_shipped
+  // - Entregue -> order_delivered
+  // ---------------------------------------------------------------------------
+  const handleAdvanceOrderStatus = async (order, targetStatus) => {
+    if (!order || isProcessingApproval) return;
+
+    try {
+      setIsProcessingApproval(true);
+      const adminEmail = session?.user?.email || 'admin@aquitem.ao';
+      const formattedTimestamp = new Date().toLocaleString('pt-AO');
+      const calc = calculateEstimatedDeliveryDate(new Date(), 3);
+      const trackingCode = order.trackingNumber || `AQT-TRK-${order.orderCode}`;
+
+      const templateMap = {
+        'Encomenda Agendada': 'payment_confirmed',
+        'Em Preparação': 'order_processing',
+        'Em Rota': 'order_shipped',
+        'Entregue': 'order_delivered'
+      };
+
+      const templateType = templateMap[targetStatus];
+      const auditNote = `[ESTADO ATUALIZADO: ${targetStatus.toUpperCase()}] Atualizado pelo administrador (${adminEmail}) em ${formattedTimestamp}. Rastreio: ${trackingCode}.`;
+
+      showToast(`A actualizar encomenda #${order.orderCode} para "${targetStatus}"...`);
+
+      // 1. Atualizar lead no CRM / Supabase
+      await updateLeadStatus(order.id, targetStatus, auditNote);
+
+      // 2. Atualizar gestor de encomendas local
+      updateOrderStatus(order.orderCode, targetStatus, null, trackingCode, calc.formattedDate);
+
+      // 3. Enviar e-mail correspondente via Brevo
+      const customerEmail = order.email || (order.notes ? (order.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || order.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '');
+      if (templateType && customerEmail && customerEmail.includes('@')) {
+        const orderDateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO');
+        const prodPrice = Number(order.productPrice || order.totalValue);
+
+        await sendBrevoTransactionalEmail({
+          templateType,
+          to: customerEmail,
+          recipientName: order.name,
+          orderData: {
+            id: order.orderCode,
+            orderDate: orderDateStr,
+            total: order.totalValue,
+            subtotal: prodPrice,
+            deliveryFee: order.deliveryFee,
+            items: [{
+              name: order.productName || 'Artigo AQUI TEM',
+              description: 'Equipamento Original com Garantia Oficial de 7 Dias',
+              price: prodPrice,
+              quantity: 1
+            }],
+            customerPhone: order.phone,
+            customerEmail,
+            province: order.city || 'Luanda',
+            municipality: order.city || 'Luanda',
+            address: order.address,
+            paymentStatus: targetStatus,
+            trackingNumber: trackingCode,
+            estimatedDeliveryDate: calc.formattedDate
+          },
+          deduplicationKey: `${templateType}-${order.orderCode}`
+        }).catch(err => console.warn('Aviso no envio de e-mail Brevo transição:', err));
+      }
+
+      showToast(`✓ Estado da encomenda #${order.orderCode} alterado para "${targetStatus}"! E-mail oficial disparado.`);
+      if (refreshCRMData) await refreshCRMData();
+    } catch (err) {
+      showToast(`Erro ao alterar estado: ${err.message}`);
     } finally {
       setIsProcessingApproval(false);
     }
@@ -859,6 +1047,44 @@ export default function FinancialReceiptsManager({
                         </button>
                       )}
 
+                      {/* Acções de Avanço do Ciclo de Vida da Encomenda (Modelos Oficiais Brevo) */}
+                      {isApproved && (
+                        <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {order.status !== 'Em Preparação' && order.status !== 'Em Rota' && order.status !== 'Entregue' && (
+                            <button
+                              onClick={() => handleAdvanceOrderStatus(order, 'Em Preparação')}
+                              className="nav-btn"
+                              style={{ padding: '6px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#2563EB', color: '#FFF', border: 'none', fontWeight: 700 }}
+                              title="Avançar para Preparação & Controlo de Qualidade (Dispara e-mail de preparação)"
+                            >
+                              <Package size={13} /> Preparação
+                            </button>
+                          )}
+
+                          {order.status !== 'Em Rota' && order.status !== 'Entregue' && (
+                            <button
+                              onClick={() => handleAdvanceOrderStatus(order, 'Em Rota')}
+                              className="nav-btn"
+                              style={{ padding: '6px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#EA580C', color: '#FFF', border: 'none', fontWeight: 700 }}
+                              title="Despachar viatura com estafeta (Dispara e-mail em rota)"
+                            >
+                              <Truck size={13} /> Despachar em Rota
+                            </button>
+                          )}
+
+                          {order.status !== 'Entregue' && (
+                            <button
+                              onClick={() => handleAdvanceOrderStatus(order, 'Entregue')}
+                              className="nav-btn"
+                              style={{ padding: '6px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px', background: '#059669', color: '#FFF', border: 'none', fontWeight: 700 }}
+                              title="Confirmar entrega finalizada e activar garantia (Dispara e-mail de garantia)"
+                            >
+                              <CheckCircle size={13} /> Concluir Entrega
+                            </button>
+                          )}
+                        </div>
+                      )}
+
                       {cleanPhone && (
                         <a
                           href={`https://wa.me/${cleanPhone.startsWith('244') ? cleanPhone : `244${cleanPhone}`}?text=${encodeURIComponent(`Olá ${order.name}, entramos em contacto da AQUI TEM Angola a respeito da sua encomenda #${order.orderCode}.`)}`}
@@ -880,6 +1106,370 @@ export default function FinancialReceiptsManager({
                           <MessageCircle size={13} /> WhatsApp
                         </a>
                       )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ===================================================================== */}
+      {/* 5. SEPARADOR EXCLUSIVO: ARMAZENAMENTO & GALERIA DE RECIBOS            */}
+      {/* ===================================================================== */}
+      {activeTab === 'armazenamento' && (
+        <div style={{ display: 'grid', gap: '16px' }}>
+          {/* Banner de Controlo do Armazenamento */}
+          <div
+            style={{
+              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(255, 101, 0, 0.05) 100%)',
+              border: '1px solid rgba(2, 132, 199, 0.25)',
+              borderRadius: '14px',
+              padding: '18px 22px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: '16px'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0284c7', fontWeight: 800, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <FolderOpen size={16} /> Bucket Privado Supabase Storage: payment-receipts
+              </div>
+              <h2 style={{ margin: '4px 0 6px 0', fontSize: '1.35rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                Galeria de Armazenamento de Comprovativos Bancários
+              </h2>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                Repositório oficial dos ficheiros (JPG, PNG, PDF) submetidos pelos clientes no checkout e portal. Todos os ficheiros permanecem protegidos com acesso via URLs assinados temporários.
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <div style={{ background: 'var(--bg-card)', padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.70rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Ficheiros</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--primary-orange)' }}>{galleryOrders.length}</div>
+              </div>
+              <div style={{ background: 'var(--bg-card)', padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.70rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Imagens</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#0284c7' }}>{galleryOrders.filter(o => !o.isPdf).length}</div>
+              </div>
+              <div style={{ background: 'var(--bg-card)', padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--border-light)', textAlign: 'center' }}>
+                <div style={{ fontSize: '0.70rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Documentos PDF</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#DC2626' }}>{galleryOrders.filter(o => o.isPdf).length}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Barra de Filtros da Galeria */}
+          <div
+            style={{
+              background: 'var(--bg-card)',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-light)',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '10px',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', flex: 1, minWidth: '280px' }}>
+              <div style={{ position: 'relative', flex: '1 1 240px', minWidth: '200px' }}>
+                <Search size={15} style={{ position: 'absolute', left: 12, top: 11, color: 'var(--text-muted)' }} />
+                <input
+                  type="text"
+                  placeholder="Filtrar por código AQT, nome do cliente, telemóvel ou ficheiro..."
+                  value={gallerySearch}
+                  onChange={e => setGallerySearch(e.target.value)}
+                  className="form-input"
+                  style={{ paddingLeft: '34px', width: '100%', boxSizing: 'border-box', fontSize: '0.84rem' }}
+                />
+              </div>
+
+              {/* Filtro por Formato */}
+              <select
+                value={galleryFilter}
+                onChange={e => setGalleryFilter(e.target.value)}
+                className="form-input"
+                style={{ width: 'auto', minWidth: '150px', fontSize: '0.82rem' }}
+              >
+                <option value="all">Todos os Formatos</option>
+                <option value="images">Apenas Imagens (JPG/PNG)</option>
+                <option value="pdfs">Apenas Documentos PDF</option>
+              </select>
+
+              {/* Filtro por Estado */}
+              <select
+                value={galleryStatusFilter}
+                onChange={e => setGalleryStatusFilter(e.target.value)}
+                className="form-input"
+                style={{ width: 'auto', minWidth: '160px', fontSize: '0.82rem' }}
+              >
+                <option value="all">Todos os Estados</option>
+                <option value="pending">Pendentes de Validação</option>
+                <option value="approved">Pagamentos Aprovados</option>
+                <option value="rejected">Comprovativos Rejeitados</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <button
+                onClick={refreshCRMData}
+                className="nav-btn"
+                style={{ padding: '7px 12px', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                title="Sincronizar ficheiros com Supabase Storage"
+              >
+                <RefreshCw size={13} className={loadingGalleryUrls ? 'spin' : ''} /> Actualizar Galeria
+              </button>
+            </div>
+          </div>
+
+          {/* Grid de Imagens e Documentos da Galeria */}
+          {galleryOrders.length === 0 ? (
+            <div
+              style={{
+                background: 'var(--bg-card)',
+                padding: '48px 20px',
+                borderRadius: '14px',
+                border: '1px solid var(--border-light)',
+                textAlign: 'center'
+              }}
+            >
+              <FolderOpen size={48} style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
+              <h3 style={{ margin: '0 0 6px 0', fontSize: '1.1rem', fontWeight: 800 }}>Nenhum comprovativo encontrado</h3>
+              <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: '0.84rem' }}>
+                Não existem ficheiros no bucket que correspondam aos filtros de pesquisa actuais.
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+                gap: '16px'
+              }}
+            >
+              {galleryOrders.map(ord => {
+                const signedUrl = cachedSignedUrls[ord.storagePath];
+                const uploadDateFormatted = ord.uploadedAt
+                  ? new Date(ord.uploadedAt).toLocaleString('pt-AO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+                  : 'Data registada';
+
+                return (
+                  <div
+                    key={ord.id}
+                    style={{
+                      background: 'var(--bg-card)',
+                      borderRadius: '14px',
+                      border: ord.isApproved ? '1px solid rgba(22, 163, 74, 0.4)' : (ord.isRejected ? '1px solid rgba(220, 38, 38, 0.4)' : '1px solid rgba(2, 132, 199, 0.35)'),
+                      overflow: 'hidden',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      boxShadow: 'var(--shadow-sm)',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease'
+                    }}
+                  >
+                    {/* Área do Thumbnail / Pré-visualização */}
+                    <div
+                      style={{
+                        height: '170px',
+                        background: '#0B0F19',
+                        position: 'relative',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        overflow: 'hidden'
+                      }}
+                      onClick={() => {
+                        setSelectedReceiptLead(ord);
+                        handleFetchSignedUrl(ord);
+                      }}
+                      title="Clique para abrir e ampliar comprovativo em alta definição"
+                    >
+                      {ord.isPdf ? (
+                        <div style={{ textAlign: 'center', color: '#FFF', padding: '16px' }}>
+                          <FileText size={48} color="#EF4444" style={{ margin: '0 auto 8px' }} />
+                          <div style={{ fontSize: '0.82rem', fontWeight: 800 }}>Documento Digital PDF</div>
+                          <div style={{ fontSize: '0.70rem', color: '#94A3B8', marginTop: '2px', wordBreak: 'break-all' }}>
+                            {ord.fileName}
+                          </div>
+                        </div>
+                      ) : signedUrl ? (
+                        <img
+                          src={signedUrl}
+                          alt={`Recibo ${ord.orderCode}`}
+                          style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            transition: 'transform 0.2s ease'
+                          }}
+                          onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+                          onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+                        />
+                      ) : (
+                        <div style={{ textAlign: 'center', color: '#94A3B8', padding: '16px' }}>
+                          <ImageIcon size={40} style={{ margin: '0 auto 6px', opacity: 0.6 }} />
+                          <div style={{ fontSize: '0.75rem' }}>A carregar pré-visualização segura...</div>
+                        </div>
+                      )}
+
+                      {/* Badge de Formato */}
+                      <span
+                        style={{
+                          position: 'absolute',
+                          top: 10,
+                          left: 10,
+                          background: ord.isPdf ? '#EF4444' : '#0284c7',
+                          color: '#FFF',
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          padding: '2px 8px',
+                          borderRadius: '6px',
+                          letterSpacing: '0.04em',
+                          textTransform: 'uppercase'
+                        }}
+                      >
+                        {ord.isPdf ? 'PDF' : (ord.fileName.split('.').pop() || 'IMG').toUpperCase()}
+                      </span>
+
+                      {/* Botão de Ampliação */}
+                      <button
+                        style={{
+                          position: 'absolute',
+                          top: 10,
+                          right: 10,
+                          background: 'rgba(0,0,0,0.6)',
+                          color: '#FFF',
+                          border: 'none',
+                          borderRadius: '6px',
+                          padding: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          cursor: 'pointer'
+                        }}
+                        title="Ampliar"
+                      >
+                        <Maximize2 size={14} />
+                      </button>
+                    </div>
+
+                    {/* Conteúdo Informativo */}
+                    <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', flex: 1, gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+                        <div>
+                          <div style={{ fontSize: '0.92rem', fontWeight: 900, color: 'var(--primary-orange)' }}>
+                            #{ord.orderCode}
+                          </div>
+                          <div style={{ fontSize: '0.84rem', fontWeight: 800, color: 'var(--text-main)', marginTop: '2px' }}>
+                            {ord.name}
+                          </div>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 800,
+                            padding: '3px 8px',
+                            borderRadius: '9999px',
+                            background: ord.isApproved ? 'rgba(22, 163, 74, 0.15)' : (ord.isRejected ? 'rgba(220, 38, 38, 0.15)' : 'rgba(2, 132, 199, 0.15)'),
+                            color: ord.isApproved ? '#16A34A' : (ord.isRejected ? '#DC2626' : '#0284c7'),
+                            border: `1px solid ${ord.isApproved ? 'rgba(22, 163, 74, 0.3)' : (ord.isRejected ? 'rgba(220, 38, 38, 0.3)' : 'rgba(2, 132, 199, 0.3)')}`
+                          }}
+                        >
+                          {ord.status}
+                        </span>
+                      </div>
+
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                        <div>📱 {ord.phone}</div>
+                        {ord.email && <div style={{ marginTop: '2px', wordBreak: 'break-all' }}>✉️ {ord.email}</div>}
+                        <div style={{ marginTop: '2px', color: 'var(--text-main)', fontWeight: 700 }}>
+                          💰 {ord.totalValue.toLocaleString('pt-AO')} Kz • {ord.paymentMethod}
+                        </div>
+                        <div style={{ marginTop: '4px', fontSize: '0.72rem' }}>
+                          🕒 Enviado em: <strong>{uploadDateFormatted}</strong>
+                        </div>
+                      </div>
+
+                      {/* Barra de Ações Rápidas na Galeria */}
+                      <div style={{ marginTop: 'auto', paddingTop: '10px', borderTop: '1px solid var(--border-light)', display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        <button
+                          onClick={() => {
+                            setSelectedReceiptLead(ord);
+                            handleFetchSignedUrl(ord);
+                          }}
+                          className="nav-btn"
+                          style={{ flex: 1, padding: '6px 10px', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: 'rgba(2, 132, 199, 0.1)', color: '#0284c7', border: '1px solid rgba(2, 132, 199, 0.25)', fontWeight: 700 }}
+                        >
+                          <Eye size={12} /> Ver Recibo
+                        </button>
+
+                        {signedUrl && (
+                          <a
+                            href={signedUrl}
+                            download={ord.fileName}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="nav-btn"
+                            style={{ padding: '6px 10px', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: 'var(--bg-body)', color: 'var(--text-main)', border: '1px solid var(--border-light)', textDecoration: 'none' }}
+                            title="Descarregar ficheiro original"
+                          >
+                            <Download size={12} />
+                          </a>
+                        )}
+
+                        {!ord.isApproved && (
+                          <button
+                            onClick={() => {
+                              setApprovingLead(ord);
+                              setApprovalNote('');
+                            }}
+                            className="nav-btn"
+                            style={{ padding: '6px 10px', fontSize: '0.76rem', background: '#16A34A', color: '#FFF', border: 'none', fontWeight: 800 }}
+                            title="Validar entrada bancária e aprovar encomenda"
+                          >
+                            <CheckCircle size={12} /> Aprovar
+                          </button>
+                        )}
+
+                        {ord.isApproved && ord.status !== 'Em Preparação' && ord.status !== 'Em Rota' && ord.status !== 'Entregue' && (
+                          <button
+                            onClick={() => handleAdvanceOrderStatus(ord, 'Em Preparação')}
+                            className="nav-btn"
+                            style={{ padding: '6px 10px', fontSize: '0.76rem', background: '#2563EB', color: '#FFF', border: 'none', fontWeight: 700 }}
+                            title="Avançar para Preparação (Dispara e-mail Brevo)"
+                          >
+                            <Package size={12} /> Preparar
+                          </button>
+                        )}
+
+                        {ord.isApproved && ord.status === 'Em Preparação' && (
+                          <button
+                            onClick={() => handleAdvanceOrderStatus(ord, 'Em Rota')}
+                            className="nav-btn"
+                            style={{ padding: '6px 10px', fontSize: '0.76rem', background: '#EA580C', color: '#FFF', border: 'none', fontWeight: 700 }}
+                            title="Despachar em Rota (Dispara e-mail Brevo)"
+                          >
+                            <Truck size={12} /> Despachar
+                          </button>
+                        )}
+
+                        {ord.isApproved && ord.status === 'Em Rota' && (
+                          <button
+                            onClick={() => handleAdvanceOrderStatus(ord, 'Entregue')}
+                            className="nav-btn"
+                            style={{ padding: '6px 10px', fontSize: '0.76rem', background: '#059669', color: '#FFF', border: 'none', fontWeight: 700 }}
+                            title="Confirmar Entrega (Dispara e-mail de Garantia)"
+                          >
+                            <CheckCircle size={12} /> Entregue
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -1169,6 +1759,47 @@ export default function FinancialReceiptsManager({
                 >
                   <CheckCircle size={14} /> APROVAR PAGAMENTO
                 </button>
+              )}
+
+              {selectedReceiptLead.isApproved && (
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {selectedReceiptLead.status !== 'Em Preparação' && selectedReceiptLead.status !== 'Em Rota' && selectedReceiptLead.status !== 'Entregue' && (
+                    <button
+                      onClick={() => {
+                        handleAdvanceOrderStatus(selectedReceiptLead, 'Em Preparação');
+                        setSelectedReceiptLead(null);
+                      }}
+                      className="nav-btn"
+                      style={{ padding: '8px 14px', fontSize: '0.82rem', background: '#2563EB', color: '#FFF', border: 'none', fontWeight: 700 }}
+                    >
+                      <Package size={14} /> Em Preparação
+                    </button>
+                  )}
+                  {selectedReceiptLead.status !== 'Em Rota' && selectedReceiptLead.status !== 'Entregue' && (
+                    <button
+                      onClick={() => {
+                        handleAdvanceOrderStatus(selectedReceiptLead, 'Em Rota');
+                        setSelectedReceiptLead(null);
+                      }}
+                      className="nav-btn"
+                      style={{ padding: '8px 14px', fontSize: '0.82rem', background: '#EA580C', color: '#FFF', border: 'none', fontWeight: 700 }}
+                    >
+                      <Truck size={14} /> Despachar em Rota
+                    </button>
+                  )}
+                  {selectedReceiptLead.status !== 'Entregue' && (
+                    <button
+                      onClick={() => {
+                        handleAdvanceOrderStatus(selectedReceiptLead, 'Entregue');
+                        setSelectedReceiptLead(null);
+                      }}
+                      className="nav-btn"
+                      style={{ padding: '8px 14px', fontSize: '0.82rem', background: '#059669', color: '#FFF', border: 'none', fontWeight: 700 }}
+                    >
+                      <CheckCircle size={14} /> Confirmar Entregue
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>

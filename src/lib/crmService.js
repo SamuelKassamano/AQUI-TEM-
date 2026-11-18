@@ -76,30 +76,41 @@ export async function fetchLeadsFromSupabase() {
     }
 
     // Normaliza leads do banco
-    const normalized = (data || []).map(lead => ({
-      id: lead.id,
-      leadCode: lead.lead_code || `LEAD-${lead.id.slice(0, 8)}`,
-      name: lead.name,
-      phone: lead.phone,
-      email: lead.email || '',
-      marketingConsent: Boolean(lead.marketing_consent),
-      consentSource: lead.consent_source || '',
-      city: lead.city || 'Luanda',
-      address: lead.address || 'Angola',
-      productName: lead.product_name,
-      productPrice: Number(lead.product_price) || 0,
-      totalValue: Number(lead.total_value) || 0,
-      status: lead.status || 'Novo Lead',
-      trafficSource: lead.traffic_source || 'Direto',
-      timeOnSite: lead.time_on_site || '0m 0s',
-      pagesViewed: lead.pages_viewed || 1,
-      notes: lead.notes || '',
-      history: Array.isArray(lead.history) ? lead.history : [],
-      receiptToken: lead.receipt_token || null,
-      receiptStoragePath: lead.receipt_storage_path || null,
-      receiptUploadedAt: lead.receipt_uploaded_at || null,
-      createdAt: lead.created_at
-    }));
+    const normalized = (data || []).map(lead => {
+      const rawNotes = lead.notes || '';
+      let email = lead.email || '';
+      if (!email || !email.includes('@')) {
+        const match = rawNotes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || rawNotes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        if (match && match[1]) {
+          email = match[1].trim();
+        }
+      }
+
+      return {
+        id: lead.id,
+        leadCode: lead.lead_code || `LEAD-${lead.id.slice(0, 8)}`,
+        name: lead.name,
+        phone: lead.phone,
+        email,
+        marketingConsent: Boolean(lead.marketing_consent),
+        consentSource: lead.consent_source || '',
+        city: lead.city || 'Luanda',
+        address: lead.address || 'Angola',
+        productName: lead.product_name,
+        productPrice: Number(lead.product_price) || 0,
+        totalValue: Number(lead.total_value) || 0,
+        status: lead.status || 'Novo Lead',
+        trafficSource: lead.traffic_source || 'Direto',
+        timeOnSite: lead.time_on_site || '0m 0s',
+        pagesViewed: lead.pages_viewed || 1,
+        notes: rawNotes,
+        history: Array.isArray(lead.history) ? lead.history : [],
+        receiptToken: lead.receipt_token || null,
+        receiptStoragePath: lead.receipt_storage_path || null,
+        receiptUploadedAt: lead.receipt_uploaded_at || null,
+        createdAt: lead.created_at
+      };
+    });
 
     // Filtragem para remover clientes e pedidos sintéticos de teste, mantendo estritamente o SR. Marculino e encomendas reais
     const realLeads = normalized.filter(lead => {

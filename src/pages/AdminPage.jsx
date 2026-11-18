@@ -331,7 +331,8 @@ export default function AdminPage({ defaultTab = 'products' }) {
       updateOrderStatus(orderCode, 'Encomenda Agendada', null, trackingNumber, calc.formattedDate);
 
       // Envio automático de confirmação pelo Brevo
-      if (lead.email && lead.email.includes('@')) {
+      const customerEmail = lead.email || (lead.notes ? (lead.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || lead.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '');
+      if (customerEmail && customerEmail.includes('@')) {
         const orderDateStr = lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO');
         const totalNum = Number(lead.totalValue || 0);
         const prodPrice = Number(lead.productPrice || totalNum);
@@ -339,7 +340,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
 
         sendBrevoTransactionalEmail({
           templateType: 'payment_confirmed',
-          to: lead.email,
+          to: customerEmail,
           recipientName: lead.name,
           orderData: {
             id: orderCode,
@@ -354,7 +355,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
               quantity: 1
             }],
             customerPhone: lead.phone,
-            customerEmail: lead.email,
+            customerEmail: customerEmail,
             province: lead.city || 'Luanda',
             municipality: lead.city || 'Luanda',
             address: lead.address,
@@ -2526,9 +2527,11 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                 showToast(`Estado de ${lead.name} alterado para ${newSt}`);
 
                                 // Notificar o cliente via Brevo quando a encomenda transitar de estado
-                                if (lead.email && lead.email.includes('@')) {
+                                const customerEmail = lead.email || (lead.notes ? (lead.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || lead.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '');
+                                if (customerEmail && customerEmail.includes('@')) {
                                   const templateMap = {
                                     'Venda Realizada': 'payment_confirmed',
+                                    'Encomenda Agendada': 'payment_confirmed',
                                     'Em Preparação': 'order_processing',
                                     'Em Rota': 'order_shipped',
                                     'Entregue': 'order_delivered'
@@ -2537,10 +2540,10 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                   if (tpl) {
                                     const totalNum = Number(lead.totalValue || 0);
                                     const prodPrice = Number(lead.productPrice || totalNum);
-                                    const deliveryFee = totalNum > prodPrice ? (totalNum - prodPrice) : 0;
+                                    const deliveryFee = totalNum > prodPrice ? (totalNum - prodPrice) : 3000;
                                     sendBrevoTransactionalEmail({
                                       templateType: tpl,
-                                      to: lead.email,
+                                      to: customerEmail,
                                       recipientName: lead.name,
                                       orderData: {
                                         id: orderCode,
@@ -2555,7 +2558,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                           quantity: 1
                                         }],
                                         customerPhone: lead.phone,
-                                        customerEmail: lead.email,
+                                        customerEmail,
                                         province: lead.city || 'Luanda',
                                         municipality: lead.city || 'Luanda',
                                         address: lead.address,

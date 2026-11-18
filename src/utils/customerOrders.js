@@ -553,13 +553,17 @@ export function attachPaymentReceipt(orderId, receiptData) {
 
     // Regra Fundamental: Enviar e-mail de confirmação da recepção do comprovativo
     // O pagamento permanece PENDENTE até validação manual do administrador
-    if (targetOrder?.customer?.email && targetOrder.customer.email.includes('@')) {
+    const resolvedEmail = targetOrder?.customer?.email || 
+      (targetOrder?.notes ? (targetOrder.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || targetOrder.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '') ||
+      getSavedCustomerProfile()?.email || '';
+
+    if (resolvedEmail && resolvedEmail.includes('@')) {
       setTimeout(async () => {
         try {
           await sendBrevoTransactionalEmail({
             templateType: 'receipt_submitted',
-            to: targetOrder.customer.email,
-            recipientName: targetOrder.customer.name,
+            to: resolvedEmail,
+            recipientName: targetOrder.customer?.name || 'Cliente AQUI TEM',
             orderData: {
               id: targetOrder.id,
               orderDate: targetOrder.createdAt ? new Date(targetOrder.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
@@ -568,7 +572,7 @@ export function attachPaymentReceipt(orderId, receiptData) {
               deliveryFee: targetOrder.deliveryFee,
               items: targetOrder.items,
               customerPhone: targetOrder.customer?.phone,
-              customerEmail: targetOrder.customer?.email,
+              customerEmail: resolvedEmail,
               province: targetOrder.customer?.province,
               municipality: targetOrder.customer?.municipality,
               deliveryZone: targetOrder.deliveryZone?.name || 'Luanda',
@@ -584,7 +588,7 @@ export function attachPaymentReceipt(orderId, receiptData) {
 
           await trackBrevoCommerceEvent({
             eventName: 'receipt_submitted',
-            email: targetOrder.customer.email,
+            email: resolvedEmail,
             eventId: `receipt_submitted-${orderId}`,
             properties: {
               orderId,
@@ -743,7 +747,11 @@ export function updateOrderStatus(orderId, newStatus, driverInfo = null, customT
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
 
     // Notificações automáticas Brevo nas alterações de estado das encomendas
-    if (targetOrder?.customer?.email && targetOrder.customer.email.includes('@')) {
+    const resolvedEmail = targetOrder?.customer?.email || 
+      (targetOrder?.notes ? (targetOrder.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || targetOrder.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '') ||
+      getSavedCustomerProfile()?.email || '';
+
+    if (resolvedEmail && resolvedEmail.includes('@')) {
       const templateMap = {
         'Encomenda Agendada': 'payment_confirmed',
         'Em Preparação': 'order_processing',
@@ -757,8 +765,8 @@ export function updateOrderStatus(orderId, newStatus, driverInfo = null, customT
           try {
             await sendBrevoTransactionalEmail({
               templateType,
-              to: targetOrder.customer.email,
-              recipientName: targetOrder.customer.name,
+              to: resolvedEmail,
+              recipientName: targetOrder.customer?.name || 'Cliente AQUI TEM',
               orderData: {
                 id: targetOrder.id,
                 orderDate: targetOrder.createdAt ? new Date(targetOrder.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
@@ -767,7 +775,7 @@ export function updateOrderStatus(orderId, newStatus, driverInfo = null, customT
                 deliveryFee: targetOrder.deliveryFee,
                 items: targetOrder.items,
                 customerPhone: targetOrder.customer?.phone,
-                customerEmail: targetOrder.customer?.email,
+                customerEmail: resolvedEmail,
                 province: targetOrder.customer?.province,
                 municipality: targetOrder.customer?.municipality,
                 deliveryZone: targetOrder.deliveryZone?.name || 'Luanda',
@@ -783,7 +791,7 @@ export function updateOrderStatus(orderId, newStatus, driverInfo = null, customT
 
             await trackBrevoCommerceEvent({
               eventName: `order_${canonicalStatus.toLowerCase().replace(/\s+/g, '_')}`,
-              email: targetOrder.customer.email,
+              email: resolvedEmail,
               eventId: `order_${canonicalStatus}-${orderId}`,
               properties: { orderId, status: canonicalStatus }
             });

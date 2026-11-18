@@ -23,6 +23,22 @@ function getBrevoFunctionHeaders() {
       const parsed = JSON.parse(rawAuth);
       if (parsed?.access_token) {
         headers['Authorization'] = `Bearer ${parsed.access_token}`;
+        return headers;
+      }
+    }
+
+    // Procura em todas as chaves do localStorage por token de sessão Supabase
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('sb-') || k.includes('supabase')) && (k.endsWith('-auth-token') || k.includes('token'))) {
+        try {
+          const item = JSON.parse(localStorage.getItem(k) || '{}');
+          const token = item?.access_token || item?.currentSession?.access_token;
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+            return headers;
+          }
+        } catch (_inner) { }
       }
     }
   } catch (_e) { }
@@ -533,7 +549,7 @@ export async function fetchBrevoTemplates() {
   try {
     const raw = localStorage.getItem(BREVO_CUSTOM_TEMPLATES_KEY);
     if (raw) cachedCustom = JSON.parse(raw);
-  } catch {}
+  } catch { }
 
   return {
     success: true,
@@ -596,7 +612,7 @@ export async function saveBrevoTemplates(templates) {
   // Actualiza cache local imediatamente
   try {
     localStorage.setItem(BREVO_CUSTOM_TEMPLATES_KEY, JSON.stringify(templates));
-  } catch {}
+  } catch { }
 
   if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'test' || process.env.BREVO_LOCAL_TEST === '1')) {
     return {
