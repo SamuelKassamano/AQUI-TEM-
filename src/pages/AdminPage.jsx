@@ -62,6 +62,7 @@ import { createSlug } from '../utils/slug';
 import { calculateEstimatedDeliveryDate } from '../utils/angolaLocations';
 import { updateOrderStatus, getLocalOrders } from '../utils/customerOrders';
 import FinancialReceiptsManager from '../components/admin/FinancialReceiptsManager';
+import EmailManagementManager from '../components/admin/EmailManagementManager';
 
 
 const EMPTY_FORM = {
@@ -1865,6 +1866,26 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
           </button>
 
           <button
+            onClick={() => setTab('emails')}
+            style={{
+              padding: '12px 18px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: currentTab === 'emails' ? '3px solid #F37021' : '3px solid transparent',
+              color: currentTab === 'emails' ? '#F37021' : 'var(--text-muted)',
+              fontWeight: currentTab === 'emails' ? 800 : 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Mail size={17} /> Gestão de E-mails
+          </button>
+
+          <button
             onClick={() => setTab('analytics')}
             style={{
               padding: '12px 18px',
@@ -2682,6 +2703,18 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
             session={session}
             updateLeadStatus={updateLeadStatus}
             refreshCRMData={refreshCRMData}
+            showToast={showToast}
+          />
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA: GESTÃO DE E-MAILS TRANSACCIONAIS (BREVO & WEBHOOKS)       */}
+        {/* ============================================================== */}
+        {currentTab === 'emails' && (
+          <EmailManagementManager
+            leads={leads}
+            session={session}
+            formatPriceKz={formatPriceKz}
             showToast={showToast}
           />
         )}

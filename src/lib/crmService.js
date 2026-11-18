@@ -101,7 +101,25 @@ export async function fetchLeadsFromSupabase() {
       createdAt: lead.created_at
     }));
 
-    return { leads: normalized, tableMissing: false, error: null };
+    // Filtragem para remover clientes e pedidos sintéticos de teste, mantendo estritamente o SR. Marculino e encomendas reais
+    const realLeads = normalized.filter(lead => {
+      const name = (lead.name || '').toLowerCase();
+      const code = (lead.leadCode || '').toUpperCase();
+      const notes = (lead.notes || '').toLowerCase();
+
+      // Preservar estritamente o cliente real Sr. Marculino
+      if (name.includes('marculino')) return true;
+
+      // Filtrar clientes e registos sintéticos de testes
+      if (name.includes('teste') || name.includes('probe') || name.includes('token test') || name.includes('status test')) return false;
+      if (code.startsWith('TEST') || code.startsWith('ST-TEST') || code.startsWith('LEAD-TEST')) return false;
+      if (code === 'LEAD-170648-99' || code === 'LEAD-185526-75' || code === 'LEAD-244785-85' || code === 'LEAD-363328-4' || code === 'LEAD-893954-48' || code === 'AQT-5940' || code === 'LEAD-332980-39' || code === 'AQT-TST8515' || code === 'AQT-TST5359') return false;
+      if (notes.includes('teste de inserção') || notes.includes('teste de validação') || notes.includes('teste de envio real') || notes.includes('byigyggffdiop')) return false;
+
+      return true;
+    });
+
+    return { leads: realLeads, tableMissing: false, error: null };
   } catch (err) {
     console.error('Erro ao carregar leads do Supabase:', err);
     return {

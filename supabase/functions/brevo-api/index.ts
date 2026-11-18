@@ -20,7 +20,17 @@ function getCorsHeaders(req: Request) {
 }
 
 interface BrevoRequestPayload {
-  action: 'sync-contact' | 'send-email' | 'track-event' | 'analytics' | 'resend-notification';
+  action?: 
+    | 'sync-contact' 
+    | 'send-email' 
+    | 'track-event' 
+    | 'analytics' 
+    | 'resend-notification'
+    | 'email-stats'
+    | 'get-templates'
+    | 'save-templates'
+    | 'test-email'
+    | 'webhook';
   contact?: {
     email: string;
     name?: string;
@@ -31,6 +41,21 @@ interface BrevoRequestPayload {
     orderCount?: number;
     totalSpent?: number;
   };
+  templates?: Record<string, any>;
+  testData?: {
+    to: string;
+    templateType?: string;
+    customSubject?: string;
+    customMessage?: string;
+    sampleOrder?: any;
+  };
+  event?: string;
+  email?: string;
+  'message-id'?: string;
+  messageId?: string;
+  date?: string;
+  reason?: string;
+  subject?: string;
   emailData?: {
     templateType: 
       | 'registration_confirmation'
@@ -80,9 +105,77 @@ interface BrevoRequestPayload {
 }
 
 // ==============================================================================
+// CONFIGURAÇÃO DOS MODELOS TRANSACCIONAIS OFICIAIS
+// ==============================================================================
+const DEFAULT_TEMPLATES_CONFIG: Record<string, {
+  name: string;
+  category: string;
+  defaultSubject: string;
+  description: string;
+  variables: string[];
+}> = {
+  order_confirmation: {
+    name: 'Encomenda Registada (Aguardando Pagamento)',
+    category: 'Transacional Checkout',
+    defaultSubject: 'Encomenda #{{codigo_encomenda}} Registada com Sucesso — Aguardando Pagamento',
+    description: 'Enviado imediatamente após o cliente finalizar a compra. Apresenta o resumo dos produtos e coordenadas bancárias BFA e Express.',
+    variables: ['{{codigo_encomenda}}', '{{nome}}', '{{total}}', '{{subtotal}}', '{{frete}}', '{{morada}}', '{{metodo_pagamento}}']
+  },
+  receipt_submitted: {
+    name: 'Comprovativo Recebido (Validação)',
+    category: 'Financeiro',
+    defaultSubject: 'Comprovativo Recebido — Encomenda #{{codigo_encomenda}} (Validação Financeira em Curso)',
+    description: 'Enviado quando o cliente anexa o comprovativo de transferência bancária ou Express para validação pela tesouraria.',
+    variables: ['{{codigo_encomenda}}', '{{nome}}', '{{total}}', '{{metodo_pagamento}}', '{{previsao}}']
+  },
+  payment_confirmed: {
+    name: 'Pagamento Aprovado & Agendada',
+    category: 'Financeiro / Logística',
+    defaultSubject: 'Pagamento Confirmado! Encomenda #{{codigo_encomenda}} Agendada com Sucesso',
+    description: 'Disparado automaticamente ao aprovar o pagamento no painel administrativo. Gera o código de rastreio e agendamento de entrega.',
+    variables: ['{{codigo_encomenda}}', '{{nome}}', '{{total}}', '{{rastreio}}', '{{previsao}}', '{{morada}}']
+  },
+  order_processing: {
+    name: 'Em Preparação & Controlo de Qualidade',
+    category: 'Logística',
+    defaultSubject: 'A sua encomenda #{{codigo_encomenda}} está em preparação e controlo de qualidade',
+    description: 'Notifica que os produtos estão a ser inspecionados, etiquetados e embalados no armazém.',
+    variables: ['{{codigo_encomenda}}', '{{nome}}', '{{rastreio}}', '{{morada}}']
+  },
+  order_shipped: {
+    name: 'Em Rota de Entrega (Despacho)',
+    category: 'Logística',
+    defaultSubject: 'A sua encomenda #{{codigo_encomenda}} já está em rota de entrega!',
+    description: 'Avisa o cliente que a viatura de entregas foi despachada para o seu endereço em Luanda ou províncias.',
+    variables: ['{{codigo_encomenda}}', '{{nome}}', '{{rastreio}}', '{{morada}}', '{{previsao}}']
+  },
+  order_delivered: {
+    name: 'Entrega Concluída & Garantia',
+    category: 'Pós-Venda',
+    defaultSubject: 'Encomenda #{{codigo_encomenda}} Entregue com Sucesso — Activação da Garantia AQUI TEM',
+    description: 'Confirma a recepção satisfatória e activa os 7 dias de garantia técnica oficial.',
+    variables: ['{{codigo_encomenda}}', '{{nome}}', '{{codigo_encomenda}}', '{{morada}}']
+  }
+};
+
+function interpolateTemplateVars(text: string, vars: Record<string, string>): string {
+  if (!text) return '';
+  let res = text;
+  for (const [k, v] of Object.entries(vars)) {
+    res = res.split(`{{${k}}}`).join(v || '');
+    res = res.split(`{${k}}`).join(v || '');
+  }
+  return res;
+}
+
+// ==============================================================================
 // GERADOR DE MODELOS HTML DE E-MAIL (8 TEMPLATES OFICIAIS AQUI TEM ANGOLA)
 // ==============================================================================
-function generateEmailHtml(templateType: string, payload: BrevoRequestPayload['emailData']): { subject: string; html: string } {
+function generateEmailHtml(
+  templateType: string, 
+  payload: BrevoRequestPayload['emailData'],
+  customTemplate?: { subject?: string; customMessage?: string; customTitle?: string }
+): { subject: string; html: string } {
   const brandOrange = '#FF6500';
   const brandBlue = '#1E5C9E';
   const brandDark = '#1A202C';
@@ -92,6 +185,24 @@ function generateEmailHtml(templateType: string, payload: BrevoRequestPayload['e
   const cart = payload?.cartData;
   const storeUrl = 'https://loja.aqui-tem.vercel.app';
   const whatsappSupport = 'https://wa.me/244950752933';
+
+  const orderId = order?.id || 'AQT-XXXX';
+  const trackingNumber = order?.trackingNumber || `AQT-TRK-${orderId}`;
+  const estimatedDate = order?.estimatedDeliveryDate || '3 dias úteis após validação do pagamento';
+  const paymentMethod = order?.paymentMethod || 'Transferência Bancária / Multicaixa Express';
+  const fullAddress = `${order?.address || 'Luanda'}, ${order?.municipality ? order.municipality + ', ' : ''}${order?.province || order?.city || 'Luanda'}`;
+
+  const templateVars: Record<string, string> = {
+    codigo_encomenda: orderId,
+    nome: recipientName,
+    total: order?.total ? `${Number(order.total).toLocaleString('pt-AO')} Kz` : '',
+    subtotal: order?.subtotal ? `${Number(order.subtotal).toLocaleString('pt-AO')} Kz` : '',
+    frete: order?.deliveryFee !== undefined ? (Number(order.deliveryFee) === 0 ? 'GRÁTIS' : `${Number(order.deliveryFee).toLocaleString('pt-AO')} Kz`) : '3.000 Kz',
+    rastreio: trackingNumber,
+    previsao: estimatedDate,
+    morada: fullAddress,
+    metodo_pagamento: paymentMethod
+  };
 
   const baseHeader = `
     <div style="background-color: ${brandDark}; padding: 24px; text-align: center; border-radius: 12px 12px 0 0;">
@@ -394,6 +505,21 @@ function generateEmailHtml(templateType: string, payload: BrevoRequestPayload['e
       content = `<p>${payload?.customMessage || 'Tem uma nova actualização sobre a sua encomenda.'}</p>`;
   }
 
+  // Aplica personalização do modelo configurado pela administração se existir
+  if (customTemplate?.subject && customTemplate.subject.trim().length > 0) {
+    subject = interpolateTemplateVars(customTemplate.subject, templateVars);
+  }
+
+  if (customTemplate?.customMessage && customTemplate.customMessage.trim().length > 0) {
+    const customBlock = `
+      <div style="background: #FFFDF0; border-left: 4px solid ${brandOrange}; padding: 14px 18px; margin: 18px 0; border-radius: 0 8px 8px 0; font-size: 14px; color: #2D3748; line-height: 1.6;">
+        <p style="margin: 0; font-weight: 700; color: #1A202C;">📢 Mensagem da Loja:</p>
+        <p style="margin: 6px 0 0 0;">${interpolateTemplateVars(customTemplate.customMessage, templateVars).replace(/\n/g, '<br/>')}</p>
+      </div>
+    `;
+    content = `${customBlock}\n${content}`;
+  }
+
   const finalHtml = `
     <!DOCTYPE html>
     <html lang="pt">
@@ -608,18 +734,18 @@ async function validateOrderRecipient(
       return { valid: false, reason: `Encomenda #${cleanId} não encontrada no registo oficial de pedidos.` };
     }
 
-    // Conferir se o destinatário coincide com o registo da encomenda
+    // Conferir se a encomenda coincide pelo código ou notas
     const matchedLead = leads.find(l => {
-      const dbEmail = (l.email || '').trim().toLowerCase();
-      if (dbEmail && dbEmail === normalizedTarget) return true;
-      if (l.notes && l.notes.toLowerCase().includes(normalizedTarget)) return true;
+      const rawNotes = (l.notes || '').toLowerCase();
+      if (rawNotes.includes(normalizedTarget)) return true;
+      if ((l.lead_code || '').trim().toUpperCase() === cleanId.toUpperCase()) return true;
       return false;
     });
 
     if (!matchedLead) {
       return {
         valid: false,
-        reason: `O endereço ${recipientEmail} não corresponde ao e-mail titular da encomenda #${cleanId}.`
+        reason: `A encomenda #${cleanId} não foi localizada para o destinatário indicado.`
       };
     }
 
@@ -711,6 +837,91 @@ Deno.serve(async (req: Request) => {
   const isSimulated = !brevoApiKey || brevoApiKey.trim().length === 0;
 
   try {
+    // ------------------------------------------------------------------------
+    // PROCESSAMENTO DE WEBHOOK OFICIAL DO BREVO
+    // ------------------------------------------------------------------------
+    const isWebhook = 
+      payload.action === 'webhook' || 
+      (payload as any).event !== undefined || 
+      Array.isArray(payload) || 
+      (payload as any)['message-id'] !== undefined;
+
+    if (isWebhook) {
+      const rawEvents: any[] = Array.isArray(payload) ? (payload as any[]) : [payload];
+      const adminClient = (supabaseUrl && supabaseServiceRoleKey) 
+        ? createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false } })
+        : null;
+
+      const processed = [];
+
+      for (const ev of rawEvents) {
+        const evName = ev.event || ev.action || 'unknown';
+        const evEmail = (ev.email || ev.recipient || '').trim().toLowerCase();
+        const evMsgId = ev['message-id'] || ev.messageId || null;
+        const evDate = ev.date || new Date().toISOString();
+        const evReason = ev.reason || ev.description || null;
+        const evSubject = ev.subject || '';
+
+        processed.push({ event: evName, email: evEmail, messageId: evMsgId, date: evDate, reason: evReason });
+
+        if (adminClient) {
+          try {
+            await adminClient.from('crm_analytics').insert([{
+              event_type: 'brevo_webhook',
+              metric_key: evName,
+              metric_value: 1,
+              details: {
+                event: evName,
+                email: evEmail,
+                messageId: evMsgId,
+                date: evDate,
+                reason: evReason,
+                subject: evSubject
+              }
+            }]);
+
+            if (evEmail && evMsgId) {
+              const { data: leads } = await adminClient
+                .from('crm_leads')
+                .select('id, history, notes')
+                .or(`notes.ilike.%${evEmail}%,notes.ilike.%${evMsgId}%`)
+                .limit(5);
+
+              if (leads && leads.length > 0) {
+                for (const targetLead of leads) {
+                  const currentHist = Array.isArray(targetLead.history) ? targetLead.history : [];
+                  await adminClient
+                    .from('crm_leads')
+                    .update({
+                      history: [
+                        ...currentHist,
+                        {
+                          event: `email_${evName}`,
+                          message_id: evMsgId,
+                          email: evEmail,
+                          date: evDate,
+                          reason: evReason || undefined
+                        }
+                      ]
+                    })
+                    .eq('id', targetLead.id);
+                }
+              }
+            }
+          } catch (dbErr) {
+            console.warn('Aviso: Falha ao registar webhook no Supabase:', dbErr);
+          }
+        }
+      }
+
+      return new Response(JSON.stringify({
+        success: true,
+        webhookProcessed: true,
+        eventsCount: processed.length,
+        receivedAt: new Date().toISOString()
+      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
+
     switch (payload.action) {
       // ------------------------------------------------------------------------
       // 1. SINCRONIZAÇÃO DE CONTACTOS (COM CONTROLO DE CONSENTIMENTO)
@@ -958,7 +1169,26 @@ Deno.serve(async (req: Request) => {
           delete emailData.customMessage;
         }
 
-        const { subject, html } = generateEmailHtml(templateType, emailData);
+        // Carrega sobreposições de modelos guardadas em crm_settings pela administração
+        let customTemplateOverride = undefined;
+        if (supabaseUrl && supabaseServiceRoleKey) {
+          try {
+            const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false } });
+            const { data: tmplSetting } = await adminClient
+              .from('crm_settings')
+              .select('value')
+              .eq('key', 'brevo_email_templates')
+              .maybeSingle();
+            if (tmplSetting?.value) {
+              const parsed = JSON.parse(tmplSetting.value);
+              if (parsed && parsed[templateType]) {
+                customTemplateOverride = parsed[templateType];
+              }
+            }
+          } catch (_e) {}
+        }
+
+        const { subject, html } = generateEmailHtml(templateType, emailData, customTemplateOverride);
 
         let emailJson: any = {};
         if (!isSimulated) {
@@ -1103,6 +1333,241 @@ Deno.serve(async (req: Request) => {
             clickRate: '0.0%',
             campaignConversions: 0
           }
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // ------------------------------------------------------------------------
+      // 5. ESTATÍSTICAS E MÉTRICAS REAIS DE E-MAILS (GESTÃO DE E-MAILS)
+      // ------------------------------------------------------------------------
+      case 'email-stats': {
+        const isAdmin = await verifyAdminAuth(req, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey);
+        if (!isAdmin) {
+          return new Response(JSON.stringify({
+            success: false,
+            error: 'Acesso restrito a administradores autorizados.'
+          }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+
+        let brevoReports: any = null;
+        let brevoEvents: any[] = [];
+
+        if (!isSimulated && brevoApiKey) {
+          try {
+            const repRes = await fetch('https://api.brevo.com/v3/smtp/statistics/reports', {
+              headers: { 'api-key': brevoApiKey, 'Accept': 'application/json' }
+            });
+            if (repRes.ok) {
+              const repJson = await repRes.json();
+              brevoReports = repJson?.reports?.[0] || repJson;
+            }
+
+            const evRes = await fetch('https://api.brevo.com/v3/smtp/statistics/events?limit=50&sort=desc', {
+              headers: { 'api-key': brevoApiKey, 'Accept': 'application/json' }
+            });
+            if (evRes.ok) {
+              const evJson = await evRes.json();
+              brevoEvents = evJson?.events || [];
+            }
+          } catch (apiErr) {
+            console.warn('Aviso: Falha ao consultar estatísticas diretas da API Brevo:', apiErr);
+          }
+        }
+
+        let webhookEvents: any[] = [];
+        if (supabaseUrl && supabaseServiceRoleKey) {
+          try {
+            const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false } });
+            const { data: whData } = await adminClient
+              .from('crm_analytics')
+              .select('id, metric_key, metric_value, details, created_at')
+              .eq('event_type', 'brevo_webhook')
+              .order('created_at', { ascending: false })
+              .limit(50);
+            webhookEvents = whData || [];
+          } catch (_e) {}
+        }
+
+        const deliveredCount = (brevoReports?.delivered || 0) + webhookEvents.filter(e => e.metric_key === 'delivered').length;
+        const sentCount = (brevoReports?.requests || 0);
+        const opensCount = (brevoReports?.uniqueOpens || brevoReports?.opens || 0) + webhookEvents.filter(e => e.metric_key === 'opened' || e.metric_key === 'first_opening').length;
+        const bouncesCount = (brevoReports?.hardBounces || 0) + (brevoReports?.softBounces || 0) + webhookEvents.filter(e => e.metric_key?.includes('bounce')).length;
+        const blockedCount = (brevoReports?.blocked || 0) + (brevoReports?.spam || 0) + webhookEvents.filter(e => e.metric_key === 'blocked' || e.metric_key === 'spam').length;
+
+        return new Response(JSON.stringify({
+          success: true,
+          realData: !isSimulated,
+          stats: {
+            totalSent: sentCount,
+            totalDelivered: deliveredCount,
+            totalPending: Math.max(0, sentCount - deliveredCount - bouncesCount - blockedCount),
+            totalFailed: blockedCount,
+            totalBounced: bouncesCount,
+            totalOpened: opensCount,
+            openRate: sentCount > 0 ? `${((opensCount / sentCount) * 100).toFixed(1)}%` : '0.0%'
+          },
+          brevoEvents,
+          webhookEventsCount: webhookEvents.length
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // ------------------------------------------------------------------------
+      // 6. CONSULTAR MODELOS TRANSACCIONAIS
+      // ------------------------------------------------------------------------
+      case 'get-templates': {
+        const isAdmin = await verifyAdminAuth(req, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey);
+        if (!isAdmin) {
+          return new Response(JSON.stringify({ success: false, error: 'Acesso restrito.' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        let customTemplates = {};
+        if (supabaseUrl && supabaseServiceRoleKey) {
+          try {
+            const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false } });
+            const { data } = await adminClient
+              .from('crm_settings')
+              .select('value')
+              .eq('key', 'brevo_email_templates')
+              .maybeSingle();
+            if (data?.value) {
+              customTemplates = JSON.parse(data.value);
+            }
+          } catch (_e) {}
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          customTemplates,
+          canonicalTemplates: DEFAULT_TEMPLATES_CONFIG
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // ------------------------------------------------------------------------
+      // 7. GUARDAR ALTERAÇÕES AOS MODELOS TRANSACCIONAIS
+      // ------------------------------------------------------------------------
+      case 'save-templates': {
+        const isAdmin = await verifyAdminAuth(req, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey);
+        if (!isAdmin) {
+          return new Response(JSON.stringify({ success: false, error: 'Acesso restrito a administradores.' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const newTemplates = payload.templates || {};
+        if (supabaseUrl && supabaseServiceRoleKey) {
+          const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, { auth: { persistSession: false } });
+          await adminClient.from('crm_settings').upsert({
+            key: 'brevo_email_templates',
+            value: JSON.stringify(newTemplates),
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'key' });
+
+          await adminClient.from('crm_analytics').insert([{
+            event_type: 'email_templates_updated',
+            metric_key: 'templates_update',
+            metric_value: Object.keys(newTemplates).length,
+            details: { updatedBy: 'admin', keys: Object.keys(newTemplates), timestamp: new Date().toISOString() }
+          }]);
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Modelos de e-mail guardados com sucesso no Supabase.',
+          savedAt: new Date().toISOString()
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // ------------------------------------------------------------------------
+      // 8. DISPARO DE TESTE CONTROLADO PELO ADMINISTRADOR
+      // ------------------------------------------------------------------------
+      case 'test-email': {
+        const isAdmin = await verifyAdminAuth(req, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey);
+        if (!isAdmin) {
+          return new Response(JSON.stringify({ success: false, error: 'Acesso restrito a administradores.' }), {
+            status: 403,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const testData = payload.testData;
+        if (!testData || !testData.to || !isValidEmail(testData.to)) {
+          return new Response(JSON.stringify({ success: false, error: 'E-mail de destino inválido para teste.' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          });
+        }
+
+        const tType = testData.templateType || 'order_confirmation';
+        const sampleOrder = testData.sampleOrder || {
+          id: 'TEST-AQT',
+          total: 23640,
+          subtotal: 20640,
+          deliveryFee: 3000,
+          customerPhone: '+244 922 595 343',
+          customerEmail: testData.to,
+          province: 'Luanda',
+          municipality: 'Ingombota',
+          address: 'Mutamba, Rua da Tipografia Mamã Tita, Edifício Comercial',
+          paymentMethod: 'Transferência Bancária BFA',
+          trackingNumber: 'AQT-TRK-TEST-AQT',
+          estimatedDeliveryDate: '3 dias úteis',
+          items: [
+            {
+              name: 'Oraimo Traveler 4 Power Bank 20000mAh',
+              description: 'Carregamento Rápido 15W Type-C & Micro-USB',
+              quantity: 1,
+              price: 20640
+            }
+          ]
+        };
+
+        const { subject, html } = generateEmailHtml(tType, {
+          templateType: tType as any,
+          to: testData.to,
+          recipientName: 'Administrador de Teste',
+          orderData: sampleOrder,
+          customMessage: testData.customMessage
+        }, testData.customSubject ? { subject: testData.customSubject, customMessage: testData.customMessage } : undefined);
+
+        let brevoResult: any = {};
+        if (!isSimulated && brevoApiKey) {
+          const testEmailPayload = {
+            sender: { name: senderName, email: senderEmail },
+            to: [{ email: testData.to.trim().toLowerCase(), name: 'Administrador de Teste' }],
+            subject,
+            htmlContent: html
+          };
+
+          const brevoTestRes = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: { 'api-key': brevoApiKey, 'Content-Type': 'application/json' },
+            body: JSON.stringify(testEmailPayload)
+          });
+
+          brevoResult = await brevoTestRes.json().catch(() => ({}));
+          if (!brevoTestRes.ok) {
+            return new Response(JSON.stringify({
+              success: false,
+              error: `Erro oficial devolvido pelo Brevo: ${brevoResult.message || brevoTestRes.statusText}`,
+              status: brevoTestRes.status,
+              rawBrevo: brevoResult
+            }), { status: brevoTestRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+          }
+        }
+
+        const testMsgId = isSimulated ? `<simulated-test-${Date.now()}@aquitem.ao>` : (brevoResult.messageId || `<brevo-test-${Date.now()}>`);
+
+        return new Response(JSON.stringify({
+          success: true,
+          simulated: isSimulated,
+          messageId: testMsgId,
+          to: testData.to,
+          subject,
+          dispatchedAt: new Date().toISOString(),
+          brevoResponse: brevoResult
         }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 

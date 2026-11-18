@@ -101,7 +101,7 @@ export default function StoreDrawers() {
   const deliveryFee = Math.max(getDeliveryFeeForLocation(checkoutForm.province, checkoutForm.municipality), 3000);
   const itemsSubtotal = isSingle
     ? getEffectivePrice(checkoutItems[0]) * (Number(checkoutItems[0].quantity) || 1)
-    : finalTotal;
+    : Math.max(0, subtotal - discountAmount);
   const grandTotal = itemsSubtotal + deliveryFee;
 
   // Previsão de Entrega de 3 DIAS ÚTEIS
@@ -841,8 +841,13 @@ export default function StoreDrawers() {
                     </select>
                   </div>
 
-                  {/* Resumo da Encomenda (Sem linha de subtotal conforme directiva) */}
+                  {/* Resumo da Encomenda */}
                   <div style={{ background: 'var(--bg-main)', padding: '14px', borderRadius: '12px', margin: '14px 0', border: '1px solid var(--border-light)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '6px' }}>
+                      <span>Subtotal dos Produtos:</span>
+                      <strong>{Number(itemsSubtotal).toLocaleString('pt-AO')} Kz</strong>
+                    </div>
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--primary-orange)', fontWeight: 600, marginBottom: '6px' }}>
                       <span>Taxa de Transporte ({checkoutForm.province}):</span>
                       <strong>{deliveryFee.toLocaleString('pt-AO')} Kz</strong>

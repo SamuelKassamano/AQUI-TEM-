@@ -76,7 +76,7 @@ export default function CheckoutPage() {
   const deliveryFee = Math.max(getDeliveryFeeForLocation(formData.province, formData.municipality), 3000);
   const itemsSubtotal = isSingle
     ? getEffectivePrice(itemsToCheckout[0]) * (Number(itemsToCheckout[0].quantity) || 1)
-    : finalTotal;
+    : Math.max(0, subtotal - discountAmount);
   const grandTotal = itemsSubtotal + deliveryFee;
 
   // Previsão de Entrega (3 DIAS ÚTEIS)
@@ -794,8 +794,15 @@ export default function CheckoutPage() {
                       })}
                     </div>
 
-                    {/* Detalhamento de Valores (Subtotal removido conforme especificação) */}
+                    {/* Detalhamento de Valores */}
                     <div style={{ display: 'grid', gap: '8px', fontSize: '0.88rem', color: 'var(--text-muted)', borderBottom: '1px solid var(--border-light)', paddingBottom: '14px', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span>Subtotal dos Produtos:</span>
+                        <strong style={{ color: 'var(--text-main)', fontSize: '0.92rem' }}>
+                          {Number(itemsSubtotal).toLocaleString('pt-AO')} Kz
+                        </strong>
+                      </div>
+
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span>Taxa de Transporte ({formData.province}):</span>
                         <strong style={{ color: 'var(--text-main)', fontSize: '0.92rem' }}>
