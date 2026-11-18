@@ -48,3 +48,12 @@ dist/
 .env
 .env.*
 !.env.example
+
+# Backups e ficheiros temporários locais
+BACKUP_*
+*.zip
+*.tar.gz
+scripts/test_*
+scripts/query.sql
+scripts/run_*
+scripts/storage_*

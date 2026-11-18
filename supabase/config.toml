@@ -2,3 +2,6 @@ project_id = "essjwjbtzytefycjodgh"
 
 [functions.brevo-test-connection]
 verify_jwt = true
+
+[functions.brevo-api]
+verify_jwt = false

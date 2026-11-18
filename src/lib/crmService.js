@@ -81,6 +81,9 @@ export async function fetchLeadsFromSupabase() {
       leadCode: lead.lead_code || `LEAD-${lead.id.slice(0, 8)}`,
       name: lead.name,
       phone: lead.phone,
+      email: lead.email || '',
+      marketingConsent: Boolean(lead.marketing_consent),
+      consentSource: lead.consent_source || '',
       city: lead.city || 'Luanda',
       address: lead.address || 'Angola',
       productName: lead.product_name,
@@ -92,6 +95,9 @@ export async function fetchLeadsFromSupabase() {
       pagesViewed: lead.pages_viewed || 1,
       notes: lead.notes || '',
       history: Array.isArray(lead.history) ? lead.history : [],
+      receiptToken: lead.receipt_token || null,
+      receiptStoragePath: lead.receipt_storage_path || null,
+      receiptUploadedAt: lead.receipt_uploaded_at || null,
       createdAt: lead.created_at
     }));
 
@@ -120,6 +126,7 @@ export async function captureLeadInSupabase(leadPayload) {
     lead_code: leadCode,
     name: leadPayload.name || 'Cliente Sem Nome',
     phone: leadPayload.phone || '',
+    email: leadPayload.email?.trim() || null,
     city: leadPayload.city || 'Luanda',
     address: leadPayload.address || 'Angola',
     product_name: leadPayload.productName || 'Consulta Geral',
@@ -154,6 +161,7 @@ export async function captureLeadInSupabase(leadPayload) {
           leadCode: leadRow.lead_code,
           name: leadRow.name,
           phone: leadRow.phone,
+          email: leadRow.email || '',
           city: leadRow.city,
           address: leadRow.address,
           productName: leadRow.product_name,
@@ -180,6 +188,7 @@ export async function captureLeadInSupabase(leadPayload) {
     leadCode,
     name: leadRow.name,
     phone: leadRow.phone,
+    email: leadRow.email || '',
     city: leadRow.city,
     address: leadRow.address,
     productName: leadRow.product_name,

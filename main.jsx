@@ -16,6 +16,7 @@ import FAQPage from './src/pages/FAQPage.jsx';
 import ProductPage from './src/pages/ProductPage.jsx';
 import AdminPage from './src/pages/AdminPage.jsx';
 import CustomerAreaPage from './src/pages/CustomerAreaPage.jsx';
+import CheckoutPage from './src/pages/CheckoutPage.jsx';
 
 // Error Boundary to prevent white screen crashes
 class ErrorBoundary extends React.Component {
@@ -83,6 +84,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
                 <Route path="/minha-conta" element={<CustomerAreaPage />} />
                 <Route path="/rastreio" element={<CustomerAreaPage />} />
                 <Route path="/consultar-pedido" element={<CustomerAreaPage />} />
+
+                {/* Novo Checkout Completo Dentro da Loja */}
+                <Route path="/checkout" element={<CheckoutPage />} />
+                <Route path="/finalizar-compra" element={<CheckoutPage />} />
 
                 {/* Páginas Individuais de Produtos */}
                 <Route path="/produto/:slug" element={<ProductPage />} />

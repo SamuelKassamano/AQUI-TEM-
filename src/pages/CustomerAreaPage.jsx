@@ -22,12 +22,14 @@ import {
   Mail,
   Phone,
   AlertTriangle,
-  FileText
+  FileText,
+  Upload
 } from 'lucide-react';
 
 import Layout from '../components/Layout';
 import { useLanguage } from '../context/LanguageContext';
 import { useStore } from '../context/StoreContext';
+import { uploadReceiptDocument } from '../lib/supabase';
 import {
   getLocalOrders,
   findOrder,
@@ -36,8 +38,10 @@ import {
   getAbandonedCart,
   clearAbandonedCart,
   attachPaymentReceipt,
-  updateOrderStatus
+  updateOrderStatus,
+  fetchReceiptSignedUrl
 } from '../utils/customerOrders';
+import { syncBrevoContact } from '../lib/brevoService';
 import {
   getNotificationFeed,
   getNotificationPrefs,
@@ -142,6 +146,19 @@ export default function CustomerAreaPage() {
     e.preventDefault();
     saveCustomerProfile(profile);
     setProfileSavedMsg(true);
+
+    // Sincronizar dados actualizados com o Brevo em background
+    if (profile.email && profile.email.includes('@')) {
+      syncBrevoContact({
+        email: profile.email,
+        name: profile.name,
+        phone: profile.phone,
+        city: profile.city,
+        address: profile.address,
+        marketingConsent: Boolean(profile.marketingConsent)
+      }).catch(() => { });
+    }
+
     setTimeout(() => setProfileSavedMsg(false), 3000);
   };
 
@@ -191,6 +208,61 @@ export default function CustomerAreaPage() {
     }
   };
 
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
+  const [openingReceipt, setOpeningReceipt] = useState(false);
+
+  // Upload Direto de Ficheiro de Comprovativo (Imagem / PDF)
+  const handleReceiptFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedOrder) return;
+
+    try {
+      setUploadingReceipt(true);
+      const res = await uploadReceiptDocument(file, selectedOrder.id, selectedOrder.receiptToken);
+      const updated = attachPaymentReceipt(selectedOrder.id, {
+        fileName: res.fileName,
+        url: res.url,
+        source: res.source
+      });
+
+      if (updated) {
+        setSelectedOrder(updated);
+        setOrders(getLocalOrders());
+        setReceiptSuccessMsg(`Comprovativo "${res.fileName}" anexado com sucesso! A nossa tesouraria confere a entrada e desbloqueia a rota.`);
+        setTimeout(() => setReceiptSuccessMsg(''), 7000);
+      }
+    } catch (err) {
+      alert(`Erro no upload: ${err.message || 'Falha ao processar ficheiro'}`);
+    } finally {
+      setUploadingReceipt(false);
+      e.target.value = '';
+    }
+  };
+
+  // Visualização Segura do Comprovativo (Exclusivamente via Backend Signed URL)
+  const handleViewReceipt = async (order) => {
+    if (!order) return;
+    try {
+      setOpeningReceipt(true);
+      const res = await fetchReceiptSignedUrl({
+        orderCode: order.id,
+        receiptToken: order.receiptToken
+      });
+      if (res?.signedUrl) {
+        window.open(res.signedUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+    } catch (_err) {
+      if (order.receiptUrl) {
+        window.open(order.receiptUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      alert('Não foi possível gerar um URL assinado seguro para este comprovativo.');
+    } finally {
+      setOpeningReceipt(false);
+    }
+  };
+
   // Simular Desbloqueio da Rota em Tempo Recorde (Demonstração ao Vivo)
   const handleToggleRouteDemo = (toRoute = true) => {
     if (!selectedOrder) return;
@@ -212,7 +284,7 @@ export default function CustomerAreaPage() {
     <Layout>
       <div className="client-portal-wrapper" style={{ background: '#07090e', color: '#ffffff', minHeight: '85vh', padding: '36px 16px 64px' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          
+
           {/* Header da Área do Cliente */}
           <div
             className="client-portal-header"
@@ -397,7 +469,7 @@ export default function CustomerAreaPage() {
           {/* ========================================================= */}
           {activeTab === 'rastreio' && (
             <div style={{ display: 'grid', gap: '24px' }}>
-              
+
               {/* Caixa de Busca */}
               <div
                 style={{
@@ -480,11 +552,16 @@ export default function CustomerAreaPage() {
                   >
                     <div>
                       <div style={{ fontSize: '0.74rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                        Código de Rastreamento Oficial
+                        Código da Encomenda & Rastreio Oficial
                       </div>
                       <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#ffffff', letterSpacing: '0.04em' }}>
                         #{selectedOrder.id}
                       </div>
+                      {selectedOrder.trackingNumber && (
+                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ff8a3d', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Truck size={14} /> Rastreio: <span>{selectedOrder.trackingNumber}</span>
+                        </div>
+                      )}
                       <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
                         Criado em: {new Date(selectedOrder.createdAt).toLocaleDateString('pt-AO', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </div>
@@ -493,9 +570,29 @@ export default function CustomerAreaPage() {
                     <div style={{ textAlign: 'right' }}>
                       <span
                         style={{
-                          background: 'rgba(34, 197, 94, 0.15)',
-                          color: '#22c55e',
-                          border: '1px solid rgba(34, 197, 94, 0.3)',
+                          background: selectedOrder.status === 'Aguardando Pagamento'
+                            ? 'rgba(245, 158, 11, 0.15)'
+                            : selectedOrder.status === 'Comprovativo Recebido' || selectedOrder.status === 'Pendente de Confirmação'
+                            ? 'rgba(59, 130, 246, 0.15)'
+                            : selectedOrder.status === 'Em Preparação'
+                            ? 'rgba(168, 85, 247, 0.15)'
+                            : 'rgba(34, 197, 94, 0.15)',
+                          color: selectedOrder.status === 'Aguardando Pagamento'
+                            ? '#f59e0b'
+                            : selectedOrder.status === 'Comprovativo Recebido' || selectedOrder.status === 'Pendente de Confirmação'
+                            ? '#60a5fa'
+                            : selectedOrder.status === 'Em Preparação'
+                            ? '#c084fc'
+                            : '#22c55e',
+                          border: `1px solid ${
+                            selectedOrder.status === 'Aguardando Pagamento'
+                              ? 'rgba(245, 158, 11, 0.35)'
+                              : selectedOrder.status === 'Comprovativo Recebido' || selectedOrder.status === 'Pendente de Confirmação'
+                              ? 'rgba(59, 130, 246, 0.35)'
+                              : selectedOrder.status === 'Em Preparação'
+                              ? 'rgba(168, 85, 247, 0.35)'
+                              : 'rgba(34, 197, 94, 0.35)'
+                          }`,
                           padding: '6px 14px',
                           borderRadius: '9999px',
                           fontSize: '0.82rem',
@@ -505,10 +602,10 @@ export default function CustomerAreaPage() {
                           gap: '6px'
                         }}
                       >
-                        <CheckCircle size={14} /> {selectedOrder.statusLabel || 'Aguardando Validação'}
+                        <CheckCircle size={14} /> {selectedOrder.statusLabel || selectedOrder.status || 'Aguardando Pagamento'}
                       </span>
                       <div style={{ color: '#cbd5e1', fontSize: '0.85rem', marginTop: '6px' }}>
-                        Previsão de Entrega: <strong style={{ color: '#ffffff' }}>{selectedOrder.deliveryZone?.estimatedTime || '24h a 48h'}</strong>
+                        Previsão de Entrega: <strong style={{ color: '#ffffff' }}>{selectedOrder.estimatedDeliveryDate || selectedOrder.deliveryZone?.estimatedTime || '3 dias úteis'}</strong>
                       </div>
                     </div>
                   </div>
@@ -616,7 +713,7 @@ export default function CustomerAreaPage() {
 
                   {/* Resumo da Encomenda & Morada */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-                    
+
                     {/* Lista de Itens */}
                     <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '18px', borderRadius: '14px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
                       <div style={{ fontSize: '0.85rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px' }}>
@@ -707,6 +804,23 @@ export default function CustomerAreaPage() {
                             <MessageCircle size={14} /> Enviar no WhatsApp
                           </a>
 
+                          <input
+                            type="file"
+                            id="customer-receipt-upload"
+                            accept="image/*,application/pdf"
+                            style={{ display: 'none' }}
+                            onChange={handleReceiptFileUpload}
+                          />
+
+                          <button
+                            type="button"
+                            disabled={uploadingReceipt}
+                            onClick={() => document.getElementById('customer-receipt-upload')?.click()}
+                            style={{ background: '#ff6500', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: uploadingReceipt ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                          >
+                            <Upload size={14} /> {uploadingReceipt ? 'A Carregar...' : 'Anexar Ficheiro'}
+                          </button>
+
                           <button
                             type="button"
                             onClick={handleConfirmReceiptSent}
@@ -715,6 +829,30 @@ export default function CustomerAreaPage() {
                             <FileText size={14} color="#ff6500" /> Já enviei o Comprovativo
                           </button>
                         </div>
+
+                        {selectedOrder.receiptFileName && (
+                          <div style={{ marginTop: '8px', fontSize: '0.74rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <FileText size={12} color="#22c55e" /> Ficheiro anexado: <strong>{selectedOrder.receiptFileName}</strong>
+                            <button
+                              type="button"
+                              onClick={() => handleViewReceipt(selectedOrder)}
+                              disabled={openingReceipt}
+                              style={{
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#ff8a3d',
+                                textDecoration: 'underline',
+                                cursor: 'pointer',
+                                padding: 0,
+                                fontSize: '0.74rem',
+                                fontWeight: 600,
+                                marginLeft: '6px'
+                              }}
+                            >
+                              {openingReceipt ? 'A Gerar Acesso Seguro...' : 'Visualizar com Segurança'}
+                            </button>
+                          </div>
+                        )}
 
                         {receiptSuccessMsg && (
                           <div style={{ marginTop: '10px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#22c55e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 600 }}>
@@ -1065,7 +1203,7 @@ export default function CustomerAreaPage() {
           {/* ========================================================= */}
           {activeTab === 'notificacoes' && (
             <div style={{ display: 'grid', gap: '24px' }}>
-              
+
               {/* Card de Configuração de Notificações */}
               <div
                 style={{

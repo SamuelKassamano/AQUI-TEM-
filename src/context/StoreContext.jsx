@@ -328,10 +328,10 @@ export function StoreProvider({ children }) {
     return false;
   }, []);
 
-  // Public active products only (active = true AND added/edited on Oct 28 or 29)
+  // Public active products only (active = true)
   const activeProducts = useMemo(() => {
-  return products.filter(p => p.active !== false && isOct28Or29(p));
-}, [products, isOct28Or29]);
+    return products.filter(p => p.active !== false);
+  }, [products]);
 
 // Find product by slug (supports exact slug, createSlug(name), slugAliases, and prefix fallback like /produto/smart-tv-55)
 const findProductBySlug = useCallback(

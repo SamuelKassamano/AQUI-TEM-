@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
-import { createSlug } from '../utils/slug';
-import { PRODUCTS, PRODUCT_FALLBACK_IMAGES } from '../../data/products';
+import { createSlug } from '../utils/slug.js';
+import { PRODUCTS, PRODUCT_FALLBACK_IMAGES } from '../../data/products.js';
 import { getOfficialPricing } from '../data/productPricing.js';
 
 export const SUPABASE_PROJECT_ID = 'essjwjbtzytefycjodgh';
@@ -35,9 +35,10 @@ function cleanEnvValue(val) {
 }
 
 const rawEnvUrl =
-  cleanEnvValue(import.meta.env.VITE_SUPABASE_URL) ||
-  cleanEnvValue(import.meta.env.SUPABASE_URL) ||
-  cleanEnvValue(import.meta.env.VITE_SUPABASE_PROJECT_URL) ||
+  cleanEnvValue(typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) ||
+  cleanEnvValue(typeof import.meta !== 'undefined' && import.meta.env?.SUPABASE_URL) ||
+  cleanEnvValue(typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_PROJECT_URL) ||
+  cleanEnvValue(typeof process !== 'undefined' && process.env?.VITE_SUPABASE_URL) ||
   '';
 
 export const SUPABASE_URL =
@@ -47,10 +48,11 @@ export const DEFAULT_SUPABASE_PUBLISHABLE_KEY =
   'sb_publishable_jVht5KNDZPLBWR_NZ1lrvw_pNSyuv0B';
 
 const rawEnvKey =
-  cleanEnvValue(import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY) ||
-  cleanEnvValue(import.meta.env.VITE_SUPABASE_ANON_KEY) ||
-  cleanEnvValue(import.meta.env.SUPABASE_PUBLISHABLE_KEY) ||
-  cleanEnvValue(import.meta.env.SUPABASE_ANON_KEY) ||
+  cleanEnvValue(typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY) ||
+  cleanEnvValue(typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_ANON_KEY) ||
+  cleanEnvValue(typeof import.meta !== 'undefined' && import.meta.env?.SUPABASE_PUBLISHABLE_KEY) ||
+  cleanEnvValue(typeof import.meta !== 'undefined' && import.meta.env?.SUPABASE_ANON_KEY) ||
+  cleanEnvValue(typeof process !== 'undefined' && process.env?.VITE_SUPABASE_PUBLISHABLE_KEY) ||
   DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
 // Segurança rigorosa: NUNCA permitir service_role ou secret key no frontend
@@ -778,6 +780,104 @@ export function getEffectivePrice(product) {
               url: fallbackDataUrl,
               source: 'data_url',
               storageError: storageErrorMessage
+            };
+          }
+
+          /**
+           * Realiza o upload seguro de comprovativo de pagamento (imagem ou PDF).
+           * Armazena estritamente no bucket PRIVADO 'payment-receipts' com URL assinado temporário.
+           * NUNCA utiliza URLs públicos para dados financeiros ou comprovativos bancários.
+           */
+          export async function uploadReceiptDocument(file, orderId = 'encomenda', receiptToken = null) {
+            if (!file) throw new Error('Nenhum ficheiro fornecido.');
+
+            // Validação estrita de tipos MIME autorizados
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+            if (file.type && !allowedTypes.includes(file.type)) {
+              throw new Error('Tipo de ficheiro não suportado. Envie apenas imagens (JPG, PNG) ou documento PDF.');
+            }
+
+            // Limite máximo de segurança: 10 MB
+            if (file.size > 10 * 1024 * 1024) {
+              throw new Error('O ficheiro excede o tamanho máximo permitido de 10 MB.');
+            }
+
+            const rawExt = file.name ? file.name.split('.').pop() : '';
+            const ext = (rawExt || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+            const cleanOrderId = (orderId || 'comprovativo').replace(/[^a-zA-Z0-9_-]/g, '');
+            const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+            const filePath = `${cleanOrderId}/${cleanOrderId}-${uniqueSuffix}.${ext}`;
+            const contentType = file.type || (ext === 'pdf' ? 'application/pdf' : 'image/jpeg');
+
+            let signedUrl = null;
+            let storedPath = null;
+
+            // Upload estrito para o bucket PRIVADO 'payment-receipts'
+            if (isSupabaseConfigured && supabase) {
+              try {
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                  .from('payment-receipts')
+                  .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: true,
+                    contentType
+                  });
+
+                if (!uploadError && uploadData?.path) {
+                  storedPath = uploadData.path;
+
+                  // Registo atómico no backend via Edge Function receipt-access
+                  if (receiptToken && supabase.functions) {
+                    try {
+                      const { data: regData } = await supabase.functions.invoke('receipt-access', {
+                        body: {
+                          action: 'register-receipt',
+                          orderCode: cleanOrderId,
+                          receiptToken,
+                          storagePath: storedPath
+                        }
+                      });
+
+                      if (regData?.success) {
+                        const { data: signData } = await supabase.functions.invoke('receipt-access', {
+                          body: {
+                            action: 'get-signed-url',
+                            orderCode: cleanOrderId,
+                            receiptToken,
+                            expiresIn: 1800
+                          }
+                        });
+                        if (signData?.signedUrl) {
+                          signedUrl = signData.signedUrl;
+                        }
+                      }
+                    } catch (_e) {}
+                  }
+
+                  // Fallback temporário para createSignedUrl se backend Edge Function indisponível
+                  if (!signedUrl) {
+                    const { data: signedData } = await supabase.storage
+                      .from('payment-receipts')
+                      .createSignedUrl(storedPath, 1800);
+
+                    if (signedData?.signedUrl) {
+                      signedUrl = signedData.signedUrl;
+                    }
+                  }
+                }
+              } catch (_err) {
+                console.warn('Aviso: Bucket privado payment-receipts aguarda activação no Supabase.');
+              }
+            }
+
+            return {
+              url: signedUrl || null,
+              storagePath: storedPath || null,
+              fileName: file.name,
+              fileSize: file.size,
+              fileType: file.type,
+              isPrivate: true,
+              source: storedPath ? 'storage-private' : 'local-pending'
             };
           }
 

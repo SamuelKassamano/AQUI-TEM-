@@ -2,7 +2,14 @@
  * Gestor de Encomendas, Área do Cliente, Rastreio e Recuperação de Carrinho — AQUI TEM Angola
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.js';
+import {
+  syncBrevoContact,
+  sendBrevoTransactionalEmail,
+  trackBrevoCommerceEvent
+} from '../lib/brevoService.js';
+import { notifyCompanyWhatsApp } from '../lib/whatsappNotificationService.js';
+import { calculateEstimatedDeliveryDate } from './angolaLocations.js';
 
 const ORDERS_STORAGE_KEY = 'aquitem_customer_orders_v1';
 const PROFILE_STORAGE_KEY = 'aquitem_customer_profile_v1';
@@ -12,6 +19,15 @@ const ABANDONED_CART_KEY = 'aquitem_abandoned_cart_v1';
 export function generateOrderCode() {
   const random = Math.floor(1000 + Math.random() * 9000);
   return `AQT-${random}`;
+}
+
+// Gerador de Token Criptográfico de Autorização de Comprovativo (Anti-Enumeração & Prova de Posse)
+export function generateReceiptToken() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `rtk_${crypto.randomUUID().replace(/-/g, '')}`;
+  }
+  const rand = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  return `rtk_${Date.now()}_${rand}`;
 }
 
 // Obter perfil do cliente salvo
@@ -28,7 +44,7 @@ export function getSavedCustomerProfile() {
 export function saveCustomerProfile(profile) {
   try {
     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // Obter todas as encomendas locais
@@ -51,44 +67,73 @@ export async function createAndSaveOrder({
   notes
 }) {
   const orderId = generateOrderCode();
-  const deliveryFee = Number(deliveryZone?.fee ?? 2500);
+  const receiptToken = generateReceiptToken();
+  const deliveryFee = Number(deliveryZone?.fee ?? 2000);
   const total = Number(subtotal || 0) + deliveryFee;
   const now = new Date().toISOString();
+  const formattedDate = new Date().toLocaleDateString('pt-AO', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 
-  // Timeline inicial
+  // Fluxo oficial de 7 estados:
+  // 1. Aguardando Pagamento
+  // 2. Comprovativo Recebido
+  // 3. Pendente de Confirmação (Validação Financeira)
+  // 4. Encomenda Agendada (Confirmação Administrativa & Agendamento)
+  // 5. Em Preparação (Embalagem & Controlo de Qualidade)
+  // 6. Em Rota (Distribuição com Estafeta)
+  // 7. Entregue (Activação da Garantia de 7 Dias)
   const timeline = [
     {
       step: 1,
-      title: 'Pedido Registado no Sistema',
-      description: 'Aguardando validação do comprovativo bancário via WhatsApp.',
-      date: new Date().toLocaleDateString('pt-AO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+      title: 'Aguardando Pagamento',
+      description: `Pedido #${orderId} registado. Aguardando transferência bancária ou envio Express.`,
+      date: formattedDate,
       completed: true
     },
     {
       step: 2,
-      title: 'Pagamento & Reserva de Stock',
-      description: 'Validação pelo departamento financeiro e reserva de artigos selados.',
+      title: 'Comprovativo Recebido',
+      description: 'Comprovativo de pagamento submetido com sucesso pelo cliente.',
       date: 'Pendente',
       completed: false
     },
     {
       step: 3,
-      title: 'Embalagem & Controlo de Qualidade',
-      description: 'Verificação dos selos de fábrica e empacotamento com proteção anti-impacto.',
+      title: 'Pendente de Confirmação',
+      description: 'Validação e conferência financeira em curso pela tesouraria.',
       date: 'Pendente',
       completed: false
     },
     {
       step: 4,
-      title: 'Em Rota de Entrega / Despacho',
-      description: `Motorista dedicado em rota para ${customer.address || customer.city}.`,
+      title: 'Encomenda Agendada',
+      description: 'Pagamento conferido pela administração e data de entrega agendada.',
       date: 'Pendente',
       completed: false
     },
     {
       step: 5,
-      title: 'Entrega Concluída com Sucesso',
-      description: 'Artigo recebido pelo cliente e ativação da garantia de troca de 7 dias.',
+      title: 'Em Preparação',
+      description: 'Verificação técnica de fábrica, empacotamento anti-impacto e controlo de qualidade.',
+      date: 'Pendente',
+      completed: false
+    },
+    {
+      step: 6,
+      title: 'Em Rota de Entrega',
+      description: `Motorista/estafeta despachado para entrega no endereço em ${customer.province || customer.city || 'Luanda'}.`,
+      date: 'Pendente',
+      completed: false
+    },
+    {
+      step: 7,
+      title: 'Entregue com Sucesso',
+      description: 'Entrega finalizada ao cliente e activação formal da garantia oficial AQUI TEM de 7 dias.',
       date: 'Pendente',
       completed: false
     }
@@ -97,39 +142,46 @@ export async function createAndSaveOrder({
   const orderRecord = {
     id: orderId,
     trackingCode: orderId,
+    trackingNumber: `AQT-TRK-${orderId}`,
+    receiptToken,
     createdAt: now,
-    status: 'registado', // registado | pago | preparacao | rota | entregue
-    statusLabel: 'Pedido Registado (Aguardando Comprovativo)',
+    status: 'Aguardando Pagamento',
+    statusLabel: 'Aguardando Pagamento',
+    estimatedDeliveryDate: '3 dias úteis após validação do pagamento',
     customer: {
       name: customer.name || '',
       phone: customer.phone || '',
       email: customer.email || '',
+      province: customer.province || 'Luanda',
+      municipality: customer.municipality || 'Luanda',
       address: customer.address || '',
-      city: customer.city || 'Luanda',
-      notes: notes || ''
+      city: customer.city || `${customer.province || 'Luanda'} — ${customer.municipality || 'Luanda'}`,
+      notes: notes || '',
+      marketingConsent: Boolean(customer.marketingConsent)
     },
     items: items.map(item => ({
       id: item.id,
       name: item.name,
+      description: item.description || item.category || '',
       price: item.price,
       quantity: Number(item.quantity) || 1,
       image: item.image || item.image_url || '/logo.jpg'
     })),
-    subtotal,
+    subtotal: Number(subtotal || 0),
     deliveryZone: {
-      id: deliveryZone?.id || 'luanda-central',
-      name: deliveryZone?.name || 'Luanda',
-      shortName: deliveryZone?.shortName || 'Luanda',
-      estimatedTime: deliveryZone?.estimatedTime || '24h',
+      id: deliveryZone?.id || 'delivery-zone',
+      name: deliveryZone?.name || `${customer.province || 'Luanda'} (${customer.municipality || 'Centro'})`,
+      shortName: deliveryZone?.shortName || customer.province || 'Luanda',
+      estimatedTime: deliveryZone?.estimatedTime || '3 dias úteis',
       fee: deliveryFee
     },
     deliveryFee,
     total,
-    paymentMethod,
+    paymentMethod: paymentMethod || 'Transferência Bancária (Banco BFA)',
     timeline
   };
 
-  // 1. Guardar localmente para o cliente consultar a qualquer momento
+  // 1. Guardar localmente para consulta imediata do cliente
   try {
     const existing = getLocalOrders();
     const updated = [orderRecord, ...existing.filter(o => o.id !== orderId)];
@@ -140,8 +192,10 @@ export async function createAndSaveOrder({
       name: customer.name,
       phone: customer.phone,
       email: customer.email,
+      province: customer.province,
+      municipality: customer.municipality,
       address: customer.address,
-      city: customer.city
+      city: customer.city || `${customer.province || 'Luanda'} — ${customer.municipality || 'Luanda'}`
     });
 
     // Limpar carrinho abandonado já que a compra foi realizada
@@ -150,25 +204,139 @@ export async function createAndSaveOrder({
     console.error('Erro ao guardar pedido localmente:', e);
   }
 
-  // 2. Sincronizar com Supabase se disponível
+  // 2. Sincronizar com Supabase (Tabela oficial crm_leads)
   try {
     if (supabase) {
-      await supabase.from('leads').insert([
-        {
-          name: customer.name,
-          phone: customer.phone,
-          city: `${customer.city} (${deliveryZone?.shortName || ''})`,
-          address: customer.address,
-          product_name: items.map(i => `${i.name} (x${i.quantity || 1})`).join(' + '),
-          total_value: total,
-          status: 'novo_pedido',
-          notes: `Código: ${orderId} | Email: ${customer.email} | Frete: ${deliveryFee} Kz | Pagamento: ${paymentMethod}`
-        }
-      ]);
+      const orderPayload = {
+        lead_code: orderId,
+        receipt_token: receiptToken,
+        name: customer.name,
+        phone: customer.phone,
+        email: customer.email?.trim() || null,
+        city: `${customer.province || 'Luanda'}${customer.municipality ? ` — ${customer.municipality}` : ''}`,
+        address: customer.address || 'Angola',
+        product_name: items.map(i => `${i.name} (x${i.quantity || 1})`).join(' + '),
+        total_value: total,
+        status: 'Aguardando Pagamento',
+        marketing_consent: Boolean(customer.marketingConsent),
+        consent_source: 'checkout',
+        traffic_source: 'Loja Online (Novo Checkout)',
+        notes: `Código: ${orderId} | Email: ${customer.email} | Telefone: ${customer.phone} | Província: ${customer.province || 'Luanda'} | Município: ${customer.municipality || 'Luanda'} | Frete: ${deliveryFee} Kz | Pagamento: ${paymentMethod}${notes ? ` | Obs: ${notes}` : ''}`,
+        history: [
+          {
+            date: now,
+            action: 'Pedido Registado no Checkout',
+            details: `Código: #${orderId} | Total: ${total.toLocaleString('pt-AO')} Kz | Método: ${paymentMethod} | Status: Aguardando Pagamento`
+          }
+        ]
+      };
+
+      const { error: crmErr } = await supabase.from('crm_leads').insert([orderPayload]);
+      if (crmErr) {
+        try {
+          await supabase.from('leads').insert([orderPayload]);
+        } catch (_leadErr) {}
+        console.warn('Aviso ao gravar em crm_leads:', crmErr.message);
+      }
     }
   } catch (err) {
-    console.warn('Aviso: Sincronização Supabase remota em fallback local:', err);
+    console.warn('Aviso: Sincronização Supabase em modo local:', err);
   }
+
+  // 3. Sincronização Segura e Não-Bloqueante com o Brevo (Fail-Safe)
+  // 3. Sincronização Segura com o Brevo (E-mail de Encomenda Criada)
+  if (customer.email && customer.email.includes('@')) {
+    setTimeout(async () => {
+      try {
+        // Sincronizar dados do contacto
+        await syncBrevoContact({
+          email: customer.email,
+          name: customer.name,
+          phone: customer.phone,
+          city: customer.city,
+          city: `${customer.province || 'Luanda'} - ${customer.municipality || ''}`,
+          address: customer.address,
+          marketingConsent: Boolean(customer.marketingConsent)
+        });
+
+        // Enviar E-mail Transaccional de Confirmação de Encomenda
+        await sendBrevoTransactionalEmail({
+          templateType: 'order_confirmation',
+          to: customer.email,
+          recipientName: customer.name,
+          orderData: {
+            id: orderId,
+            orderDate: formattedDate,
+            total,
+            items: items.map(i => ({ name: i.name, quantity: Number(i.quantity) || 1 })),
+            deliveryZone: deliveryZone?.name || 'Luanda',
+            subtotal: Number(subtotal || 0),
+            deliveryFee,
+            items: items.map(i => ({
+              name: i.name,
+              description: i.description || i.category || '',
+              price: i.price,
+              quantity: Number(i.quantity) || 1
+            })),
+            customerPhone: customer.phone,
+            customerEmail: customer.email,
+            province: customer.province || 'Luanda',
+            municipality: customer.municipality || 'Luanda',
+            deliveryZone: deliveryZone?.name || customer.province || 'Luanda',
+            address: customer.address,
+            city: customer.city || customer.province,
+            paymentMethod,
+            paymentStatus: 'Aguardando Pagamento',
+            trackingNumber: `AQT-TRK-${orderId}`,
+            estimatedDeliveryDate: '3 dias úteis após validação do pagamento'
+          },
+          deduplicationKey: `order_confirmation-${orderId}`
+        });
+
+        // Registar evento de comércio electrónico no Brevo
+        await trackBrevoCommerceEvent({
+          eventName: 'order_created',
+          email: customer.email,
+          eventId: `order_created-${orderId}`,
+          properties: {
+            orderId,
+            total,
+            itemsCount: items.length
+          }
+        });
+      } catch (brevoErr) {
+        console.warn('Aviso: Falha não-bloqueante no envio Brevo:', brevoErr);
+      }
+    }, 10);
+  }
+
+  // Notificação WhatsApp para a Empresa (+244 950 752 933): Nova Encomenda
+  setTimeout(() => {
+    notifyCompanyWhatsApp({
+      eventType: 'order_created',
+      orderData: {
+        id: orderId,
+        orderDate: formattedDate,
+        total,
+        subtotal: Number(subtotal || 0),
+        deliveryFee,
+        items: items.map(i => ({
+          name: i.name,
+          quantity: Number(i.quantity) || 1,
+          price: i.price
+        })),
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        customerEmail: customer.email,
+        province: customer.province || 'Luanda',
+        municipality: customer.municipality || 'Luanda',
+        address: customer.address,
+        paymentMethod,
+        paymentStatus: 'Aguardando Pagamento'
+      },
+      deduplicationKey: `company-wa-created-${orderId}`
+    }).catch(waErr => console.warn('Aviso: Notificação WhatsApp empresa:', waErr));
+  }, 15);
 
   return orderRecord;
 }
@@ -195,13 +363,32 @@ export function saveAbandonedCart(cartItems, customerInfo = null) {
     return;
   }
   try {
+    const cust = customerInfo || getSavedCustomerProfile() || {};
     const data = {
       savedAt: new Date().toISOString(),
       items: cartItems,
-      customer: customerInfo || getSavedCustomerProfile() || {}
+      customer: cust
     };
     localStorage.setItem(ABANDONED_CART_KEY, JSON.stringify(data));
-  } catch (e) {}
+
+    // Recuperação de carrinhos abandonados, respeitando o consentimento aplicável
+    if (cust.email && cust.email.includes('@') && Boolean(cust.marketingConsent)) {
+      setTimeout(async () => {
+        try {
+          const totalVal = cartItems.reduce((acc, it) => acc + (Number(it.price || 0) * (Number(it.quantity) || 1)), 0);
+          await trackBrevoCommerceEvent({
+            eventName: 'cart_abandoned',
+            email: cust.email,
+            eventId: `cart_abandoned-${cust.email}-${new Date().toISOString().slice(0, 10)}`,
+            properties: {
+              itemsCount: cartItems.length,
+              totalValue: totalVal
+            }
+          });
+        } catch (_e) { }
+      }, 500);
+    }
+  } catch (e) { }
 }
 
 export function getAbandonedCart() {
@@ -216,104 +403,409 @@ export function getAbandonedCart() {
 export function clearAbandonedCart() {
   try {
     localStorage.removeItem(ABANDONED_CART_KEY);
-  } catch (e) {}
+  } catch (e) { }
 }
 
 // Anexar Comprovativo de Pagamento e Notificar Validação
+// Anexar Comprovativo de Pagamento e Notificar Validação Financeira
+// REGRA RESTRITA: O envio do comprovativo NUNCA confirma automaticamente o pagamento!
 export function attachPaymentReceipt(orderId, receiptData) {
   try {
     const orders = getLocalOrders();
+    let targetOrder = null;
+    const nowStr = new Date().toLocaleDateString('pt-AO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
     const updated = orders.map(ord => {
       if (ord.id === orderId) {
-        const nowStr = new Date().toLocaleDateString('pt-AO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-        const newTimeline = ord.timeline.map(step => {
+        const newTimeline = (ord.timeline || []).map(step => {
           if (step.step === 2) {
             return {
               ...step,
               completed: true,
               date: nowStr,
-              description: 'Comprovativo enviado via WhatsApp / Portal. Em validação financeira imediata.'
+              description: 'Comprovativo de pagamento submetido com sucesso. Aguardando validação pela tesouraria.'
             };
           }
           return step;
         });
 
-        return {
+        const isReceiptObj = typeof receiptData === 'object' && receiptData !== null;
+        const receiptNote = isReceiptObj
+          ? `Comprovativo anexado: ${receiptData.fileName || 'documento'} (${receiptData.source || 'portal'})`
+          : (receiptData || 'Comprovativo enviado');
+
+        targetOrder = {
           ...ord,
-          status: 'comprovativo_enviado',
-          statusLabel: 'Comprovativo Enviado (Em Validação Financeira)',
+          status: 'Comprovativo Recebido',
+          statusLabel: 'Comprovativo Recebido (Pendente de Validação Financeira)',
           receiptAttached: true,
-          receiptData: receiptData || 'Comprovativo enviado pelo WhatsApp',
+          receiptData: receiptNote,
+          receiptUrl: isReceiptObj ? (receiptData.url || null) : null,
+          receiptStoragePath: isReceiptObj ? (receiptData.storagePath || null) : null,
+          receiptFileName: isReceiptObj ? (receiptData.fileName || null) : null,
           receiptDate: new Date().toISOString(),
           timeline: newTimeline
         };
+        return targetOrder;
       }
       return ord;
     });
 
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
-    return updated.find(o => o.id === orderId);
-  } catch (e) {
-    return null;
+
+// Atualizar status no Supabase crm_leads de forma segura
+if (supabase && targetOrder) {
+  const nowIso = new Date().toISOString();
+  const updatePayload = {
+    status: 'Comprovativo Recebido',
+    receipt_uploaded_at: nowIso
+  };
+  if (targetOrder.receiptStoragePath) {
+    updatePayload.receipt_storage_path = targetOrder.receiptStoragePath;
   }
+  supabase.from('crm_leads').update(updatePayload).eq('lead_code', orderId).then(() => { }).catch(() => { });
 }
 
-// Atualizar Status da Encomenda (Desbloqueio de Rota / Entrega)
-export function updateOrderStatus(orderId, newStatus, driverInfo = null) {
+// Regra Fundamental: Enviar e-mail de confirmação da recepção do comprovativo
+// O pagamento permanece PENDENTE até validação manual do administrador
+if (targetOrder?.customer?.email && targetOrder.customer.email.includes('@')) {
+  setTimeout(async () => {
+    try {
+      await sendBrevoTransactionalEmail({
+        templateType: 'receipt_submitted',
+        to: targetOrder.customer.email,
+        recipientName: targetOrder.customer.name,
+        orderData: {
+          id: targetOrder.id,
+          orderDate: targetOrder.createdAt ? new Date(targetOrder.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
+          total: targetOrder.total,
+          subtotal: targetOrder.subtotal,
+          deliveryFee: targetOrder.deliveryFee,
+          items: targetOrder.items,
+          customerPhone: targetOrder.customer?.phone,
+          customerEmail: targetOrder.customer?.email,
+          province: targetOrder.customer?.province,
+          municipality: targetOrder.customer?.municipality,
+          deliveryZone: targetOrder.deliveryZone?.name || 'Luanda',
+          address: targetOrder.customer?.address,
+          city: targetOrder.customer?.city,
+          paymentMethod: targetOrder.paymentMethod,
+          paymentStatus: 'Comprovativo Recebido (Pendente de Validação)',
+          trackingNumber: targetOrder.trackingNumber || `AQT-TRK-${orderId}`,
+          estimatedDeliveryDate: targetOrder.estimatedDeliveryDate || '3 dias úteis após validação do pagamento'
+        },
+        deduplicationKey: `receipt_submitted-${orderId}`
+      });
+
+      await trackBrevoCommerceEvent({
+        eventName: 'receipt_submitted',
+        email: targetOrder.customer.email,
+        eventId: `receipt_submitted-${orderId}`,
+        properties: {
+          orderId,
+          status: 'Comprovativo Recebido',
+          total: targetOrder.total
+        }
+      });
+    } catch (e) {
+      console.warn('Aviso: Falha ao despachar notificação Brevo de comprovativo:', e);
+    }
+  }, 10);
+}
+
+    // Notificação WhatsApp para a Empresa (+244 950 752 933): Comprovativo Recebido
+    if (targetOrder) {
+      setTimeout(() => {
+        notifyCompanyWhatsApp({
+          eventType: 'receipt_submitted',
+          orderData: {
+            id: targetOrder.id,
+            total: targetOrder.total,
+            customerName: targetOrder.customer?.name,
+            customerPhone: targetOrder.customer?.phone,
+            customerEmail: targetOrder.customer?.email,
+            receiptStoragePath: targetOrder.receiptStoragePath,
+            receiptToken: targetOrder.receiptToken,
+            receiptDate: new Date().toLocaleString('pt-AO'),
+            paymentStatus: 'Comprovativo Recebido (Pendente de Validação)'
+          },
+          deduplicationKey: `company-wa-receipt-${orderId}`
+        }).catch(waErr => console.warn('Aviso: Notificação WhatsApp comprovativo empresa:', waErr));
+      }, 15);
+    }
+
+return targetOrder;
+  } catch (e) {
+  return null;
+}
+}
+
+// Atualizar Status da Encomenda com Cálculo de 3 Dias Úteis e Disparo de Notificações
+export function updateOrderStatus(orderId, newStatus, driverInfo = null, customTracking = null, customDeliveryDate = null) {
   try {
     const orders = getLocalOrders();
-    const nowStr = new Date().toLocaleDateString('pt-AO', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    const nowStr = new Date().toLocaleDateString('pt-AO', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    let targetOrder = null;
+
+    // Padronização dos 7 estados oficiais:
+    // Aguardando Pagamento | Comprovativo Recebido | Pendente de Confirmação | Encomenda Agendada | Em Preparação | Em Rota | Entregue
+    let canonicalStatus = newStatus;
+    if (newStatus === 'pago' || newStatus === 'Venda Realizada') canonicalStatus = 'Encomenda Agendada';
+    if (newStatus === 'preparacao') canonicalStatus = 'Em Preparação';
+    if (newStatus === 'rota') canonicalStatus = 'Em Rota';
+    if (newStatus === 'entregue') canonicalStatus = 'Entregue';
+
+    // Cálculo automático da Previsão de Entrega: 3 DIAS ÚTEIS após confirmação do pagamento
+    const deliveryCalc = calculateEstimatedDeliveryDate(new Date(), 3);
+    const estimatedDate = customDeliveryDate || deliveryCalc.formattedDate;
 
     const updated = orders.map(ord => {
       if (ord.id === orderId) {
         let statusLabel = ord.statusLabel;
-        const newTimeline = ord.timeline.map(step => {
-          if (newStatus === 'pago' && step.step <= 2) {
-            return { ...step, completed: true, date: step.date === 'Pendente' ? nowStr : step.date };
-          }
-          if (newStatus === 'preparacao' && step.step <= 3) {
-            return { ...step, completed: true, date: step.date === 'Pendente' ? nowStr : step.date };
-          }
-          if (newStatus === 'rota' && step.step <= 4) {
+        const trackingNum = customTracking || ord.trackingNumber || `AQT-TRK-${orderId}`;
+
+        const newTimeline = (ord.timeline || []).map(step => {
+          if (canonicalStatus === 'Aguardando Pagamento') {
             return {
               ...step,
-              completed: true,
-              date: step.date === 'Pendente' ? nowStr : step.date,
-              description: driverInfo
-                ? `Motorista ${driverInfo.driverName} (${driverInfo.driverPhone}) em trânsito com ${driverInfo.vehicle}. Previsão: ${driverInfo.estimatedArrival || 'Hoje'}.`
+              completed: step.step === 1,
+              date: step.step === 1 ? (step.date || nowStr) : 'Pendente'
+            };
+          }
+          if (canonicalStatus === 'Comprovativo Recebido') {
+            return {
+              ...step,
+              completed: step.step <= 2,
+              date: step.step <= 2 ? (step.date === 'Pendente' ? nowStr : step.date) : 'Pendente'
+            };
+          }
+          if (canonicalStatus === 'Pendente de Confirmação') {
+            return {
+              ...step,
+              completed: step.step <= 3,
+              date: step.step <= 3 ? (step.date === 'Pendente' ? nowStr : step.date) : 'Pendente'
+            };
+          }
+          if (canonicalStatus === 'Encomenda Agendada') {
+            return {
+              ...step,
+              completed: step.step <= 4,
+              date: step.step <= 4 ? (step.date === 'Pendente' ? nowStr : step.date) : 'Pendente',
+              description: step.step === 4
+                ? `Pagamento validado e aprovado pela administração. Entrega agendada para ${estimatedDate}.`
                 : step.description
             };
           }
-          if (newStatus === 'entregue') {
-            return { ...step, completed: true, date: nowStr };
+          if (canonicalStatus === 'Em Preparação') {
+            return {
+              ...step,
+              completed: step.step <= 5,
+              date: step.step <= 5 ? (step.date === 'Pendente' ? nowStr : step.date) : 'Pendente',
+              description: step.step === 4
+                ? `Pagamento validado e aprovado pela administração. Entrega agendada para ${estimatedDate}.`
+                : step.description
+            };
+          }
+          if (canonicalStatus === 'Em Rota') {
+            return {
+              ...step,
+              completed: step.step <= 6,
+              date: step.step <= 6 ? (step.date === 'Pendente' ? nowStr : step.date) : 'Pendente',
+              description: step.step === 6
+                ? (driverInfo
+                  ? `Motorista ${driverInfo.driverName} (${driverInfo.driverPhone}) em trânsito com ${driverInfo.vehicle}.`
+                  : step.description)
+                : step.description
+            };
+          }
+          if (canonicalStatus === 'Entregue') {
+            return {
+              ...step,
+              completed: true,
+              date: step.date === 'Pendente' ? nowStr : step.date
+            };
           }
           return step;
         });
 
-        if (newStatus === 'pago') statusLabel = 'Pagamento Confirmado & Stock Reservado';
-        if (newStatus === 'preparacao') statusLabel = 'Em Preparação & Controlo de Qualidade';
-        if (newStatus === 'rota') statusLabel = '🚚 ROTA DESBLOQUEADA — Motorista a Caminho!';
-        if (newStatus === 'entregue') statusLabel = '✅ Entregue com Sucesso';
+        if (canonicalStatus === 'Aguardando Pagamento') statusLabel = 'Aguardando Pagamento';
+        if (canonicalStatus === 'Comprovativo Recebido') statusLabel = 'Comprovativo Recebido (Pendente de Validação)';
+        if (canonicalStatus === 'Pendente de Confirmação') statusLabel = 'Pendente de Confirmação Financeira';
+        if (canonicalStatus === 'Encomenda Agendada') statusLabel = 'Encomenda Agendada (Pagamento Confirmado)';
+        if (canonicalStatus === 'Em Preparação') statusLabel = 'Em Preparação & Controlo de Qualidade';
+        if (canonicalStatus === 'Em Rota') statusLabel = '🚚 Em Rota — Motorista a Caminho!';
+        if (canonicalStatus === 'Entregue') statusLabel = '✅ Entregue com Sucesso';
 
-        return {
+        targetOrder = {
           ...ord,
-          status: newStatus,
+          status: canonicalStatus,
           statusLabel,
+          trackingNumber: trackingNum,
+          estimatedDeliveryDate: estimatedDate,
           driver: driverInfo || ord.driver || {
             driverName: 'Mateus Domingos',
             driverPhone: '+244 924 812 345',
             vehicle: 'Viatura Express Toyota (LD-44-82-AO)',
-            estimatedArrival: 'Hoje entre 14h00 e 17h00'
+            estimatedArrival: estimatedDate
           },
           timeline: newTimeline
         };
+        return targetOrder;
       }
       return ord;
     });
 
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
-    return updated.find(o => o.id === orderId);
+
+    // Notificações automáticas Brevo nas alterações de estado das encomendas
+    if (targetOrder?.customer?.email && targetOrder.customer.email.includes('@')) {
+      const templateMap = {
+        'Encomenda Agendada': 'payment_confirmed',
+        'Em Preparação': 'order_processing',
+        'Em Rota': 'order_shipped',
+        'Entregue': 'order_delivered'
+      };
+
+      const templateType = templateMap[canonicalStatus];
+      if (templateType) {
+        setTimeout(async () => {
+          try {
+            await sendBrevoTransactionalEmail({
+              templateType,
+              to: targetOrder.customer.email,
+              recipientName: targetOrder.customer.name,
+              orderData: {
+                id: targetOrder.id,
+                orderDate: targetOrder.createdAt ? new Date(targetOrder.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
+                total: targetOrder.total,
+                subtotal: targetOrder.subtotal,
+                deliveryFee: targetOrder.deliveryFee,
+                items: targetOrder.items,
+                customerPhone: targetOrder.customer?.phone,
+                customerEmail: targetOrder.customer?.email,
+                province: targetOrder.customer?.province,
+                municipality: targetOrder.customer?.municipality,
+                deliveryZone: targetOrder.deliveryZone?.name || 'Luanda',
+                address: targetOrder.customer?.address,
+                city: targetOrder.customer?.city,
+                paymentMethod: targetOrder.paymentMethod,
+                paymentStatus: canonicalStatus,
+                trackingNumber: targetOrder.trackingNumber || `AQT-TRK-${orderId}`,
+                estimatedDeliveryDate: targetOrder.estimatedDeliveryDate || estimatedDate
+              },
+              deduplicationKey: `${templateType}-${orderId}`
+            });
+
+            await trackBrevoCommerceEvent({
+              eventName: `order_${canonicalStatus.toLowerCase().replace(/\s+/g, '_')}`,
+              email: targetOrder.customer.email,
+              eventId: `order_${canonicalStatus}-${orderId}`,
+              properties: { orderId, status: canonicalStatus }
+            });
+          } catch (e) {
+            console.warn('Aviso: Falha ao despachar notificação Brevo de estado:', e);
+          }
+        }, 10);
+      }
+    }
+
+    // Notificação WhatsApp para a Empresa (+244 950 752 933) nas alterações de estado
+    if (targetOrder) {
+      const waEventMap = {
+        'Encomenda Agendada': 'payment_confirmed',
+        'Em Preparação': 'order_processing',
+        'Em Rota': 'order_shipped',
+        'Entregue': 'order_delivered'
+      };
+      const waEvent = waEventMap[canonicalStatus];
+      if (waEvent) {
+        setTimeout(() => {
+          notifyCompanyWhatsApp({
+            eventType: waEvent,
+            orderData: {
+              id: targetOrder.id,
+              total: targetOrder.total,
+              customerName: targetOrder.customer?.name,
+              customerPhone: targetOrder.customer?.phone,
+              customerEmail: targetOrder.customer?.email,
+              province: targetOrder.customer?.province,
+              municipality: targetOrder.customer?.municipality,
+              address: targetOrder.customer?.address,
+              trackingNumber: targetOrder.trackingNumber || `AQT-TRK-${orderId}`,
+              estimatedDeliveryDate: targetOrder.estimatedDeliveryDate || estimatedDate,
+              paymentStatus: canonicalStatus
+            },
+            deduplicationKey: `company-wa-${canonicalStatus}-${orderId}`
+          }).catch(err => console.warn('Aviso no envio WhatsApp empresa:', err));
+        }, 15);
+      }
+    }
+
+    return targetOrder;
   } catch (e) {
     return null;
   }
 }
+
+/**
+ * Solicita exclusivamente ao backend (Edge Function receipt-access) um URL assinado temporário.
+ * Regra de Segurança Estrita:
+ * - O backend valida o par (orderCode, receiptToken) contra a base de dados oficial crm_leads.
+ * - Administradores autenticados podem aceder sem token específico.
+ * - NENHUMA permissão directa de leitura é concedida ao bucket no frontend.
+ */
+export async function fetchReceiptSignedUrl({ orderCode, receiptToken, expiresIn = 1800 }) {
+        if (!orderCode) throw new Error('Código da encomenda é obrigatório.');
+
+        if (supabase?.functions) {
+          try {
+            const { data, error } = await supabase.functions.invoke('receipt-access', {
+              body: {
+                action: 'get-signed-url',
+                orderCode,
+                receiptToken,
+                expiresIn
+              }
+            });
+
+            if (error) {
+              throw new Error(error.message || 'Falha na comunicação com o serviço de segurança.');
+            }
+            if (!data?.success) {
+              throw new Error(data?.message || 'Acesso não autorizado ao comprovativo.');
+            }
+            return data;
+          } catch (err) {
+            console.warn('Aviso ao solicitar Signed URL:', err.message);
+            throw err;
+          }
+        }
+
+        throw new Error('Serviço de segurança Supabase indisponível no momento.');
+      }
+
+      /**
+       * Regista o comprovativo no backend atómico associando-o ao registo canónico em crm_leads.
+       */
+      export async function registerReceiptWithBackend({ orderCode, receiptToken, storagePath }) {
+        if (!orderCode || !storagePath) throw new Error('Código da encomenda e caminho do ficheiro são obrigatórios.');
+
+        if (supabase?.functions) {
+          try {
+            const { data, error } = await supabase.functions.invoke('receipt-access', {
+              body: {
+                action: 'register-receipt',
+                orderCode,
+                receiptToken,
+                storagePath
+              }
+            });
+            if (error) throw error;
+            return data;
+          } catch (err) {
+            console.warn('Aviso ao registar comprovativo no backend:', err.message);
+            return null;
+          }
+        }
+        return null;
+      }
