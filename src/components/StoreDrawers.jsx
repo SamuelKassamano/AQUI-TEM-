@@ -97,8 +97,8 @@ export default function StoreDrawers() {
   const checkoutItems = directCheckoutItem ? [directCheckoutItem] : cart;
   const isSingle = Boolean(directCheckoutItem) && checkoutItems.length === 1;
 
-  // Cálculo automático de taxa de entrega com base na província e município
-  const deliveryFee = getDeliveryFeeForLocation(checkoutForm.province, checkoutForm.municipality);
+  // Cálculo automático de taxa de entrega com base na província e município (Mínimo de 3.000 Kz)
+  const deliveryFee = Math.max(getDeliveryFeeForLocation(checkoutForm.province, checkoutForm.municipality), 3000);
   const itemsSubtotal = isSingle
     ? getEffectivePrice(checkoutItems[0]) * (Number(checkoutItems[0].quantity) || 1)
     : finalTotal;
@@ -841,20 +841,15 @@ export default function StoreDrawers() {
                     </select>
                   </div>
 
-                  {/* Resumo da Encomenda */}
+                  {/* Resumo da Encomenda (Sem linha de subtotal conforme directiva) */}
                   <div style={{ background: 'var(--bg-main)', padding: '14px', borderRadius: '12px', margin: '14px 0', border: '1px solid var(--border-light)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '4px' }}>
-                      <span>Subtotal dos Artigos:</span>
-                      <strong style={{ color: 'var(--text-main)' }}>{Number(itemsSubtotal).toLocaleString('pt-AO')} Kz</strong>
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--primary-orange)', fontWeight: 600, marginBottom: '4px' }}>
-                      <span>Taxa de Entrega ({checkoutForm.province}):</span>
-                      <strong>{deliveryFee === 0 ? 'GRÁTIS' : `${deliveryFee.toLocaleString('pt-AO')} Kz`}</strong>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--primary-orange)', fontWeight: 600, marginBottom: '6px' }}>
+                      <span>Taxa de Transporte ({checkoutForm.province}):</span>
+                      <strong>{deliveryFee.toLocaleString('pt-AO')} Kz</strong>
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#10B981', marginBottom: '8px' }}>
-                      <span>Previsão de Entrega:</span>
+                      <span>Previsão de Entrega (3 Dias Úteis):</span>
                       <strong>{deliveryEstimate.formattedDate}</strong>
                     </div>
 

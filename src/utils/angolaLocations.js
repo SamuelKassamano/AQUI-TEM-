@@ -17,7 +17,7 @@ export const ANGOLA_PROVINCES = [
       'Icolo e Bengo',
       'Quissama'
     ],
-    defaultDeliveryFee: 2000
+    defaultDeliveryFee: 3000
   },
   {
     name: 'Bengo',
@@ -137,21 +137,25 @@ export const ANGOLA_HOLIDAYS_FIXED = [
 ];
 
 /**
- * Calcula a taxa de entrega em Kwanzas com base na província e município
+ * Calcula a taxa de entrega em Kwanzas com base na província e município.
+ * Regra Estrita: A taxa mínima de transporte deve ser obrigatoriamente 3.000 Kz em todo o território nacional.
  */
 export function getDeliveryFeeForLocation(provinceName, municipalityName) {
   const prov = ANGOLA_PROVINCES.find(p => p.name.toLowerCase() === (provinceName || '').toLowerCase());
-  if (!prov) return 2000;
+  let fee = 3000;
 
-  if (prov.name === 'Luanda') {
+  if (prov && prov.name === 'Luanda') {
     const muni = (municipalityName || '').toLowerCase();
-    if (muni.includes('talatona') || muni.includes('belas') || muni.includes('kilamba')) return 2500;
-    if (muni.includes('viana') || muni.includes('cacuaco') || muni.includes('cazenga')) return 3000;
-    if (muni.includes('icolo') || muni.includes('quissama')) return 4500;
-    return 2000; // Luanda Central (Ingombota, Maianga, etc.)
+    if (muni.includes('talatona') || muni.includes('belas') || muni.includes('kilamba')) fee = 3500;
+    else if (muni.includes('viana') || muni.includes('cacuaco') || muni.includes('cazenga')) fee = 3500;
+    else if (muni.includes('icolo') || muni.includes('quissama')) fee = 4500;
+    else fee = 3000; // Luanda Central (Ingombota, Maianga, etc.)
+  } else if (prov) {
+    fee = prov.defaultDeliveryFee || 5500;
   }
 
-  return prov.defaultDeliveryFee || 5500;
+  // Regra Estrita: Nenhuma encomenda pode apresentar transporte inferior a 3.000 Kz
+  return Math.max(Number(fee) || 3000, 3000);
 }
 
 /**

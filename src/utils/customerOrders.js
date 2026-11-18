@@ -68,7 +68,8 @@ export async function createAndSaveOrder({
 }) {
   const orderId = generateOrderCode();
   const receiptToken = generateReceiptToken();
-  const deliveryFee = Number(deliveryZone?.fee ?? 2000);
+  // Regra Estrita: A taxa mínima de transporte deve ser obrigatoriamente 3.000 Kz
+  const deliveryFee = Math.max(Number(deliveryZone?.fee ?? 3000), 3000);
   const total = Number(subtotal || 0) + deliveryFee;
   const now = new Date().toISOString();
   const formattedDate = new Date().toLocaleDateString('pt-AO', {
@@ -235,7 +236,7 @@ export async function createAndSaveOrder({
       if (crmErr) {
         try {
           await supabase.from('leads').insert([orderPayload]);
-        } catch (_leadErr) {}
+        } catch (_leadErr) { }
         console.warn('Aviso ao gravar em crm_leads:', crmErr.message);
       }
     }
@@ -356,6 +357,90 @@ export function findOrder(query) {
   }) || null;
 }
 
+// Consultar encomenda online de forma segura via Edge Function (receipt-access: track-order)
+export async function trackOrderOnline(query) {
+  if (!query || typeof query !== 'string') {
+    throw new Error('Código de rastreio ou encomenda inválido.');
+  }
+
+  const cleanQuery = query.trim();
+
+  try {
+    if (supabase?.functions) {
+      const { data, error } = await supabase.functions.invoke('receipt-access', {
+        body: {
+          action: 'track-order',
+          code: cleanQuery
+        }
+      });
+
+      if (!error && data?.success && data?.order) {
+        const remote = data.order;
+        const local = findOrder(cleanQuery) || {};
+
+        const mergedOrder = {
+          ...local,
+          id: remote.orderCode || local.id || cleanQuery,
+          trackingCode: remote.orderCode || local.id || cleanQuery,
+          trackingNumber: remote.trackingNumber || local.trackingNumber || `AQT-TRK-${remote.orderCode}`,
+          status: remote.status || local.status || 'Aguardando Pagamento',
+          statusLabel: remote.status || local.status || 'Aguardando Pagamento',
+          createdAt: remote.orderDate || local.createdAt || new Date().toISOString(),
+          paymentConfirmedAt: remote.paymentConfirmedAt || local.paymentConfirmedAt || null,
+          estimatedDeliveryDate: remote.estimatedDeliveryDate || local.estimatedDeliveryDate || '3 dias úteis',
+          timeline: (remote.history && remote.history.length > 0)
+            ? remote.history.map((h, i) => ({
+              step: i + 1,
+              title: h.action,
+              description: h.details,
+              date: h.date ? new Date(h.date).toLocaleDateString('pt-AO') : 'Concluído',
+              completed: true
+            }))
+            : (local.timeline || []),
+          customer: {
+            name: remote.customer?.name || local.customer?.name || 'Cliente AQUI TEM',
+            phone: local.customer?.phone || '',
+            email: local.customer?.email || '',
+            address: local.customer?.address || remote.customer?.location || 'Luanda',
+            city: remote.customer?.location || local.customer?.city || 'Luanda'
+          },
+          items: local.items || [
+            {
+              name: remote.product || 'Artigo AQUI TEM',
+              price: Number(remote.totalValue || 0) > 3000 ? (Number(remote.totalValue) - 3000) : Number(remote.totalValue || 0),
+              quantity: 1,
+              image: '/logo.jpg'
+            }
+          ],
+          subtotal: Number(local.subtotal || (Number(remote.totalValue || 0) > 3000 ? (Number(remote.totalValue) - 3000) : Number(remote.totalValue || 0))),
+          deliveryFee: Math.max(Number(local.deliveryFee || 3000), 3000),
+          total: Number(remote.totalValue || local.total || 0),
+          paymentMethod: local.paymentMethod || 'Transferência Bancária / Multicaixa Express'
+        };
+
+        // Salvar / atualizar no cache local para persistência de navegação
+        const currentOrders = getLocalOrders();
+        const existingIdx = currentOrders.findIndex(o => o.id === mergedOrder.id || o.trackingCode === mergedOrder.id);
+        if (existingIdx >= 0) {
+          currentOrders[existingIdx] = { ...currentOrders[existingIdx], ...mergedOrder };
+        } else {
+          currentOrders.unshift(mergedOrder);
+        }
+        localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(currentOrders));
+
+        return mergedOrder;
+      }
+    }
+  } catch (err) {
+    console.warn('Consulta remota falhou, a recorrer ao histórico local:', err);
+  }
+
+  const localFound = findOrder(cleanQuery);
+  if (localFound) return localFound;
+
+  throw new Error(`Nenhuma encomenda encontrada com "${cleanQuery}". Verifique o código recebido no WhatsApp ou e-mail.`);
+}
+
 // Gestor de Carrinho Abandonado (Recuperação de Carrinho)
 export function saveAbandonedCart(cartItems, customerInfo = null) {
   if (!cartItems || cartItems.length === 0) {
@@ -453,65 +538,65 @@ export function attachPaymentReceipt(orderId, receiptData) {
 
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
 
-// Atualizar status no Supabase crm_leads de forma segura
-if (supabase && targetOrder) {
-  const nowIso = new Date().toISOString();
-  const updatePayload = {
-    status: 'Comprovativo Recebido',
-    receipt_uploaded_at: nowIso
-  };
-  if (targetOrder.receiptStoragePath) {
-    updatePayload.receipt_storage_path = targetOrder.receiptStoragePath;
-  }
-  supabase.from('crm_leads').update(updatePayload).eq('lead_code', orderId).then(() => { }).catch(() => { });
-}
-
-// Regra Fundamental: Enviar e-mail de confirmação da recepção do comprovativo
-// O pagamento permanece PENDENTE até validação manual do administrador
-if (targetOrder?.customer?.email && targetOrder.customer.email.includes('@')) {
-  setTimeout(async () => {
-    try {
-      await sendBrevoTransactionalEmail({
-        templateType: 'receipt_submitted',
-        to: targetOrder.customer.email,
-        recipientName: targetOrder.customer.name,
-        orderData: {
-          id: targetOrder.id,
-          orderDate: targetOrder.createdAt ? new Date(targetOrder.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
-          total: targetOrder.total,
-          subtotal: targetOrder.subtotal,
-          deliveryFee: targetOrder.deliveryFee,
-          items: targetOrder.items,
-          customerPhone: targetOrder.customer?.phone,
-          customerEmail: targetOrder.customer?.email,
-          province: targetOrder.customer?.province,
-          municipality: targetOrder.customer?.municipality,
-          deliveryZone: targetOrder.deliveryZone?.name || 'Luanda',
-          address: targetOrder.customer?.address,
-          city: targetOrder.customer?.city,
-          paymentMethod: targetOrder.paymentMethod,
-          paymentStatus: 'Comprovativo Recebido (Pendente de Validação)',
-          trackingNumber: targetOrder.trackingNumber || `AQT-TRK-${orderId}`,
-          estimatedDeliveryDate: targetOrder.estimatedDeliveryDate || '3 dias úteis após validação do pagamento'
-        },
-        deduplicationKey: `receipt_submitted-${orderId}`
-      });
-
-      await trackBrevoCommerceEvent({
-        eventName: 'receipt_submitted',
-        email: targetOrder.customer.email,
-        eventId: `receipt_submitted-${orderId}`,
-        properties: {
-          orderId,
-          status: 'Comprovativo Recebido',
-          total: targetOrder.total
-        }
-      });
-    } catch (e) {
-      console.warn('Aviso: Falha ao despachar notificação Brevo de comprovativo:', e);
+    // Atualizar status no Supabase crm_leads de forma segura
+    if (supabase && targetOrder) {
+      const nowIso = new Date().toISOString();
+      const updatePayload = {
+        status: 'Em Atendimento',
+        receipt_uploaded_at: nowIso
+      };
+      if (targetOrder.receiptStoragePath) {
+        updatePayload.receipt_storage_path = targetOrder.receiptStoragePath;
+      }
+      supabase.from('crm_leads').update(updatePayload).eq('lead_code', orderId).then(() => { }).catch(() => { });
     }
-  }, 10);
-}
+
+    // Regra Fundamental: Enviar e-mail de confirmação da recepção do comprovativo
+    // O pagamento permanece PENDENTE até validação manual do administrador
+    if (targetOrder?.customer?.email && targetOrder.customer.email.includes('@')) {
+      setTimeout(async () => {
+        try {
+          await sendBrevoTransactionalEmail({
+            templateType: 'receipt_submitted',
+            to: targetOrder.customer.email,
+            recipientName: targetOrder.customer.name,
+            orderData: {
+              id: targetOrder.id,
+              orderDate: targetOrder.createdAt ? new Date(targetOrder.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO'),
+              total: targetOrder.total,
+              subtotal: targetOrder.subtotal,
+              deliveryFee: targetOrder.deliveryFee,
+              items: targetOrder.items,
+              customerPhone: targetOrder.customer?.phone,
+              customerEmail: targetOrder.customer?.email,
+              province: targetOrder.customer?.province,
+              municipality: targetOrder.customer?.municipality,
+              deliveryZone: targetOrder.deliveryZone?.name || 'Luanda',
+              address: targetOrder.customer?.address,
+              city: targetOrder.customer?.city,
+              paymentMethod: targetOrder.paymentMethod,
+              paymentStatus: 'Comprovativo Recebido (Pendente de Validação)',
+              trackingNumber: targetOrder.trackingNumber || `AQT-TRK-${orderId}`,
+              estimatedDeliveryDate: targetOrder.estimatedDeliveryDate || '3 dias úteis após validação do pagamento'
+            },
+            deduplicationKey: `receipt_submitted-${orderId}`
+          });
+
+          await trackBrevoCommerceEvent({
+            eventName: 'receipt_submitted',
+            email: targetOrder.customer.email,
+            eventId: `receipt_submitted-${orderId}`,
+            properties: {
+              orderId,
+              status: 'Comprovativo Recebido',
+              total: targetOrder.total
+            }
+          });
+        } catch (e) {
+          console.warn('Aviso: Falha ao despachar notificação Brevo de comprovativo:', e);
+        }
+      }, 10);
+    }
 
     // Notificação WhatsApp para a Empresa (+244 950 752 933): Comprovativo Recebido
     if (targetOrder) {
@@ -534,10 +619,10 @@ if (targetOrder?.customer?.email && targetOrder.customer.email.includes('@')) {
       }, 15);
     }
 
-return targetOrder;
+    return targetOrder;
   } catch (e) {
-  return null;
-}
+    return null;
+  }
 }
 
 // Atualizar Status da Encomenda com Cálculo de 3 Dias Úteis e Disparo de Notificações
@@ -755,57 +840,57 @@ export function updateOrderStatus(orderId, newStatus, driverInfo = null, customT
  * - NENHUMA permissão directa de leitura é concedida ao bucket no frontend.
  */
 export async function fetchReceiptSignedUrl({ orderCode, receiptToken, expiresIn = 1800 }) {
-        if (!orderCode) throw new Error('Código da encomenda é obrigatório.');
+  if (!orderCode) throw new Error('Código da encomenda é obrigatório.');
 
-        if (supabase?.functions) {
-          try {
-            const { data, error } = await supabase.functions.invoke('receipt-access', {
-              body: {
-                action: 'get-signed-url',
-                orderCode,
-                receiptToken,
-                expiresIn
-              }
-            });
-
-            if (error) {
-              throw new Error(error.message || 'Falha na comunicação com o serviço de segurança.');
-            }
-            if (!data?.success) {
-              throw new Error(data?.message || 'Acesso não autorizado ao comprovativo.');
-            }
-            return data;
-          } catch (err) {
-            console.warn('Aviso ao solicitar Signed URL:', err.message);
-            throw err;
-          }
+  if (supabase?.functions) {
+    try {
+      const { data, error } = await supabase.functions.invoke('receipt-access', {
+        body: {
+          action: 'get-signed-url',
+          orderCode,
+          receiptToken,
+          expiresIn
         }
+      });
 
-        throw new Error('Serviço de segurança Supabase indisponível no momento.');
+      if (error) {
+        throw new Error(error.message || 'Falha na comunicação com o serviço de segurança.');
       }
+      if (!data?.success) {
+        throw new Error(data?.message || 'Acesso não autorizado ao comprovativo.');
+      }
+      return data;
+    } catch (err) {
+      console.warn('Aviso ao solicitar Signed URL:', err.message);
+      throw err;
+    }
+  }
 
-      /**
-       * Regista o comprovativo no backend atómico associando-o ao registo canónico em crm_leads.
-       */
-      export async function registerReceiptWithBackend({ orderCode, receiptToken, storagePath }) {
-        if (!orderCode || !storagePath) throw new Error('Código da encomenda e caminho do ficheiro são obrigatórios.');
+  throw new Error('Serviço de segurança Supabase indisponível no momento.');
+}
 
-        if (supabase?.functions) {
-          try {
-            const { data, error } = await supabase.functions.invoke('receipt-access', {
-              body: {
-                action: 'register-receipt',
-                orderCode,
-                receiptToken,
-                storagePath
-              }
-            });
-            if (error) throw error;
-            return data;
-          } catch (err) {
-            console.warn('Aviso ao registar comprovativo no backend:', err.message);
-            return null;
-          }
+/**
+ * Regista o comprovativo no backend atómico associando-o ao registo canónico em crm_leads.
+ */
+export async function registerReceiptWithBackend({ orderCode, receiptToken, storagePath }) {
+  if (!orderCode || !storagePath) throw new Error('Código da encomenda e caminho do ficheiro são obrigatórios.');
+
+  if (supabase?.functions) {
+    try {
+      const { data, error } = await supabase.functions.invoke('receipt-access', {
+        body: {
+          action: 'register-receipt',
+          orderCode,
+          receiptToken,
+          storagePath
         }
-        return null;
-      }
+      });
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      console.warn('Aviso ao registar comprovativo no backend:', err.message);
+      return null;
+    }
+  }
+  return null;
+}

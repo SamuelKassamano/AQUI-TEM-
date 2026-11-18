@@ -241,10 +241,26 @@ export async function updateLeadStatusInSupabase(leadId, newStatus, note = '') {
   };
   const updatedHistory = [newHistoryItem, ...currentHistory];
 
+  const dbStatusMap = {
+    'Aguardando Pagamento': 'Novo Lead',
+    'Comprovativo Recebido': 'Em Atendimento',
+    'Pendente de Confirmação': 'Em Atendimento',
+    'Encomenda Agendada': 'Venda Realizada',
+    'Em Preparação': 'Venda Realizada',
+    'Em Rota': 'Venda Realizada',
+    'Entregue': 'Venda Realizada',
+    'Cancelado': 'Perdido',
+    'Perdido': 'Perdido',
+    'Novo Lead': 'Novo Lead',
+    'Em Atendimento': 'Em Atendimento',
+    'Venda Realizada': 'Venda Realizada'
+  };
+  const validDbStatus = dbStatusMap[newStatus] || (['Novo Lead', 'Em Atendimento', 'Venda Realizada', 'Perdido'].includes(newStatus) ? newStatus : 'Em Atendimento');
+
   const { data, error } = await supabase
     .from('crm_leads')
     .update({
-      status: newStatus,
+      status: validDbStatus,
       history: updatedHistory,
       updated_at: new Date().toISOString()
     })

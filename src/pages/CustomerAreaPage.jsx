@@ -33,6 +33,7 @@ import { uploadReceiptDocument } from '../lib/supabase';
 import {
   getLocalOrders,
   findOrder,
+  trackOrderOnline,
   getSavedCustomerProfile,
   saveCustomerProfile,
   getAbandonedCart,
@@ -61,6 +62,7 @@ export default function CustomerAreaPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [searchError, setSearchError] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [receiptSuccessMsg, setReceiptSuccessMsg] = useState('');
 
   // Perfil do Cliente
@@ -116,6 +118,15 @@ export default function CustomerAreaPage() {
         setSelectedOrder(found);
         setActiveTab('rastreio');
       }
+
+      // Consulta de estado actualizado online em background
+      trackOrderOnline(trackingCode)
+        .then(remoteOrder => {
+          setSelectedOrder(remoteOrder);
+          setActiveTab('rastreio');
+          setOrders(getLocalOrders());
+        })
+        .catch(() => {});
     } else if (localOrders.length > 0) {
       // Abre a encomenda mais recente por padrão
       setSelectedOrder(localOrders[0]);
@@ -123,21 +134,35 @@ export default function CustomerAreaPage() {
   }, [location.search]);
 
   // Pesquisar encomenda
-  const handleSearchOrder = (e) => {
+  const handleSearchOrder = async (e) => {
     e?.preventDefault();
     setSearchError('');
 
-    if (!searchQuery.trim()) {
-      setSearchError('Por favor, digite o código da encomenda (ex: AQT-1234), telefone ou e-mail.');
+    const query = searchQuery.trim();
+    if (!query) {
+      setSearchError('Por favor, digite o código da encomenda (ex: AQT-1234) ou número de rastreio (ex: AQT-TRK-1234).');
       return;
     }
 
-    const found = findOrder(searchQuery);
-    if (found) {
-      setSelectedOrder(found);
+    // 1. Tenta carregar do cache local imediatamente
+    const local = findOrder(query);
+    if (local) {
+      setSelectedOrder(local);
+    }
+
+    setIsSearching(true);
+    try {
+      // 2. Consulta online autorizada e sincroniza estado oficial
+      const order = await trackOrderOnline(query);
+      setSelectedOrder(order);
+      setOrders(getLocalOrders());
       setSearchError('');
-    } else {
-      setSearchError(`Nenhuma encomenda encontrada com "${searchQuery}". Verifique o código no WhatsApp ou consulte o seu histórico.`);
+    } catch (err) {
+      if (!local) {
+        setSearchError(err.message || `Nenhuma encomenda encontrada com "${query}". Verifique o código recebido no WhatsApp ou e-mail.`);
+      }
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -196,48 +221,7 @@ export default function CustomerAreaPage() {
     setNotifPrefs(getNotificationPrefs());
   };
 
-  // Confirmar Envio do Comprovativo
-  const handleConfirmReceiptSent = () => {
-    if (!selectedOrder) return;
-    const updated = attachPaymentReceipt(selectedOrder.id, 'Comprovativo enviado via WhatsApp (+244 950 752 933)');
-    if (updated) {
-      setSelectedOrder(updated);
-      setOrders(getLocalOrders());
-      setReceiptSuccessMsg('Comprovativo registado com sucesso! A nossa equipa financeira confere a entrada e desbloqueia a rota imediatamente.');
-      setTimeout(() => setReceiptSuccessMsg(''), 6000);
-    }
-  };
-
-  const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [openingReceipt, setOpeningReceipt] = useState(false);
-
-  // Upload Direto de Ficheiro de Comprovativo (Imagem / PDF)
-  const handleReceiptFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file || !selectedOrder) return;
-
-    try {
-      setUploadingReceipt(true);
-      const res = await uploadReceiptDocument(file, selectedOrder.id, selectedOrder.receiptToken);
-      const updated = attachPaymentReceipt(selectedOrder.id, {
-        fileName: res.fileName,
-        url: res.url,
-        source: res.source
-      });
-
-      if (updated) {
-        setSelectedOrder(updated);
-        setOrders(getLocalOrders());
-        setReceiptSuccessMsg(`Comprovativo "${res.fileName}" anexado com sucesso! A nossa tesouraria confere a entrada e desbloqueia a rota.`);
-        setTimeout(() => setReceiptSuccessMsg(''), 7000);
-      }
-    } catch (err) {
-      alert(`Erro no upload: ${err.message || 'Falha ao processar ficheiro'}`);
-    } finally {
-      setUploadingReceipt(false);
-      e.target.value = '';
-    }
-  };
 
   // Visualização Segura do Comprovativo (Exclusivamente via Backend Signed URL)
   const handleViewReceipt = async (order) => {
@@ -260,23 +244,6 @@ export default function CustomerAreaPage() {
       alert('Não foi possível gerar um URL assinado seguro para este comprovativo.');
     } finally {
       setOpeningReceipt(false);
-    }
-  };
-
-  // Simular Desbloqueio da Rota em Tempo Recorde (Demonstração ao Vivo)
-  const handleToggleRouteDemo = (toRoute = true) => {
-    if (!selectedOrder) return;
-    const newStatus = toRoute ? 'rota' : 'pendente';
-    const driver = toRoute ? {
-      driverName: 'Mateus Domingos',
-      driverPhone: '+244 924 812 345',
-      vehicle: 'Toyota Starlet Prata (LD-44-82-AO)',
-      estimatedArrival: 'Hoje entre 14h00 e 16h30'
-    } : null;
-    const updated = updateOrderStatus(selectedOrder.id, newStatus, driver);
-    if (updated) {
-      setSelectedOrder(updated);
-      setOrders(getLocalOrders());
     }
   };
 
@@ -558,12 +525,12 @@ export default function CustomerAreaPage() {
                         #{selectedOrder.id}
                       </div>
                       {selectedOrder.trackingNumber && (
-                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#ff8a3d', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Truck size={14} /> Rastreio: <span>{selectedOrder.trackingNumber}</span>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ff8a3d', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Truck size={15} /> Número de Rastreio: <span>{selectedOrder.trackingNumber}</span>
                         </div>
                       )}
-                      <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '2px' }}>
-                        Criado em: {new Date(selectedOrder.createdAt).toLocaleDateString('pt-AO', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      <div style={{ color: '#cbd5e1', fontSize: '0.82rem', marginTop: '4px' }}>
+                        Data da Encomenda: <strong>{new Date(selectedOrder.createdAt).toLocaleDateString('pt-AO', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong>
                       </div>
                     </div>
 
@@ -604,14 +571,19 @@ export default function CustomerAreaPage() {
                       >
                         <CheckCircle size={14} /> {selectedOrder.statusLabel || selectedOrder.status || 'Aguardando Pagamento'}
                       </span>
+                      {selectedOrder.paymentConfirmedAt && (
+                        <div style={{ color: '#22c55e', fontSize: '0.82rem', marginTop: '6px', fontWeight: 600 }}>
+                          ✓ Pagamento Confirmado em: {new Date(selectedOrder.paymentConfirmedAt).toLocaleDateString('pt-AO')}
+                        </div>
+                      )}
                       <div style={{ color: '#cbd5e1', fontSize: '0.85rem', marginTop: '6px' }}>
-                        Previsão de Entrega: <strong style={{ color: '#ffffff' }}>{selectedOrder.estimatedDeliveryDate || selectedOrder.deliveryZone?.estimatedTime || '3 dias úteis'}</strong>
+                        Data Prevista de Entrega: <strong style={{ color: '#ffffff' }}>{selectedOrder.estimatedDeliveryDate || selectedOrder.deliveryZone?.estimatedTime || '3 dias úteis'}</strong>
                       </div>
                     </div>
                   </div>
 
-                  {/* 🟢 ROTA DESBLOQUEADA EM TEMPO RECORDE (Quando Status é Rota) */}
-                  {(selectedOrder.status === 'rota' || (selectedOrder.driver && selectedOrder.status !== 'pendente')) && (
+                  {/* 🟢 ROTA DESBLOQUEADA (Apenas no estado "Em Rota", nunca em "Encomenda Agendada") */}
+                  {(selectedOrder.status === 'Em Rota' || selectedOrder.status === 'rota') && selectedOrder.driver && (
                     <div
                       style={{
                         background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.14) 0%, rgba(16, 185, 129, 0.06) 100%)',
@@ -743,17 +715,13 @@ export default function CustomerAreaPage() {
                         ))}
                       </div>
 
-                      {/* Totais */}
-                      <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.82rem', display: 'grid', gap: '4px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#94a3b8' }}>
-                          <span>Subtotal Artigos:</span>
-                          <span style={{ color: '#ffffff' }}>{formatPriceKz(selectedOrder.subtotal, lang)}</span>
-                        </div>
+                      {/* Totais: Sem subtotal de artigos, taxa de transporte (mínimo 3.000 Kz) e total final */}
+                      <div style={{ marginTop: '16px', paddingTop: '12px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.84rem', display: 'grid', gap: '6px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ff8a3d' }}>
-                          <span>Frete ({selectedOrder.deliveryZone?.shortName}):</span>
-                          <span>{selectedOrder.deliveryFee === 0 ? 'GRÁTIS' : formatPriceKz(selectedOrder.deliveryFee, lang)}</span>
+                          <span>Taxa de Transporte ({selectedOrder.deliveryZone?.shortName || selectedOrder.deliveryZone?.name || 'Entrega'}):</span>
+                          <span style={{ fontWeight: 700 }}>{formatPriceKz(Math.max(Number(selectedOrder.deliveryFee) || 3000, 3000), lang)}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ffffff', fontWeight: 800, fontSize: '1rem', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ffffff', fontWeight: 800, fontSize: '1.05rem', marginTop: '6px', paddingTop: '8px', borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                           <span>Total da Compra:</span>
                           <span style={{ color: '#22c55e' }}>{formatPriceKz(selectedOrder.total, lang)}</span>
                         </div>
@@ -784,106 +752,19 @@ export default function CustomerAreaPage() {
                         <div>
                           <strong style={{ color: '#94a3b8' }}>Método de Pagamento:</strong> <span style={{ color: '#ff8a3d' }}>{selectedOrder.paymentMethod}</span>
                         </div>
-                      </div>
-
-                      <div style={{ marginTop: '16px', background: 'rgba(255, 101, 0, 0.08)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255, 101, 0, 0.2)', fontSize: '0.8rem', color: '#cbd5e1' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, color: '#ff8a3d', marginBottom: '6px' }}>
-                          <Clock size={15} /> Validação de Comprovativo & Rota Express
-                        </div>
-                        <p style={{ margin: '0 0 10px 0', fontSize: '0.78rem', lineHeight: '1.45' }}>
-                          Envie o comprovativo Multicaixa Express ou transferência bancária para o WhatsApp <strong>(+244 950 752 933)</strong> indicando a referência <strong>#{selectedOrder.id}</strong>. Assim que a nossa tesouraria confere a entrada na conta, a viatura é despachada e a rota em tempo recorde fica desbloqueada!
-                        </p>
-
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '10px' }}>
-                          <a
-                            href={`https://wa.me/244950752933?text=Ol%C3%A1%20AQUI%20TEM!%20Segue%20o%20comprovativo%20de%20pagamento%20da%20minha%20encomenda%20%23${selectedOrder.id}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{ background: '#25D366', color: '#ffffff', textDecoration: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                          >
-                            <MessageCircle size={14} /> Enviar no WhatsApp
-                          </a>
-
-                          <input
-                            type="file"
-                            id="customer-receipt-upload"
-                            accept="image/*,application/pdf"
-                            style={{ display: 'none' }}
-                            onChange={handleReceiptFileUpload}
-                          />
-
-                          <button
-                            type="button"
-                            disabled={uploadingReceipt}
-                            onClick={() => document.getElementById('customer-receipt-upload')?.click()}
-                            style={{ background: '#ff6500', color: '#ffffff', border: 'none', padding: '8px 14px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: uploadingReceipt ? 'not-allowed' : 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                          >
-                            <Upload size={14} /> {uploadingReceipt ? 'A Carregar...' : 'Anexar Ficheiro'}
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={handleConfirmReceiptSent}
-                            style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff', border: '1px solid rgba(255, 255, 255, 0.25)', padding: '8px 14px', borderRadius: '8px', fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-                          >
-                            <FileText size={14} color="#ff6500" /> Já enviei o Comprovativo
-                          </button>
-                        </div>
-
-                        {selectedOrder.receiptFileName && (
-                          <div style={{ marginTop: '8px', fontSize: '0.74rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                            <FileText size={12} color="#22c55e" /> Ficheiro anexado: <strong>{selectedOrder.receiptFileName}</strong>
-                            <button
-                              type="button"
-                              onClick={() => handleViewReceipt(selectedOrder)}
-                              disabled={openingReceipt}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#ff8a3d',
-                                textDecoration: 'underline',
-                                cursor: 'pointer',
-                                padding: 0,
-                                fontSize: '0.74rem',
-                                fontWeight: 600,
-                                marginLeft: '6px'
-                              }}
-                            >
-                              {openingReceipt ? 'A Gerar Acesso Seguro...' : 'Visualizar com Segurança'}
-                            </button>
-                          </div>
-                        )}
-
-                        {receiptSuccessMsg && (
-                          <div style={{ marginTop: '10px', background: 'rgba(34, 197, 94, 0.15)', border: '1px solid #22c55e', color: '#22c55e', padding: '8px 12px', borderRadius: '8px', fontSize: '0.76rem', fontWeight: 600 }}>
-                            ✓ {receiptSuccessMsg}
-                          </div>
-                        )}
-
-                        {/* Teste Rápido / Demonstração do Desbloqueio da Rota */}
-                        <div style={{ marginTop: '14px', paddingTop: '10px', borderTop: '1px dashed rgba(255, 255, 255, 0.12)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                          <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>
-                            🧪 Teste de Rota em Tempo Recorde:
+                        <div>
+                          <strong style={{ color: '#94a3b8' }}>Estado do Pagamento:</strong>{' '}
+                          <span style={{ color: selectedOrder.paymentConfirmedAt ? '#22c55e' : '#f59e0b', fontWeight: 700 }}>
+                            {selectedOrder.paymentConfirmedAt ? 'Pagamento Confirmado' : (selectedOrder.receiptFileName || selectedOrder.receiptStoragePath ? 'Comprovativo Recebido / Em Validação' : 'Aguardando Pagamento')}
                           </span>
-                          {selectedOrder.status !== 'rota' ? (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleRouteDemo(true)}
-                              style={{ background: 'rgba(34, 197, 94, 0.2)', border: '1px solid #22c55e', color: '#22c55e', padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              ⚡ Testar Desbloqueio da Rota
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleRouteDemo(false)}
-                              style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid #ef4444', color: '#ef4444', padding: '4px 10px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 700, cursor: 'pointer' }}
-                            >
-                              🔄 Repor Estado Inicial
-                            </button>
-                          )}
                         </div>
                       </div>
+
+                      {selectedOrder.receiptFileName && (
+                        <div style={{ marginTop: '14px', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.78rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <FileText size={14} color="#22c55e" /> Comprovativo anexado: <strong style={{ color: '#ffffff' }}>{selectedOrder.receiptFileName}</strong>
+                        </div>
+                      )}
                     </div>
 
                   </div>

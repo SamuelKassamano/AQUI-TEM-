@@ -10,7 +10,7 @@ export const DELIVERY_ZONES = [
     name: 'Luanda — Zonas Centrais (Maianga, Ingombota, Rangel, Sambizanga, Miramar)',
     shortName: 'Luanda Central',
     region: 'Luanda',
-    fee: 2000,
+    fee: 3000,
     estimatedTime: '24 horas',
     description: 'Entrega rápida em rota prioritária em Luanda.'
   },
@@ -19,7 +19,7 @@ export const DELIVERY_ZONES = [
     name: 'Luanda — Sul / Talatona (Benfica, Talatona, Morro Bento, Belas, Samba, Ilha)',
     shortName: 'Luanda Sul / Talatona',
     region: 'Luanda',
-    fee: 2500,
+    fee: 3000,
     estimatedTime: '24 horas',
     description: 'Despacho direto a partir do nosso centro operacional no Benfica.'
   },
@@ -116,5 +116,7 @@ export function getDeliveryZoneById(id) {
 
 export function calculateDeliveryFee(zoneId) {
   const zone = getDeliveryZoneById(zoneId);
-  return zone ? zone.fee : 2500;
+  if (!zone) return 3000;
+  if (zone.id === 'levantamento-benfica') return 0;
+  return Math.max(Number(zone.fee) || 3000, 3000);
 }

@@ -3,7 +3,7 @@
  * Suporta Notificações do Navegador (Web Notifications API) e Central de Notificações In-App.
  */
 
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase.js';
 
 const NOTIFS_PREFS_KEY = 'aquitem_notification_prefs_v1';
 const NOTIFS_FEED_KEY = 'aquitem_notification_feed_v1';

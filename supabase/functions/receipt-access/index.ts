@@ -90,6 +90,192 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const { action = 'get-signed-url', orderCode, receiptToken, storagePath, expiresIn = 1800 } = body || {};
 
+    // =========================================================================
+    // ACÇÃO DE RASTREIO PÚBLICO SEGURO (Sem necessidade de token criptográfico)
+    // Regra: Retorna apenas progresso e marcos sem expor dados pessoais a terceiros
+    // =========================================================================
+    if (action === 'track-order') {
+      const rawCode = String(body.code || body.orderCode || body.trackingNumber || orderCode || '').trim();
+      if (!rawCode) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Código de encomenda ou número de rastreio é obrigatório.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Normalização robusta de prefixos (AQT-, AQT-TRK-, #, espaços)
+      let clean = rawCode.replace(/^[#\s]+/, '').trim().toUpperCase();
+      if (clean.startsWith('AQT-TRK-')) {
+        clean = clean.replace(/^AQT-TRK-/, '');
+      }
+      if (!clean.startsWith('AQT-')) {
+        clean = `AQT-${clean}`;
+      }
+
+      const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: { persistSession: false }
+      });
+
+      // Busca o registo canónico em crm_leads
+      let { data: lead, error: leadErr } = await adminClient
+        .from('crm_leads')
+        .select('id, lead_code, name, city, address, product_name, total_value, status, notes, history, receipt_storage_path, receipt_uploaded_at, created_at, updated_at')
+        .ilike('lead_code', clean)
+        .maybeSingle();
+
+      if (!lead) {
+        // Fallback para códigos numéricos ou busca aproximada
+        const numericPart = clean.replace(/\D/g, '');
+        if (numericPart.length >= 4) {
+          const { data: fallbackLeads } = await adminClient
+            .from('crm_leads')
+            .select('id, lead_code, name, city, address, product_name, total_value, status, notes, history, receipt_storage_path, receipt_uploaded_at, created_at, updated_at')
+            .ilike('lead_code', `%${numericPart}%`)
+            .limit(1);
+          if (fallbackLeads && fallbackLeads.length > 0) {
+            lead = fallbackLeads[0];
+          }
+        }
+      }
+
+      if (!lead) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            message: `Nenhuma encomenda encontrada com o código "${rawCode}". Verifique o código e tente novamente.`
+          }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const canonicalAqtCode = lead.lead_code || clean;
+      const canonicalTrackingNumber = `AQT-TRK-${canonicalAqtCode.replace(/^AQT-/, '')}`;
+
+      // Extração de data de confirmação do pagamento e previsão de entrega
+      const rawHistory = Array.isArray(lead.history) ? lead.history : [];
+      let paymentConfirmedAt: string | null = null;
+      let estimatedDeliveryDate = '3 dias úteis após validação do pagamento';
+
+      for (const h of rawHistory) {
+        const actionStr = (h.action || '').toLowerCase();
+        const detailsStr = (h.details || '').toLowerCase();
+        if (
+          actionStr.includes('pagamento') ||
+          actionStr.includes('confirmado') ||
+          actionStr.includes('agendada') ||
+          detailsStr.includes('pagamento validado')
+        ) {
+          paymentConfirmedAt = h.date || lead.updated_at;
+        }
+        if (detailsStr.includes('20/11/2026') || detailsStr.includes('agendada para') || detailsStr.includes('previsão')) {
+          const matchDate = h.details.match(/\d{2}\/\d{2}\/\d{4}/);
+          if (matchDate) estimatedDeliveryDate = matchDate[0];
+        }
+      }
+
+      if (lead.notes) {
+        const matchNoteDate = lead.notes.match(/(\d{2}\/\d{2}\/\d{4})/);
+        if (matchNoteDate) estimatedDeliveryDate = matchNoteDate[1];
+      }
+
+      // Mapeamento dos 7 estados oficiais a partir do estado CRM e histórico
+      let displayStatus = lead.status || 'Aguardando Pagamento';
+      if (lead.status === 'Novo Lead') {
+        displayStatus = lead.receipt_storage_path ? 'Comprovativo Recebido' : 'Aguardando Pagamento';
+      } else if (lead.status === 'Em Atendimento') {
+        displayStatus = 'Pendente de Confirmação';
+      } else if (lead.status === 'Venda Realizada') {
+        displayStatus = 'Encomenda Agendada';
+        for (const h of rawHistory) {
+          const act = (h.action || '').toLowerCase();
+          if (act.includes('entregue')) { displayStatus = 'Entregue'; break; }
+          if (act.includes('rota')) { displayStatus = 'Em Rota'; break; }
+          if (act.includes('preparação')) { displayStatus = 'Em Preparação'; break; }
+        }
+      }
+
+      if (['Encomenda Agendada', 'Em Preparação', 'Em Rota', 'Entregue', 'pago', 'Venda Realizada'].includes(lead.status)) {
+        if (!paymentConfirmedAt) paymentConfirmedAt = lead.updated_at || lead.created_at;
+      }
+
+      // Sanitização estrita de privacidade: Não expor telefone, endereço completo ou dados financeiros confidenciais
+      const nameParts = (lead.name || 'Cliente').trim().split(/\s+/);
+      const sanitizedName = nameParts.length > 1
+        ? `${nameParts[0]} ${nameParts[nameParts.length - 1][0]}.`
+        : nameParts[0];
+
+      const sanitizedCustomer = {
+        name: sanitizedName,
+        city: lead.city || 'Luanda',
+        province: (lead.city || 'Luanda').split('—')[0].trim()
+      };
+
+      const sanitizedHistory = rawHistory.map((h: any) => ({
+        date: h.date || '',
+        action: h.action || 'Actualização de Estado',
+        details: h.details
+          ? h.details
+              .replace(/\b\d{9}\b/g, '***')
+              .replace(/IBAN\s+[A-Z0-9.]+/gi, '***')
+              .replace(/motorista:[^|.]+/gi, '')
+          : ''
+      }));
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          order: {
+            orderCode: canonicalAqtCode,
+            trackingNumber: canonicalTrackingNumber,
+            product: lead.product_name || 'Produto AQUI TEM',
+            orderDate: lead.created_at,
+            status: displayStatus,
+            paymentConfirmedAt,
+            estimatedDeliveryDate,
+            history: sanitizedHistory,
+            hasReceipt: Boolean(lead.receipt_storage_path),
+            customer: sanitizedCustomer
+          }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'send-order-email') {
+      const emailPayload = body.emailData;
+      if (!emailPayload || !emailPayload.to) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Dados de emailData incompletos.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Dispara brevo-api passando o token de service_role do backend
+      const brevoEndpoint = `${supabaseUrl}/functions/v1/brevo-api`;
+      const brevoRes = await fetch(brevoEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseServiceRoleKey}`,
+          'apikey': supabaseServiceRoleKey
+        },
+        body: JSON.stringify({
+          action: 'send-email',
+          emailData: emailPayload
+        })
+      });
+
+      const brevoData = await brevoRes.json().catch(() => ({}));
+      return new Response(
+        JSON.stringify({
+          success: brevoRes.ok && Boolean(brevoData.success),
+          status: brevoRes.status,
+          brevoResult: brevoData
+        }),
+        { status: brevoRes.status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     if (!orderCode || typeof orderCode !== 'string' || !orderCode.trim()) {
       return new Response(
         JSON.stringify({ success: false, message: 'Código da encomenda (AQT-XXXX) é obrigatório.' }),

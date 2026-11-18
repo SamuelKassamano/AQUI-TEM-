@@ -1,8 +1,9 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { MessageCircle, ShieldCheck, MapPin, Phone, Mail, Clock } from 'lucide-react';
+import { MessageCircle } from 'lucide-react';
 
 import { useLanguage } from '../context/LanguageContext';
+import OriginalLogoImage from './OriginalLogoImage';
 
 export default function Footer() {
   const { t } = useLanguage();
@@ -10,10 +11,10 @@ export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-container">
-        {/* Line 1: Logo + Slogan + Direct WhatsApp */}
+        {/* Linha 1: Logo Branca sem fundo + Slogan + WhatsApp */}
         <div className="footer-line-main">
-          <Link to="/" className="footer-logo-link">
-            <img src="/logo.jpg" alt="AQUI TEM" height={34} className="footer-logo-png" />
+          <Link to="/" className="footer-logo-link" title="AQUI TEM Angola - Início">
+            <OriginalLogoImage src="logo.jpg" alt="AQUI TEM" height={24} white={true} className="footer-logo-white" />
           </Link>
           <span className="footer-slogan-text">{t('siteSlogan') || 'Tecnologia, Gadgets e Eletrodomésticos em Angola'}</span>
           <span className="footer-dot">•</span>
@@ -27,7 +28,7 @@ export default function Footer() {
           </a>
         </div>
 
-        {/* Line 2: Links para as 7 páginas independentes */}
+        {/* Linha 2: Links essenciais compactos */}
         <div className="footer-line-links">
           <Link to="/" className="footer-link-item">
             Início
@@ -54,7 +55,7 @@ export default function Footer() {
           </Link>
           <span className="footer-dot">•</span>
           <Link to="/perguntas-frequentes" className="footer-link-item">
-            Perguntas Frequentes
+            FAQ
           </Link>
           <span className="footer-dot">•</span>
           <Link to="/cliente" className="footer-link-item" style={{ color: '#ff6500', fontWeight: 700 }}>
@@ -62,10 +63,10 @@ export default function Footer() {
           </Link>
         </div>
 
-        {/* Line 3: Informações operacionais, localização e pagamento */}
+        {/* Linha 3: Informações operacionais e direitos reservados */}
         <div className="footer-line-bottom">
           <span>
-            © {new Date().getFullYear()} AQUI TEM Angola • Todos os direitos reservados • Produtos 100% Originais e Selados com Garantia • Multicaixa Express / Transferência Bancária • Avenida Fidel de Castro, Benfica - Zona Verde, Município Cabolombo, Luanda - Angola
+            © {new Date().getFullYear()} AQUI TEM Angola • Produtos 100% Originais com Garantia Oficial • Multicaixa Express / BFA • Luanda, Angola
           </span>
         </div>
       </div>

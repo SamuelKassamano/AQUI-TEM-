@@ -60,7 +60,8 @@ import {
 import { CATEGORIES } from '../../data/products';
 import { createSlug } from '../utils/slug';
 import { calculateEstimatedDeliveryDate } from '../utils/angolaLocations';
-import { updateOrderStatus } from '../utils/customerOrders';
+import { updateOrderStatus, getLocalOrders } from '../utils/customerOrders';
+import FinancialReceiptsManager from '../components/admin/FinancialReceiptsManager';
 
 
 const EMPTY_FORM = {
@@ -242,19 +243,20 @@ export default function AdminPage({ defaultTab = 'products' }) {
 
   const handleAdminViewReceipt = async (lead) => {
     try {
-      const orderCode = lead.leadCode || lead.lead_code;
+      const orderCode = lead.leadCode || lead.lead_code || lead.orderId || lead.id;
       if (!orderCode) {
-        showToast('Código de encomenda não associado a este lead.');
+        showToast('Código de encomenda não associado a este registo.');
         return;
       }
-      showToast('A gerar URL assinado de comprovativo...');
+      showToast('A gerar URL assinado de comprovativo no Supabase Storage...');
       if (!supabase?.functions) {
         throw new Error('Supabase client não configurado.');
       }
       const { data, error } = await supabase.functions.invoke('receipt-access', {
         body: {
           action: 'get-signed-url',
-          orderCode
+          orderCode,
+          storagePath: lead.receiptStoragePath || lead.receipt_storage_path || null
         }
       });
       if (error || !data?.success) {
@@ -262,7 +264,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
       }
       window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      showToast(`Erro no comprovativo: ${err.message}`);
+      showToast(`Erro ao abrir comprovativo: ${err.message}`);
     }
   };
 
@@ -315,22 +317,24 @@ export default function AdminPage({ defaultTab = 'products' }) {
       const orderCode = lead.leadCode || lead.lead_code || `AQT-${String(lead.id).slice(0, 6)}`;
       const calc = calculateEstimatedDeliveryDate(new Date(), 3);
       const trackingNumber = lead.trackingNumber || lead.tracking_number || `AQT-TRK-${orderCode}`;
+      const adminEmail = session?.user?.email || 'admin@aquitem.ao';
+      const formattedTimestamp = new Date().toLocaleString('pt-AO');
 
       showToast(`A confirmar pagamento e agendar entrega para ${calc.formattedDate}...`);
 
-      const note = `Pagamento validado e confirmado pelo administrador. Encomenda agendada para entrega estimada em ${calc.formattedDate} (3 dias úteis). Código de rastreio: ${trackingNumber}.`;
+      const note = `Pagamento aprovado pelo administrador (${adminEmail}) em ${formattedTimestamp}. Encomenda agendada para entrega estimada em ${calc.formattedDate} (3 dias úteis). Código de rastreio: ${trackingNumber}.`;
 
       await updateLeadStatus(lead.id, 'Encomenda Agendada', note);
 
       // Sincronizar com o gestor de encomendas local
       updateOrderStatus(orderCode, 'Encomenda Agendada', null, trackingNumber, calc.formattedDate);
 
-      // Envio de notificação Brevo de pagamento confirmado
+      // Envio automático de confirmação pelo Brevo
       if (lead.email && lead.email.includes('@')) {
         const orderDateStr = lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO');
         const totalNum = Number(lead.totalValue || 0);
         const prodPrice = Number(lead.productPrice || totalNum);
-        const deliveryFee = totalNum > prodPrice ? (totalNum - prodPrice) : 0;
+        const deliveryFee = Math.max(totalNum > prodPrice ? (totalNum - prodPrice) : 3000, 3000);
 
         sendBrevoTransactionalEmail({
           templateType: 'payment_confirmed',
@@ -375,7 +379,10 @@ export default function AdminPage({ defaultTab = 'products' }) {
       );
       if (reason === null) return;
 
-      const note = `Comprovativo rejeitado pela administração. Motivo: ${reason || 'Comprovativo não validado'}. Estado revertido para Aguardando Pagamento.`;
+      const adminEmail = session?.user?.email || 'admin@aquitem.ao';
+      const formattedTimestamp = new Date().toLocaleString('pt-AO');
+      const note = `Comprovativo rejeitado pelo administrador (${adminEmail}) em ${formattedTimestamp}. Motivo: ${reason || 'Comprovativo não validado'}. Pagamento mantido pendente.`;
+      
       await updateLeadStatus(lead.id, 'Aguardando Pagamento', note);
 
       const orderCode = lead.leadCode || lead.lead_code;
@@ -383,11 +390,106 @@ export default function AdminPage({ defaultTab = 'products' }) {
         updateOrderStatus(orderCode, 'Aguardando Pagamento');
       }
 
-      showToast(`Comprovativo rejeitado. Estado revertido para Aguardando Pagamento.`);
+      // Notificar cliente por e-mail via Brevo
+      if (lead.email && lead.email.includes('@')) {
+        sendBrevoTransactionalEmail({
+          templateType: 'receipt_rejected',
+          to: lead.email,
+          recipientName: lead.name,
+          orderData: {
+            id: orderCode,
+            customerName: lead.name,
+            reason: reason || 'Comprovativo ilegível ou divergente'
+          }
+        }).catch(err => console.warn('Aviso envio Brevo rejeição:', err));
+      }
+
+      showToast(`Comprovativo rejeitado. Pagamento mantido pendente.`);
     } catch (err) {
       showToast(`Erro ao rejeitar comprovativo: ${err.message}`);
     }
   };
+
+  // ==============================================================
+  // Gestão de Comprovativos: Estados & Memos
+  // ==============================================================
+  const [receiptFilter, setReceiptFilter] = useState('all');
+  const [receiptSearch, setReceiptSearch] = useState('');
+
+  const receiptLeads = useMemo(() => {
+    const localOrders = getLocalOrders() || [];
+    const localWithReceipts = localOrders.filter(o => Boolean(o.receiptAttached || o.receiptStoragePath || o.receiptFileName));
+
+    const crmReceipts = (leads || []).filter(lead => {
+      const hasPath = Boolean(lead.receiptStoragePath || lead.receipt_storage_path);
+      const isReceiptStatus = lead.status === 'Comprovativo Recebido' || lead.status === 'Pendente de Confirmação';
+      const notesReceipt = lead.notes && (
+        lead.notes.toLowerCase().includes('comprovativo') ||
+        lead.notes.toLowerCase().includes('payment-receipts') ||
+        lead.notes.toLowerCase().includes('receipt')
+      );
+      return hasPath || isReceiptStatus || notesReceipt;
+    });
+
+    const seenCodes = new Set();
+    const result = [];
+
+    for (const lead of crmReceipts) {
+      const code = lead.leadCode || lead.lead_code || lead.id;
+      seenCodes.add(code);
+      result.push(lead);
+    }
+
+    for (const ord of localWithReceipts) {
+      if (!seenCodes.has(ord.id)) {
+        seenCodes.add(ord.id);
+        result.push({
+          id: ord.id,
+          leadCode: ord.id,
+          name: ord.customer?.name || 'Cliente Local',
+          phone: ord.customer?.phone || '',
+          email: ord.customer?.email || '',
+          city: ord.customer?.province || ord.deliveryZone?.name || 'Luanda',
+          address: ord.customer?.address || '',
+          productName: ord.items?.map(i => `${i.quantity}x ${i.name}`).join(', ') || 'Produtos Diversos',
+          totalValue: ord.total,
+          paymentMethod: ord.paymentMethod,
+          status: ord.status || 'Comprovativo Recebido',
+          receiptStoragePath: ord.receiptStoragePath,
+          receiptFileName: ord.receiptFileName,
+          createdAt: ord.createdAt,
+          notes: ord.receiptData || 'Comprovativo submetido no checkout.',
+          history: ord.timeline || []
+        });
+      }
+    }
+
+    return result;
+  }, [leads]);
+
+  const pendingReceiptsCount = useMemo(() => {
+    return receiptLeads.filter(l => {
+      const st = l.status;
+      return st === 'Comprovativo Recebido' || st === 'Pendente de Confirmação' || st === 'Novo Lead' || st === 'Em Atendimento' || st === 'Aguardando Pagamento';
+    }).length;
+  }, [receiptLeads]);
+
+  const filteredReceiptLeads = useMemo(() => {
+    return receiptLeads.filter(lead => {
+      const isApproved = lead.status === 'Encomenda Agendada' || lead.status === 'Venda Realizada' || lead.status === 'Em Preparação' || lead.status === 'Em Rota' || lead.status === 'Entregue';
+      if (receiptFilter === 'pending' && isApproved) return false;
+      if (receiptFilter === 'approved' && !isApproved) return false;
+
+      if (!receiptSearch.trim()) return true;
+      const q = receiptSearch.toLowerCase();
+      const code = (lead.leadCode || lead.lead_code || lead.id || '').toLowerCase();
+      const name = (lead.name || '').toLowerCase();
+      const phone = (lead.phone || '').toLowerCase();
+      const email = (lead.email || '').toLowerCase();
+      const prod = (lead.productName || '').toLowerCase();
+      return code.includes(q) || name.includes(q) || phone.includes(q) || email.includes(q) || prod.includes(q);
+    });
+  }, [receiptLeads, receiptFilter, receiptSearch]);
 
   useEffect(() => {
     document.title = 'Painel Administrativo & CRM | AQUI TEM Angola';
@@ -1651,6 +1753,18 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
               </>
             )}
 
+            {currentTab === 'comprovativos' && (
+              <button
+                className="nav-btn"
+                onClick={refreshCRMData}
+                disabled={isLoadingLeads}
+                title="Recarregar comprovativos do Supabase"
+              >
+                <RefreshCw size={15} className={isLoadingLeads ? 'animate-spin' : ''} />
+                Atualizar Comprovativos
+              </button>
+            )}
+
             <Link to="/" className="nav-btn" style={{ textDecoration: 'none' }}>
               <ArrowLeft size={15} /> Ver Loja
             </Link>
@@ -1721,6 +1835,31 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
             {crmStats.novos > 0 && (
               <span style={{ background: '#F37021', color: '#FFF', padding: '2px 7px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 800 }}>
                 {crmStats.novos} novos
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setTab('comprovativos')}
+            style={{
+              padding: '12px 18px',
+              border: 'none',
+              background: 'transparent',
+              borderBottom: currentTab === 'comprovativos' ? '3px solid #F37021' : '3px solid transparent',
+              color: currentTab === 'comprovativos' ? '#F37021' : 'var(--text-muted)',
+              fontWeight: currentTab === 'comprovativos' ? 800 : 600,
+              fontSize: '0.92rem',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <FileText size={17} /> Gestão de Comprovativos ({receiptLeads.length})
+            {pendingReceiptsCount > 0 && (
+              <span style={{ background: '#0284c7', color: '#FFF', padding: '2px 7px', borderRadius: '10px', fontSize: '0.72rem', fontWeight: 800 }}>
+                {pendingReceiptsCount} pendentes
               </span>
             )}
           </button>
@@ -2532,6 +2671,19 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
               </div>
             )}
           </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ABA: GESTÃO DE COMPROVATIVOS FINANCEIROS (CENTRO DE CONTROLO) */}
+        {/* ============================================================== */}
+        {currentTab === 'comprovativos' && (
+          <FinancialReceiptsManager
+            leads={leads}
+            session={session}
+            updateLeadStatus={updateLeadStatus}
+            refreshCRMData={refreshCRMData}
+            showToast={showToast}
+          />
         )}
 
         {/* ============================================================== */}
