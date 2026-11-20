@@ -731,7 +731,7 @@ async function validateOrderRecipient(
     const cleanId = orderId.trim();
     const { data: leads, error } = await adminClient
       .from('crm_leads')
-      .select('id, lead_code, notes, history')
+      .select('id, lead_code, notes, history, email')
       .or(`lead_code.eq.${cleanId},notes.ilike.%${cleanId}%`)
       .limit(5);
 
@@ -739,9 +739,11 @@ async function validateOrderRecipient(
       return { valid: false, reason: `Encomenda #${cleanId} não encontrada no registo oficial de pedidos.` };
     }
 
-    // Conferir se a encomenda coincide pelo código ou notas
+    // Conferir se a encomenda coincide pelo código ou notas ou e-mail
     const matchedLead = leads.find(l => {
       const rawNotes = (l.notes || '').toLowerCase();
+      const leadEmail = ((l as any).email || '').toLowerCase().trim();
+      if (leadEmail && (leadEmail === normalizedTarget || leadEmail.includes(normalizedTarget) || normalizedTarget.includes(leadEmail))) return true;
       if (rawNotes.includes(normalizedTarget)) return true;
       if ((l.lead_code || '').trim().toUpperCase() === cleanId.toUpperCase()) return true;
       return false;
@@ -1064,16 +1066,38 @@ Deno.serve(async (req: Request) => {
         // PONTO DE SEGURANÇA 1: Proteger contra disparo arbitrário por visitantes anónimos
         const isAdmin = await verifyAdminAuth(req, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey);
 
-        // Bloqueio A: Se o template for de transição de estado da encomenda, APENAS ADMIN pode disparar
+        // Bloqueio A: Se o template for de transição de estado da encomenda, validar se é admin ou titular da encomenda
         if (ADMIN_LIFECYCLE_TEMPLATES.includes(templateType)) {
           if (!isAdmin) {
-            return new Response(JSON.stringify({
-              success: false,
-              error: `Acesso negado: O evento de notificação '${templateType}' exige perfil administrativo autenticado.`
-            }), {
-              status: 403,
-              headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-            });
+            const orderId = emailData.orderData?.id;
+            if (!orderId || !orderId.trim()) {
+              return new Response(JSON.stringify({
+                success: false,
+                error: `Acesso negado: O evento de notificação '${templateType}' exige perfil administrativo autenticado.`
+              }), {
+                status: 403,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              });
+            }
+
+            // Fallback de segurança: conferir legitimidade da encomenda na BD
+            orderValidation = await validateOrderRecipient(
+              orderId,
+              recipientEmail,
+              templateType,
+              supabaseUrl,
+              supabaseServiceRoleKey
+            );
+
+            if (!orderValidation.valid) {
+              return new Response(JSON.stringify({
+                success: false,
+                error: `Acesso negado: Perfil não autorizado e encomenda '${orderId}' não confirmada para o destinatário indicado (${orderValidation.reason}).`
+              }), {
+                status: 403,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+              });
+            }
           }
         }
 

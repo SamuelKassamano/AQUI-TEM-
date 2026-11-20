@@ -338,7 +338,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
         const prodPrice = Number(lead.productPrice || totalNum);
         const deliveryFee = Math.max(totalNum > prodPrice ? (totalNum - prodPrice) : 3000, 3000);
 
-        sendBrevoTransactionalEmail({
+        const emailRes = await sendBrevoTransactionalEmail({
           templateType: 'payment_confirmed',
           to: customerEmail,
           recipientName: lead.name,
@@ -363,11 +363,18 @@ export default function AdminPage({ defaultTab = 'products' }) {
             trackingNumber,
             estimatedDeliveryDate: calc.formattedDate
           },
-          deduplicationKey: `payment_confirmed-${orderCode}`
-        }).catch(e => console.warn('Aviso no envio Brevo:', e));
-      }
+          deduplicationKey: `payment_confirmed-${orderCode}`,
+          force: true
+        });
 
-      showToast(`✓ Pagamento de ${lead.name} aprovado! Encomenda agendada para ${calc.formattedDate}.`);
+        if (emailRes?.success) {
+          showToast(`✓ Pagamento de ${lead.name} aprovado! E-mail oficial enviado via Brevo.`);
+        } else {
+          showToast(`✓ Pagamento de ${lead.name} aprovado na BD! Aviso Brevo: ${emailRes?.error || 'pendente'}`);
+        }
+      } else {
+        showToast(`✓ Pagamento de ${lead.name} aprovado! Encomenda agendada para ${calc.formattedDate}.`);
+      }
     } catch (err) {
       showToast(`Erro ao aprovar pagamento: ${err.message}`);
     }
@@ -2541,7 +2548,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                     const totalNum = Number(lead.totalValue || 0);
                                     const prodPrice = Number(lead.productPrice || totalNum);
                                     const deliveryFee = totalNum > prodPrice ? (totalNum - prodPrice) : 3000;
-                                    sendBrevoTransactionalEmail({
+                                    const emailRes = await sendBrevoTransactionalEmail({
                                       templateType: tpl,
                                       to: customerEmail,
                                       recipientName: lead.name,
@@ -2566,8 +2573,15 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                         trackingNumber,
                                         estimatedDeliveryDate: calc.formattedDate
                                       },
-                                      deduplicationKey: `crm-status-${lead.id}-${newSt}`
-                                    }).catch(bErr => console.warn('Aviso no envio Brevo pelo CRM:', bErr));
+                                      deduplicationKey: `crm-status-${lead.id}-${newSt}`,
+                                      force: true
+                                    });
+
+                                    if (emailRes?.success) {
+                                      showToast(`✓ Estado alterado para ${newSt} e e-mail Brevo disparado (${emailRes.messageId || 'OK'})`);
+                                    } else {
+                                      showToast(`Estado alterado para ${newSt}. Aviso e-mail: ${emailRes?.error || 'Não enviado'}`);
+                                    }
                                   }
                                 }
                               } catch (err) {

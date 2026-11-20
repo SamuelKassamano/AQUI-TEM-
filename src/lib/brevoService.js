@@ -3,7 +3,7 @@
 // Ficheiro: src/lib/brevoService.js
 // ==============================================================================
 
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase.js';
+import { supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase.js';
 
 const BREVO_NOTIFICATIONS_STORAGE_KEY = 'aquitem_brevo_notifications_log_v1';
 const BREVO_PROCESSED_EVENTS_KEY = 'aquitem_brevo_processed_events_v1';
@@ -11,13 +11,21 @@ const BREVO_PROCESSED_EVENTS_KEY = 'aquitem_brevo_processed_events_v1';
 /**
  * Retorna os cabeçalhos de autorização padrão para invocar a Edge Function do Brevo.
  */
-function getBrevoFunctionHeaders() {
+async function getBrevoFunctionHeaders() {
   const headers = {
     'Content-Type': 'application/json',
     'apikey': SUPABASE_PUBLISHABLE_KEY
   };
 
   try {
+    if (supabase?.auth) {
+      const { data } = await supabase.auth.getSession();
+      if (data?.session?.access_token) {
+        headers['Authorization'] = `Bearer ${data.session.access_token}`;
+        return headers;
+      }
+    }
+
     const rawAuth = localStorage.getItem('sb-essjwjbtzytefycjodgh-auth-token');
     if (rawAuth) {
       const parsed = JSON.parse(rawAuth);
@@ -51,6 +59,7 @@ function getBrevoFunctionHeaders() {
  */
 export function getBrevoNotificationLog() {
   try {
+    if (typeof localStorage === 'undefined' || !localStorage.getItem) return [];
     const raw = localStorage.getItem(BREVO_NOTIFICATIONS_STORAGE_KEY);
     return raw ? JSON.parse(raw) : [];
   } catch (_e) {
@@ -86,8 +95,10 @@ function logBrevoNotification({
       payload: payload || null
     };
 
-    const updated = [newEntry, ...existing.slice(0, 199)]; // Mantém os últimos 200 registos
-    localStorage.setItem(BREVO_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updated));
+    if (typeof localStorage !== 'undefined' && localStorage.setItem) {
+      const updated = [newEntry, ...existing.slice(0, 199)]; // Mantém os últimos 200 registos
+      localStorage.setItem(BREVO_NOTIFICATIONS_STORAGE_KEY, JSON.stringify(updated));
+    }
     return newEntry;
   } catch (e) {
     console.warn('Aviso: Falha ao registar notificação Brevo no histórico local:', e);
@@ -101,6 +112,7 @@ function logBrevoNotification({
 function isEventAlreadyProcessed(eventId) {
   if (!eventId) return false;
   try {
+    if (typeof localStorage === 'undefined' || !localStorage.getItem) return false;
     const raw = localStorage.getItem(BREVO_PROCESSED_EVENTS_KEY);
     const set = raw ? JSON.parse(raw) : [];
     return set.includes(eventId);
@@ -115,6 +127,7 @@ function isEventAlreadyProcessed(eventId) {
 function markEventAsProcessed(eventId) {
   if (!eventId) return;
   try {
+    if (typeof localStorage === 'undefined' || !localStorage.setItem) return;
     const raw = localStorage.getItem(BREVO_PROCESSED_EVENTS_KEY);
     const list = raw ? JSON.parse(raw) : [];
     if (!list.includes(eventId)) {
@@ -164,7 +177,7 @@ export async function syncBrevoContact({
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: getBrevoFunctionHeaders(),
+      headers: await getBrevoFunctionHeaders(),
       body: JSON.stringify({
         action: 'sync-contact',
         contact: contactData
@@ -210,12 +223,20 @@ export async function sendBrevoTransactionalEmail({
   orderData,
   cartData,
   customMessage,
-  deduplicationKey
+  deduplicationKey,
+  force = false
 }) {
   if (!to || !to.includes('@')) return { success: false, error: 'E-mail inválido.' };
 
-  // Controlo de duplicação por chave (ex: receipt_submitted-AQT-1002)
-  if (deduplicationKey && isEventAlreadyProcessed(deduplicationKey)) {
+  const isLifecycleTemplate = [
+    'payment_confirmed',
+    'order_processing',
+    'order_shipped',
+    'order_delivered'
+  ].includes(templateType);
+
+  // Controlo de duplicação por chave (com bypass se force: true ou para templates de transição de estado da encomenda)
+  if (!force && !isLifecycleTemplate && deduplicationKey && isEventAlreadyProcessed(deduplicationKey)) {
     return {
       success: true,
       duplicatePrevented: true,
@@ -223,7 +244,8 @@ export async function sendBrevoTransactionalEmail({
     };
   }
 
-  const endpoint = `${SUPABASE_URL}/functions/v1/brevo-api`;
+  const directEndpoint = `${SUPABASE_URL}/functions/v1/brevo-api`;
+  const receiptAccessEndpoint = `${SUPABASE_URL}/functions/v1/receipt-access`;
   const emailPayload = {
     templateType,
     to: to.trim().toLowerCase(),
@@ -257,88 +279,112 @@ export async function sendBrevoTransactionalEmail({
     };
   }
 
-  try {
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: getBrevoFunctionHeaders(),
-      body: JSON.stringify({
-        action: 'send-email',
-        emailData: emailPayload
-      }),
-      signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined
-    });
+  let isSuccess = false;
+  let responseJson = null;
 
-    if (!response.ok && (response.status === 404 || response.status >= 500)) {
-      const simulatedMsgId = `<simulated-local-${Date.now()}@aquitem.ao>`;
-      const logEntry = logBrevoNotification({
-        templateType,
-        recipientEmail: to,
-        subject: `E-mail: ${templateType} (Modo Local/Simulado)`,
-        status: 'SIMULATED',
-        messageId: simulatedMsgId,
-        payload: emailPayload
+  // CANAL 1 (Prioritário para ciclo de vida / aprovações / despacho / preparação):
+  // Dispara via Edge Function 'receipt-access' com ação 'send-order-email', que utiliza a chave
+  // de serviço (service_role) do backend no servidor Supabase, garantindo autenticação 100% fiável.
+  if (isLifecycleTemplate) {
+    try {
+      const receiptResp = await fetch(receiptAccessEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': SUPABASE_PUBLISHABLE_KEY
+        },
+        body: JSON.stringify({
+          action: 'send-order-email',
+          emailData: emailPayload
+        }),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined
       });
 
-      if (deduplicationKey) {
-        markEventAsProcessed(deduplicationKey);
+      if (receiptResp.ok) {
+        const receiptData = await receiptResp.json().catch(() => ({}));
+        if (receiptData.success && receiptData.brevoResult) {
+          isSuccess = true;
+          responseJson = receiptData.brevoResult;
+        }
       }
-
-      return {
-        success: true,
-        simulated: true,
-        fallback: true,
-        messageId: simulatedMsgId,
-        logId: logEntry?.id
-      };
+    } catch (receiptErr) {
+      console.warn('Aviso: Falha ao enviar via canal receipt-access, tentando canal directo brevo-api:', receiptErr);
     }
-
-    const json = await response.json().catch(() => ({}));
-    const isSuccess = response.ok && json.success;
-
-    const logEntry = logBrevoNotification({
-      templateType,
-      recipientEmail: to,
-      subject: json.subject || `E-mail: ${templateType}`,
-      status: isSuccess ? (json.simulated ? 'SIMULATED' : 'SENT') : 'FAILED',
-      messageId: json.messageId || null,
-      error: isSuccess ? null : (json.error || 'Erro na resposta do servidor'),
-      payload: emailPayload
-    });
-
-    if (isSuccess && deduplicationKey) {
-      markEventAsProcessed(deduplicationKey);
-    }
-
-    return {
-      success: isSuccess,
-      simulated: json.simulated ?? false,
-      messageId: json.messageId,
-      logId: logEntry?.id
-    };
-  } catch (err) {
-    // Salvaguarda Fail-Safe: Se a rede falhar, gera registo simulado e prossegue sem bloquear a compra
-    const simulatedMsgId = `<simulated-local-${Date.now()}@aquitem.ao>`;
-    const logEntry = logBrevoNotification({
-      templateType,
-      recipientEmail: to,
-      subject: `E-mail: ${templateType} (Modo Local/Simulado)`,
-      status: 'SIMULATED',
-      messageId: simulatedMsgId,
-      payload: emailPayload
-    });
-
-    if (deduplicationKey) {
-      markEventAsProcessed(deduplicationKey);
-    }
-
-    return {
-      success: true,
-      simulated: true,
-      fallback: true,
-      messageId: simulatedMsgId,
-      logId: logEntry?.id
-    };
   }
+
+  // CANAL 2: Disparo directo via Edge Function 'brevo-api'
+  if (!isSuccess) {
+    try {
+      const headers = await getBrevoFunctionHeaders();
+      const response = await fetch(directEndpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'send-email',
+          emailData: emailPayload
+        }),
+        signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined
+      });
+
+      const json = await response.json().catch(() => ({}));
+
+      if (response.ok && json.success) {
+        isSuccess = true;
+        responseJson = json;
+      } else if (!isLifecycleTemplate && (response.status === 403 || response.status === 401)) {
+        // Fallback para receipt-access caso falhe por autorização
+        try {
+          const fallbackResp = await fetch(receiptAccessEndpoint, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_PUBLISHABLE_KEY
+            },
+            body: JSON.stringify({
+              action: 'send-order-email',
+              emailData: emailPayload
+            }),
+            signal: AbortSignal.timeout ? AbortSignal.timeout(15000) : undefined
+          });
+
+          if (fallbackResp.ok) {
+            const fbData = await fallbackResp.json().catch(() => ({}));
+            if (fbData.success && fbData.brevoResult) {
+              isSuccess = true;
+              responseJson = fbData.brevoResult;
+            }
+          }
+        } catch (_fbErr) {}
+      } else {
+        responseJson = json;
+      }
+    } catch (err) {
+      console.warn('Aviso no envio directo brevo-api:', err);
+    }
+  }
+
+  // Registo no histórico local
+  const logEntry = logBrevoNotification({
+    templateType,
+    recipientEmail: to,
+    subject: responseJson?.subject || `E-mail: ${templateType}`,
+    status: isSuccess ? (responseJson?.simulated ? 'SIMULATED' : 'SENT') : 'FAILED',
+    messageId: responseJson?.messageId || null,
+    error: isSuccess ? null : (responseJson?.error || 'Erro na resposta do servidor Brevo'),
+    payload: emailPayload
+  });
+
+  if (isSuccess && deduplicationKey) {
+    markEventAsProcessed(deduplicationKey);
+  }
+
+  return {
+    success: isSuccess,
+    simulated: responseJson?.simulated ?? false,
+    messageId: responseJson?.messageId,
+    logId: logEntry?.id,
+    error: isSuccess ? null : (responseJson?.error || 'Falha ao disparar e-mail transaccional')
+  };
 }
 
 /**
@@ -361,7 +407,7 @@ export async function trackBrevoCommerceEvent({ eventName, email, properties = {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: getBrevoFunctionHeaders(),
+      headers: await getBrevoFunctionHeaders(),
       body: JSON.stringify({
         action: 'track-event',
         eventData: {
@@ -432,7 +478,7 @@ export async function fetchBrevoAnalytics() {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: getBrevoFunctionHeaders(),
+      headers: await getBrevoFunctionHeaders(),
       body: JSON.stringify({ action: 'analytics' })
     });
 
@@ -472,7 +518,7 @@ export async function fetchBrevoEmailStats() {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: getBrevoFunctionHeaders(),
+      headers: await getBrevoFunctionHeaders(),
       body: JSON.stringify({ action: 'email-stats' })
     });
 
@@ -523,7 +569,7 @@ export async function fetchBrevoTemplates() {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: getBrevoFunctionHeaders(),
+      headers: await getBrevoFunctionHeaders(),
       body: JSON.stringify({ action: 'get-templates' })
     });
 
@@ -626,7 +672,7 @@ export async function saveBrevoTemplates(templates) {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: getBrevoFunctionHeaders(),
+      headers: await getBrevoFunctionHeaders(),
       body: JSON.stringify({
         action: 'save-templates',
         templates
@@ -679,7 +725,7 @@ export async function sendBrevoTestEmail({ to, templateType = 'order_confirmatio
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: getBrevoFunctionHeaders(),
+      headers: await getBrevoFunctionHeaders(),
       body: JSON.stringify({
         action: 'test-email',
         testData: {

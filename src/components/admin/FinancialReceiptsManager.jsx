@@ -421,7 +421,7 @@ export default function FinancialReceiptsManager({
         const orderDateStr = lead.createdAt ? new Date(lead.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO');
         const prodPrice = Number(lead.productPrice || lead.totalValue);
 
-        sendBrevoTransactionalEmail({
+        const emailRes = await sendBrevoTransactionalEmail({
           templateType: 'payment_confirmed',
           to: customerEmail,
           recipientName: lead.name,
@@ -446,11 +446,18 @@ export default function FinancialReceiptsManager({
             trackingNumber: trackingCode,
             estimatedDeliveryDate: calc.formattedDate
           },
-          deduplicationKey: `payment_confirmed-${lead.orderCode}`
-        }).catch(err => console.warn('Aviso no envio de e-mail Brevo:', err));
-      }
+          deduplicationKey: `payment_confirmed-${lead.orderCode}`,
+          force: true
+        });
 
-      showToast(`✓ Pagamento da encomenda #${lead.orderCode} aprovado com sucesso!`);
+        if (emailRes?.success) {
+          showToast(`✓ Pagamento da encomenda #${lead.orderCode} aprovado! E-mail oficial enviado via Brevo.`);
+        } else {
+          showToast(`✓ Pagamento aprovado na BD! Aviso Brevo: ${emailRes?.error || 'e-mail em processamento'}`);
+        }
+      } else {
+        showToast(`✓ Pagamento da encomenda #${lead.orderCode} aprovado com sucesso!`);
+      }
       setApprovingLead(null);
       setApprovalNote('');
       if (selectedReceiptLead?.id === lead.id) {
@@ -505,7 +512,7 @@ export default function FinancialReceiptsManager({
         const orderDateStr = order.createdAt ? new Date(order.createdAt).toLocaleDateString('pt-AO') : new Date().toLocaleDateString('pt-AO');
         const prodPrice = Number(order.productPrice || order.totalValue);
 
-        await sendBrevoTransactionalEmail({
+        const emailRes = await sendBrevoTransactionalEmail({
           templateType,
           to: customerEmail,
           recipientName: order.name,
@@ -530,11 +537,18 @@ export default function FinancialReceiptsManager({
             trackingNumber: trackingCode,
             estimatedDeliveryDate: calc.formattedDate
           },
-          deduplicationKey: `${templateType}-${order.orderCode}`
-        }).catch(err => console.warn('Aviso no envio de e-mail Brevo transição:', err));
-      }
+          deduplicationKey: `${templateType}-${order.orderCode}`,
+          force: true
+        });
 
-      showToast(`✓ Estado da encomenda #${order.orderCode} alterado para "${targetStatus}"! E-mail oficial disparado.`);
+        if (emailRes?.success) {
+          showToast(`✓ Estado alterado para "${targetStatus}"! E-mail oficial disparado via Brevo.`);
+        } else {
+          showToast(`✓ Estado alterado para "${targetStatus}". Aviso Brevo: ${emailRes?.error || 'e-mail em processamento'}`);
+        }
+      } else {
+        showToast(`✓ Estado da encomenda #${order.orderCode} alterado para "${targetStatus}"!`);
+      }
       if (refreshCRMData) await refreshCRMData();
     } catch (err) {
       showToast(`Erro ao alterar estado: ${err.message}`);
