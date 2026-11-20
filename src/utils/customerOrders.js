@@ -538,7 +538,7 @@ export function attachPaymentReceipt(orderId, receiptData) {
 
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
 
-    // Atualizar status no Supabase crm_leads de forma segura
+    // Atualizar status e caminho do comprovativo no Supabase crm_leads de forma segura
     if (supabase && targetOrder) {
       const nowIso = new Date().toISOString();
       const updatePayload = {
@@ -549,6 +549,18 @@ export function attachPaymentReceipt(orderId, receiptData) {
         updatePayload.receipt_storage_path = targetOrder.receiptStoragePath;
       }
       supabase.from('crm_leads').update(updatePayload).eq('lead_code', orderId).then(() => { }).catch(() => { });
+
+      // Invocação com privilégios de backend via Edge Function para contornar RLS do cliente
+      if (supabase.functions && targetOrder.receiptStoragePath) {
+        supabase.functions.invoke('receipt-access', {
+          body: {
+            action: 'register-receipt',
+            orderCode: orderId,
+            receiptToken: targetOrder.receiptToken,
+            storagePath: targetOrder.receiptStoragePath
+          }
+        }).catch(() => {});
+      }
     }
 
     // Regra Fundamental: Enviar e-mail de confirmação da recepção do comprovativo

@@ -219,7 +219,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
         setBrevoStats(statsRes.stats);
       }
       setBrevoLogs(getBrevoNotificationLog());
-    } catch (_e) {}
+    } catch (_e) { }
     finally {
       setBrevoLogsLoading(false);
     }
@@ -245,10 +245,13 @@ export default function AdminPage({ defaultTab = 'products' }) {
   const handleAdminViewReceipt = async (lead) => {
     try {
       const orderCode = lead.leadCode || lead.lead_code || lead.orderId || lead.id;
-      if (!orderCode) {
-        showToast('Código de encomenda não associado a este registo.');
+      const sPath = lead.receiptStoragePath || lead.receipt_storage_path || null;
+
+      if (lead.receiptUrl) {
+        window.open(lead.receiptUrl, '_blank', 'noopener,noreferrer');
         return;
       }
+
       showToast('A gerar URL assinado de comprovativo no Supabase Storage...');
       if (!supabase?.functions) {
         throw new Error('Supabase client não configurado.');
@@ -257,13 +260,14 @@ export default function AdminPage({ defaultTab = 'products' }) {
         body: {
           action: 'get-signed-url',
           orderCode,
-          storagePath: lead.receiptStoragePath || lead.receipt_storage_path || null
+          storagePath: sPath
         }
       });
-      if (error || !data?.success) {
-        throw new Error(data?.message || error?.message || 'Falha ao aceder ao comprovativo.');
+      if (!error && data?.success && data?.signedUrl) {
+        window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+        return;
       }
-      window.open(data.signedUrl, '_blank', 'noopener,noreferrer');
+      throw new Error(data?.message || error?.message || 'Falha ao aceder ao comprovativo.');
     } catch (err) {
       showToast(`Erro ao abrir comprovativo: ${err.message}`);
     }
@@ -391,7 +395,7 @@ export default function AdminPage({ defaultTab = 'products' }) {
       const adminEmail = session?.user?.email || 'admin@aquitem.ao';
       const formattedTimestamp = new Date().toLocaleString('pt-AO');
       const note = `Comprovativo rejeitado pelo administrador (${adminEmail}) em ${formattedTimestamp}. Motivo: ${reason || 'Comprovativo não validado'}. Pagamento mantido pendente.`;
-      
+
       await updateLeadStatus(lead.id, 'Aguardando Pagamento', note);
 
       const orderCode = lead.leadCode || lead.lead_code;
@@ -739,11 +743,11 @@ export default function AdminPage({ defaultTab = 'products' }) {
 
   const isAuthenticated = Boolean(
     isSupabaseConfigured &&
-      supabase &&
-      session &&
-      session.user &&
-      session.access_token &&
-      isAdminRole
+    supabase &&
+    session &&
+    session.user &&
+    session.access_token &&
+    isAdminRole
   );
 
   // Filtered products
@@ -977,14 +981,14 @@ export default function AdminPage({ defaultTab = 'products' }) {
         price: numericPrice,
         sale_price:
           formData.sale_price !== '' &&
-          formData.sale_price !== null &&
-          Number(formData.sale_price) > 0
+            formData.sale_price !== null &&
+            Number(formData.sale_price) > 0
             ? Number(formData.sale_price)
             : null,
         old_price:
           formData.old_price !== '' &&
-          formData.old_price !== null &&
-          Number(formData.old_price) > 0
+            formData.old_price !== null &&
+            Number(formData.old_price) > 0
             ? Number(formData.old_price)
             : null,
         stock: Number.isFinite(parsedStock) && parsedStock >= 0 ? parsedStock : 0,
@@ -2598,10 +2602,10 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                                 lead.status === 'Encomenda Agendada' || lead.status === 'Venda Realizada' || lead.status === 'Entregue'
                                   ? '#16A34A'
                                   : lead.status === 'Comprovativo Recebido' || lead.status === 'Pendente de Confirmação'
-                                  ? '#0284c7'
-                                  : lead.status === 'Aguardando Pagamento' || lead.status === 'Novo Lead'
-                                  ? '#D97706'
-                                  : 'var(--border-light)'
+                                    ? '#0284c7'
+                                    : lead.status === 'Aguardando Pagamento' || lead.status === 'Novo Lead'
+                                      ? '#D97706'
+                                      : 'var(--border-light)'
                             }}
                           >
                             {crmStatusList.map(s => (
@@ -2920,7 +2924,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                     margin: 0
                   }}
                 >
-{`{
+                  {`{
   "event": "lead.captured",
   "timestamp": "2026-10-15T21:00:00.000Z",
   "site": "AQUI TEM Angola",
@@ -3062,7 +3066,7 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
                       <strong>Como autorizar na tabela <code>public.admin_users</code>:</strong>
                       <p style={{ margin: '4px 0 8px 0' }}>Execute o seguinte comando no SQL Editor do Supabase para atribuir privilégios ao seu utilizador:</p>
                       <pre style={{ margin: 0, padding: '8px', background: '#f8fafc', borderRadius: '6px', fontSize: '0.75rem', overflowX: 'auto' }}>
-{`INSERT INTO public.admin_users (id, email, role)
+                        {`INSERT INTO public.admin_users (id, email, role)
 VALUES ('${session?.user?.id || '<ID_DO_UTILIZADOR>'}', '${session?.user?.email || 'email@dominio.com'}', 'super_admin')
 ON CONFLICT (id) DO UPDATE SET role = 'super_admin';`}
                       </pre>

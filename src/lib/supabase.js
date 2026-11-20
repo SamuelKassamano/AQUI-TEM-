@@ -827,7 +827,7 @@ export function getEffectivePrice(product) {
                   storedPath = uploadData.path;
 
                   // Registo atómico no backend via Edge Function receipt-access
-                  if (receiptToken && supabase.functions) {
+                  if (supabase?.functions) {
                     try {
                       const { data: regData } = await supabase.functions.invoke('receipt-access', {
                         body: {
@@ -838,13 +838,15 @@ export function getEffectivePrice(product) {
                         }
                       });
 
-                      if (regData?.success) {
+                      if (regData?.signedUrl) {
+                        signedUrl = regData.signedUrl;
+                      } else if (regData?.success) {
                         const { data: signData } = await supabase.functions.invoke('receipt-access', {
                           body: {
                             action: 'get-signed-url',
                             orderCode: cleanOrderId,
-                            receiptToken,
-                            expiresIn: 1800
+                            storagePath: storedPath,
+                            expiresIn: 3600
                           }
                         });
                         if (signData?.signedUrl) {

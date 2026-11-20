@@ -43,7 +43,7 @@ export default function FinancialReceiptsManager({
   session = null,
   updateLeadStatus,
   refreshCRMData,
-  showToast = () => {}
+  showToast = () => { }
 }) {
   // Navegação interna do módulo
   // Abas: visao-geral | novos | pendentes | aprovados | rejeitados | armazenamento | auditoria | relatorios
@@ -66,6 +66,8 @@ export default function FinancialReceiptsManager({
   const [galleryStatusFilter, setGalleryStatusFilter] = useState('all'); // 'all' | 'pending' | 'approved' | 'rejected'
   const [cachedSignedUrls, setCachedSignedUrls] = useState({});
   const [loadingGalleryUrls, setLoadingGalleryUrls] = useState(false);
+  const [storageReceipts, setStorageReceipts] = useState([]);
+  const [loadingStorageReceipts, setLoadingStorageReceipts] = useState(false);
 
   // Modal de Aprovação com Confirmação Explícita
   const [approvingLead, setApprovingLead] = useState(null);
@@ -254,9 +256,22 @@ export default function FinancialReceiptsManager({
   // PROCESSAMENTO EXCLUSIVO DA GALERIA & ARMAZENAMENTO DE COMPROVATIVOS
   // ---------------------------------------------------------------------------
   const galleryOrders = useMemo(() => {
-    return receiptOrders.filter(ord => {
+    // Unifica comprovativos directos do storage com os do CRM
+    const combined = [...storageReceipts];
+    const seenPaths = new Set(storageReceipts.map(r => r.storagePath).filter(Boolean));
+
+    for (const ord of receiptOrders) {
+      if (ord.storagePath && !seenPaths.has(ord.storagePath)) {
+        seenPaths.add(ord.storagePath);
+        combined.push(ord);
+      } else if (!ord.storagePath && ord.hasReceipt) {
+        combined.push(ord);
+      }
+    }
+
+    return combined.filter(ord => {
       // Filtrar registos com comprovativo anexado ou pendente de validação
-      const hasDoc = ord.hasReceipt || Boolean(ord.storagePath);
+      const hasDoc = ord.hasReceipt || Boolean(ord.storagePath) || Boolean(ord.signedUrl);
       if (!hasDoc) return false;
 
       // Filtro por Formato (Imagens vs PDFs)
@@ -272,50 +287,45 @@ export default function FinancialReceiptsManager({
       if (gallerySearch.trim()) {
         const q = gallerySearch.toLowerCase().trim();
         const code = (ord.orderCode || '').toLowerCase();
-        const name = (ord.name || '').toLowerCase();
-        const phone = (ord.phone || '').toLowerCase();
-        const email = (ord.email || '').toLowerCase();
+        const name = (ord.customerName || ord.name || '').toLowerCase();
+        const phone = (ord.customerPhone || ord.phone || '').toLowerCase();
+        const email = (ord.customerEmail || ord.email || '').toLowerCase();
         const file = (ord.fileName || '').toLowerCase();
         return code.includes(q) || name.includes(q) || phone.includes(q) || email.includes(q) || file.includes(q);
       }
 
       return true;
     });
-  }, [receiptOrders, galleryFilter, galleryStatusFilter, gallerySearch]);
+  }, [receiptOrders, storageReceipts, galleryFilter, galleryStatusFilter, gallerySearch]);
 
-  // Pré-geração e cache de URLs assinados seguros para a Galeria
-  useEffect(() => {
-    if (activeTab === 'armazenamento') {
-      const pendingFetch = galleryOrders.filter(o => o.storagePath && !cachedSignedUrls[o.storagePath]);
-      if (pendingFetch.length > 0) {
-        setLoadingGalleryUrls(true);
-        pendingFetch.forEach(async (ord) => {
-          try {
-            if (supabase?.storage) {
-              const { data: signRes } = await supabase.storage
-                .from('payment-receipts')
-                .createSignedUrl(ord.storagePath, 3600);
-              if (signRes?.signedUrl) {
-                setCachedSignedUrls(prev => ({ ...prev, [ord.storagePath]: signRes.signedUrl }));
-                return;
-              }
-            }
-            if (supabase?.functions) {
-              const { data: fnRes } = await supabase.functions.invoke('receipt-access', {
-                body: { action: 'get-signed-url', orderCode: ord.orderCode, storagePath: ord.storagePath, expiresIn: 3600 }
-              });
-              if (fnRes?.signedUrl) {
-                setCachedSignedUrls(prev => ({ ...prev, [ord.storagePath]: fnRes.signedUrl }));
-              }
-            }
-          } catch (_e) {
-          } finally {
-            setLoadingGalleryUrls(false);
+  // Carregar todos os comprovativos do bucket payment-receipts via Edge Function
+  const fetchStorageReceipts = useCallback(async () => {
+    if (!supabase?.functions) return;
+    try {
+      setLoadingStorageReceipts(true);
+      const { data, error } = await supabase.functions.invoke('receipt-access', {
+        body: { action: 'list-all-receipts' }
+      });
+      if (!error && data?.success && Array.isArray(data.receipts)) {
+        setStorageReceipts(data.receipts);
+        const urlMap = {};
+        data.receipts.forEach(r => {
+          if (r.storagePath && r.signedUrl) {
+            urlMap[r.storagePath] = r.signedUrl;
           }
         });
+        setCachedSignedUrls(prev => ({ ...prev, ...urlMap }));
       }
+    } catch (e) {
+      console.warn('Aviso ao carregar comprovativos do storage:', e);
+    } finally {
+      setLoadingStorageReceipts(false);
     }
-  }, [activeTab, galleryOrders, cachedSignedUrls]);
+  }, []);
+
+  useEffect(() => {
+    fetchStorageReceipts();
+  }, [fetchStorageReceipts]);
 
   // ---------------------------------------------------------------------------
   // CONSULTA DE URL ASSINADO SEGURO NO BACKEND (Storage Privado payment-receipts)
@@ -326,7 +336,21 @@ export default function FinancialReceiptsManager({
       setLoadingSignedUrl(true);
       setDocumentSignedUrl(null);
 
-      // 1. Tentar Edge Function oficial
+      // 1. Tentar URL directa já emitida
+      if (order.signedUrl) {
+        setDocumentSignedUrl(order.signedUrl);
+        setLoadingSignedUrl(false);
+        return;
+      }
+
+      // 2. Tentar cache local
+      if (order.storagePath && cachedSignedUrls[order.storagePath]) {
+        setDocumentSignedUrl(cachedSignedUrls[order.storagePath]);
+        setLoadingSignedUrl(false);
+        return;
+      }
+
+      // 3. Invocar Edge Function oficial receipt-access
       if (supabase?.functions) {
         const { data, error } = await supabase.functions.invoke('receipt-access', {
           body: {
@@ -346,16 +370,10 @@ export default function FinancialReceiptsManager({
         }
       }
 
-      // 2. Fallback resiliente para client direto Supabase Storage
-      if (supabase?.storage && order.storagePath) {
-        const { data: directData } = await supabase.storage
-          .from('payment-receipts')
-          .createSignedUrl(order.storagePath, 3600);
-        if (directData?.signedUrl) {
-          setDocumentSignedUrl(directData.signedUrl);
-          setCachedSignedUrls(prev => ({ ...prev, [order.storagePath]: directData.signedUrl }));
-          return;
-        }
+      // 4. Fallback directo se houver receiptUrl
+      if (order.receiptUrl) {
+        setDocumentSignedUrl(order.receiptUrl);
+        return;
       }
 
       throw new Error('Não foi possível gerar acesso seguro ao documento no bucket payment-receipts.');
@@ -364,7 +382,7 @@ export default function FinancialReceiptsManager({
     } finally {
       setLoadingSignedUrl(false);
     }
-  }, [showToast]);
+  }, [cachedSignedUrls, showToast]);
 
   const handleOpenReceiptDetail = (order) => {
     setSelectedReceiptLead(order);
@@ -948,8 +966,8 @@ export default function FinancialReceiptsManager({
                       border: isApproved
                         ? '1px solid rgba(22, 163, 74, 0.3)'
                         : isRejected
-                        ? '1px solid rgba(220, 38, 38, 0.3)'
-                        : '1px solid rgba(2, 132, 199, 0.3)',
+                          ? '1px solid rgba(220, 38, 38, 0.3)'
+                          : '1px solid rgba(2, 132, 199, 0.3)',
                       padding: '16px 18px',
                       display: 'grid',
                       gap: '12px',
@@ -1708,28 +1726,49 @@ export default function FinancialReceiptsManager({
                 </div>
               ) : documentSignedUrl ? (
                 <div>
-                  <div style={{ maxHeight: '280px', overflow: 'hidden', borderRadius: '8px', display: 'flex', justifyContent: 'center', background: '#000' }}>
-                    <img
-                      src={documentSignedUrl}
-                      alt="Comprovativo"
-                      style={{ maxHeight: '280px', width: 'auto', objectFit: 'contain' }}
-                      onError={(e) => {
-                        // Se for PDF ou falhar render de imagem, oculta preview inline
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                  <div style={{ textAlign: 'center', marginTop: '10px' }}>
-                    <a
-                      href={documentSignedUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="nav-btn"
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.80rem', textDecoration: 'none', background: '#0284c7', color: '#FFF' }}
-                    >
-                      <Download size={14} /> Visualizar / Descarregar Documento Completo
-                    </a>
-                  </div>
+                  {(selectedReceiptLead?.isPdf || selectedReceiptLead?.storagePath?.toLowerCase().endsWith('.pdf') || selectedReceiptLead?.fileName?.toLowerCase().endsWith('.pdf')) ? (
+                    <div style={{ padding: '26px 20px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '10px', textAlign: 'center' }}>
+                      <FileText size={44} color="#EF4444" style={{ margin: '0 auto 8px', display: 'block' }} />
+                      <div style={{ color: 'var(--text-main)', fontWeight: 800, fontSize: '0.92rem' }}>
+                        {selectedReceiptLead.fileName || 'Comprovativo_Pagamento.pdf'}
+                      </div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: '4px' }}>
+                        Documento Oficial em formato PDF • Guardado com Segurança no Supabase Storage
+                      </div>
+                      <div style={{ marginTop: '14px' }}>
+                        <a
+                          href={documentSignedUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="nav-btn"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.84rem', textDecoration: 'none', background: '#EF4444', color: '#FFF', fontWeight: 800, padding: '8px 18px', borderRadius: '8px' }}
+                        >
+                          <ExternalLink size={15} /> Abrir & Visualizar PDF Completo
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ maxHeight: '300px', overflow: 'hidden', borderRadius: '8px', display: 'flex', justifyContent: 'center', background: '#000' }}>
+                        <img
+                          src={documentSignedUrl}
+                          alt="Comprovativo"
+                          style={{ maxHeight: '300px', width: 'auto', objectFit: 'contain' }}
+                        />
+                      </div>
+                      <div style={{ textAlign: 'center', marginTop: '10px' }}>
+                        <a
+                          href={documentSignedUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="nav-btn"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.80rem', textDecoration: 'none', background: '#0284c7', color: '#FFF' }}
+                        >
+                          <Download size={14} /> Visualizar / Descarregar Imagem Original
+                        </a>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ textAlign: 'center', padding: '16px', color: 'var(--text-muted)', fontSize: '0.82rem' }}>

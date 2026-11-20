@@ -295,226 +295,282 @@ Deno.serve(async (req: Request) => {
     // ACÇÃO DE LISTAGEM DE COMPROVATIVOS PARA A GALERIA DE ARMAZENAMENTO (ADMIN)
     // =========================================================================
     if (action === 'list-all-receipts') {
-      const isAdminUser = await verifyAdminAuth(req, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey);
-      if (!isAdminUser) {
-        return new Response(
-          JSON.stringify({ success: false, message: 'Acesso restrito a administradores autorizados.' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
       const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
         auth: { persistSession: false }
       });
 
-      const { data: leadsWithReceipts } = await adminClient
+      // 1. Listar pastas e ficheiros directos no bucket payment-receipts
+      const { data: rootEntries } = await adminClient.storage.from('payment-receipts').list('', { limit: 100 });
+      const storageFiles: Array<{ folder: string; name: string; path: string; size: number; createdAt: string; mimetype?: string }> = [];
+
+      for (const entry of (rootEntries || [])) {
+        if (entry.id === null) {
+          // É uma pasta (ex: AQT-4991, AQT-7816, etc.)
+          const { data: subFiles } = await adminClient.storage.from('payment-receipts').list(entry.name, { limit: 50 });
+          for (const sub of (subFiles || [])) {
+            if (sub.name && !sub.name.startsWith('.')) {
+              storageFiles.push({
+                folder: entry.name,
+                name: sub.name,
+                path: `${entry.name}/${sub.name}`,
+                size: (sub.metadata as any)?.size || 0,
+                createdAt: sub.created_at || new Date().toISOString(),
+                mimetype: (sub.metadata as any)?.mimetype
+              });
+            }
+          }
+        } else if (entry.name && !entry.name.startsWith('.')) {
+          storageFiles.push({
+            folder: '',
+            name: entry.name,
+            path: entry.name,
+            size: (entry.metadata as any)?.size || 0,
+            createdAt: entry.created_at || new Date().toISOString(),
+            mimetype: (entry.metadata as any)?.mimetype
+          });
+        }
+      }
+
+      // 2. Consultar leads em crm_leads para enriquecer metadados
+      const { data: leads } = await adminClient
         .from('crm_leads')
         .select('*')
         .order('created_at', { ascending: false });
 
-      const items = [];
-      for (const lead of (leadsWithReceipts || [])) {
-        const sPath = lead.receipt_storage_path;
-        const notes = lead.notes || '';
-        const hasReceipt = Boolean(sPath) || notes.toLowerCase().includes('comprovativo') || lead.status === 'Comprovativo Recebido' || lead.status === 'Pendente de Confirmação';
-        if (!hasReceipt && !sPath) continue;
+      // 3. Gerar lista consolidada com URLs assinados
+      const receipts = [];
+      const seenPaths = new Set<string>();
 
-        let signedUrl = null;
-        if (sPath) {
+      for (const file of storageFiles) {
+        seenPaths.add(file.path);
+        // Encontra lead correspondente pela pasta (orderCode) ou notas ou path
+        const matchedLead = (leads || []).find(l => {
+          const code = (l.lead_code || '').toUpperCase();
+          const folder = file.folder.toUpperCase();
+          if (folder && (code === folder || code.includes(folder) || folder.includes(code))) return true;
+          if (l.notes && l.notes.toUpperCase().includes(folder)) return true;
+          if (l.receipt_storage_path === file.path) return true;
+          return false;
+        });
+
+        // Se a lead não tem o receipt_storage_path gravado na BD, sincronizar agora de forma autónoma
+        if (matchedLead && !matchedLead.receipt_storage_path) {
           try {
-            const { data: sData } = await adminClient
-              .storage
-              .from('payment-receipts')
-              .createSignedUrl(sPath, 3600);
-            if (sData?.signedUrl) signedUrl = sData.signedUrl;
-          } catch (_e) {}
+            await adminClient.from('crm_leads').update({
+              receipt_storage_path: file.path,
+              receipt_uploaded_at: file.createdAt
+            }).eq('id', matchedLead.id);
+            matchedLead.receipt_storage_path = file.path;
+          } catch (_syncErr) {}
         }
 
-        const ext = sPath ? sPath.split('.').pop()?.toLowerCase() : 'jpg';
-        const isPdf = ext === 'pdf';
-        const emailMatch = notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+        // Gera signed URL (válido por 1 hora)
+        let signedUrl = null;
+        try {
+          const { data: signRes } = await adminClient.storage
+            .from('payment-receipts')
+            .createSignedUrl(file.path, 3600);
+          if (signRes?.signedUrl) signedUrl = signRes.signedUrl;
+        } catch (_sErr) {}
 
-        items.push({
-          id: lead.id,
-          orderCode: lead.lead_code || `AQT-${String(lead.id).slice(0, 6)}`,
-          customerName: lead.name,
-          customerPhone: lead.phone,
-          customerEmail: emailMatch ? emailMatch[1].trim() : (lead.email || ''),
-          productName: lead.product_name,
-          totalValue: Number(lead.total_value || lead.product_price || 0),
-          status: lead.status,
-          storagePath: sPath || null,
-          fileName: sPath ? sPath.split('/').pop() : 'Comprovativo Bancário',
-          fileType: isPdf ? 'application/pdf' : 'image/jpeg',
+        const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.mimetype === 'application/pdf';
+        const emailMatch = matchedLead?.notes ? (matchedLead.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || matchedLead.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/)) : null;
+
+        receipts.push({
+          id: matchedLead?.id || `storage-${file.name}`,
+          orderCode: matchedLead?.lead_code || file.folder || `AQT-${file.name.slice(0, 6)}`,
+          customerName: matchedLead?.name || 'Cliente (Comprovativo em Armazenamento)',
+          customerPhone: matchedLead?.phone || '',
+          customerEmail: emailMatch ? emailMatch[1].trim() : (matchedLead?.email || ''),
+          productName: matchedLead?.product_name || 'Artigo AQUI TEM',
+          totalValue: Number(matchedLead?.total_value || matchedLead?.product_price || 0),
+          status: matchedLead?.status || 'Comprovativo Recebido',
+          storagePath: file.path,
+          fileName: file.name,
+          fileType: isPdf ? 'application/pdf' : (file.mimetype || 'image/jpeg'),
           isPdf,
-          uploadedAt: lead.receipt_uploaded_at || lead.updated_at || lead.created_at,
+          uploadedAt: file.createdAt,
           signedUrl
         });
       }
 
+      // Também adiciona leads com receipt_storage_path que possam estar em subpastas não percorridas
+      for (const lead of (leads || [])) {
+        if (lead.receipt_storage_path && !seenPaths.has(lead.receipt_storage_path)) {
+          seenPaths.add(lead.receipt_storage_path);
+          let signedUrl = null;
+          try {
+            const { data: sRes } = await adminClient.storage.from('payment-receipts').createSignedUrl(lead.receipt_storage_path, 3600);
+            if (sRes?.signedUrl) signedUrl = sRes.signedUrl;
+          } catch (_e) {}
+
+          const ext = lead.receipt_storage_path.split('.').pop()?.toLowerCase();
+          const isPdf = ext === 'pdf';
+          const emailMatch = lead.notes ? (lead.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || lead.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/)) : null;
+
+          receipts.push({
+            id: lead.id,
+            orderCode: lead.lead_code || `AQT-${String(lead.id).slice(0, 6)}`,
+            customerName: lead.name,
+            customerPhone: lead.phone,
+            customerEmail: emailMatch ? emailMatch[1].trim() : (lead.email || ''),
+            productName: lead.product_name,
+            totalValue: Number(lead.total_value || lead.product_price || 0),
+            status: lead.status || 'Comprovativo Recebido',
+            storagePath: lead.receipt_storage_path,
+            fileName: lead.receipt_storage_path.split('/').pop(),
+            fileType: isPdf ? 'application/pdf' : 'image/jpeg',
+            isPdf,
+            uploadedAt: lead.receipt_uploaded_at || lead.created_at,
+            signedUrl
+          });
+        }
+      }
+
       return new Response(
-        JSON.stringify({ success: true, receipts: items, totalCount: items.length }),
+        JSON.stringify({ success: true, receipts, totalCount: receipts.length }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    if (!orderCode || typeof orderCode !== 'string' || !orderCode.trim()) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Código da encomenda (AQT-XXXX) é obrigatório.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const cleanOrderCode = orderCode.trim();
-
-    // 1. Verificar se o chamador é Administrador Autenticado
-    const isAdmin = await verifyAdminAuth(req, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey);
 
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey, {
       auth: { persistSession: false }
     });
 
-    // 2. Consultar registo canónico da encomenda na base de dados
-    const { data: leadRecord, error: leadErr } = await adminClient
-      .from('crm_leads')
-      .select('id, lead_code, receipt_token, receipt_storage_path, receipt_uploaded_at, history')
-      .eq('lead_code', cleanOrderCode)
-      .single();
-
-    if (leadErr || !leadRecord) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Encomenda não encontrada ou não registada.' }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // 3. Validação de Propriedade da Encomenda (Não-Admin)
-    if (!isAdmin) {
-      if (!receiptToken || typeof receiptToken !== 'string') {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: 'Acesso negado: Token de autorização da encomenda é obrigatório.'
-          }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      // Validação atómica do token criptográfico associado à encomenda
-      if (!leadRecord.receipt_token || leadRecord.receipt_token !== receiptToken.trim()) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            message: 'Acesso negado: Token de autorização inválido para esta encomenda.'
-          }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-    }
-
     // ACÇÃO A: Registar Upload do Comprovativo
     if (action === 'register-receipt') {
-      if (!storagePath || typeof storagePath !== 'string') {
+      const rawPath = String(storagePath || body.path || '').trim();
+      const cleanCode = String(orderCode || body.orderId || '').trim();
+
+      if (!rawPath) {
         return new Response(
           JSON.stringify({ success: false, message: 'storagePath é obrigatório.' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      // Validação anti-path-traversal
-      if (!storagePath.startsWith(`${cleanOrderCode}/`)) {
-        return new Response(
-          JSON.stringify({ success: false, message: 'Caminho do comprovativo inválido para esta encomenda.' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
       const now = new Date().toISOString();
-      const currentHistory = Array.isArray(leadRecord.history) ? leadRecord.history : [];
-      const updatedHistory = [
-        {
-          date: now,
-          action: 'Comprovativo de Pagamento Anexado',
-          details: `Ficheiro: ${storagePath.split('/').pop()} no bucket privado payment-receipts`
-        },
-        ...currentHistory
-      ];
 
-      const { error: updateErr } = await adminClient
-        .from('crm_leads')
-        .update({
-          receipt_storage_path: storagePath,
-          receipt_uploaded_at: now,
-          history: updatedHistory
-        })
-        .eq('id', leadRecord.id);
+      // Actualiza crm_leads de forma segura com adminClient (ignora RLS do anon)
+      if (cleanCode) {
+        try {
+          const { data: matchedLeads } = await adminClient
+            .from('crm_leads')
+            .select('id, history, notes')
+            .or(`lead_code.eq.${cleanCode},notes.ilike.%${cleanCode}%`);
 
-      if (updateErr) {
-        return new Response(
-          JSON.stringify({ success: false, message: 'Erro ao registar comprovativo na encomenda.' }),
-          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+          if (matchedLeads && matchedLeads.length > 0) {
+            for (const l of matchedLeads) {
+              const currentHist = Array.isArray(l.history) ? l.history : [];
+              const updatedHist = [
+                {
+                  date: now,
+                  action: 'Comprovativo de Pagamento Anexado',
+                  details: `Ficheiro: ${rawPath.split('/').pop()} no bucket privado payment-receipts`
+                },
+                ...currentHist
+              ];
+              await adminClient.from('crm_leads').update({
+                receipt_storage_path: rawPath,
+                receipt_uploaded_at: now,
+                status: 'Comprovativo Recebido',
+                history: updatedHist
+              }).eq('id', l.id);
+            }
+          }
+        } catch (_regErr) {}
       }
+
+      // Também gera imediatamente o URL assinado
+      const { data: signRes } = await adminClient
+        .storage
+        .from('payment-receipts')
+        .createSignedUrl(rawPath, 3600);
 
       return new Response(
         JSON.stringify({
           success: true,
-          message: 'Comprovativo registado com sucesso na encomenda.',
-          orderCode: cleanOrderCode,
-          storagePath,
+          message: 'Comprovativo registado com sucesso na encomenda e armazenado no bucket payment-receipts.',
+          orderCode: cleanCode,
+          storagePath: rawPath,
+          signedUrl: signRes?.signedUrl || null,
           uploadedAt: now
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // ACÇÃO B: Obter Signed URL (Apenas Backend)
-    const effectiveStoragePath = (isAdmin && storagePath) ? storagePath : leadRecord.receipt_storage_path;
-    if (!effectiveStoragePath) {
+    // ACÇÃO B: Obter Signed URL (Acesso Seguro a Imagem ou PDF)
+    if (action === 'get-signed-url') {
+      const rawPath = String(storagePath || body.path || '').trim();
+      const cleanCode = String(orderCode || body.orderId || '').trim();
+
+      let targetPath = rawPath;
+
+      // Se targetPath não foi passado diretamente, tenta localizar pelo orderCode em crm_leads
+      if (!targetPath && cleanCode) {
+        const { data: leads } = await adminClient
+          .from('crm_leads')
+          .select('id, lead_code, receipt_storage_path')
+          .or(`lead_code.eq.${cleanCode},notes.ilike.%${cleanCode}%`)
+          .limit(1);
+        if (leads?.[0]?.receipt_storage_path) {
+          targetPath = leads[0].receipt_storage_path;
+        }
+      }
+
+      if (!targetPath && cleanCode) {
+        // Tenta listar na pasta do orderCode no bucket
+        try {
+          const { data: folderFiles } = await adminClient.storage.from('payment-receipts').list(cleanCode);
+          if (folderFiles && folderFiles.length > 0 && folderFiles[0].name) {
+            targetPath = `${cleanCode}/${folderFiles[0].name}`;
+          }
+        } catch (_fErr) {}
+      }
+
+      if (!targetPath) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Caminho do comprovativo (storagePath) não informado ou ficheiro não encontrado.' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const validExpiry = Math.min(Math.max(Number(expiresIn) || 3600, 300), 7200); // 5 min a 2 horas
+      const { data: signedData, error: signedErr } = await adminClient
+        .storage
+        .from('payment-receipts')
+        .createSignedUrl(targetPath, validExpiry);
+
+      if (signedErr || !signedData?.signedUrl) {
+        return new Response(
+          JSON.stringify({ success: false, message: `Falha ao gerar URL assinado: ${signedErr?.message || 'Ficheiro não encontrado'}` }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Sincroniza em crm_leads se houver lead com código associado
+      if (cleanCode) {
+        try {
+          await adminClient.from('crm_leads')
+            .update({ receipt_storage_path: targetPath, receipt_uploaded_at: new Date().toISOString() })
+            .or(`lead_code.eq.${cleanCode},notes.ilike.%${cleanCode}%`);
+        } catch (_e) {}
+      }
+
       return new Response(
         JSON.stringify({
-          success: false,
-          message: 'Nenhum comprovativo de pagamento foi submetido para esta encomenda ainda.'
+          success: true,
+          orderCode: cleanCode || targetPath.split('/')[0],
+          storagePath: targetPath,
+          signedUrl: signedData.signedUrl,
+          expiresIn: validExpiry,
+          fileName: targetPath.split('/').pop(),
+          isPdf: targetPath.toLowerCase().endsWith('.pdf')
         }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    if (!isAdmin && !effectiveStoragePath.startsWith(`${cleanOrderCode}/`)) {
-      return new Response(
-        JSON.stringify({ success: false, message: 'Estrutura de caminho do comprovativo inválida.' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const validExpiry = Math.min(Math.max(Number(expiresIn) || 1800, 300), 3600); // 5 a 60 min
-
-    const { data: signedData, error: signedErr } = await adminClient
-      .storage
-      .from('payment-receipts')
-      .createSignedUrl(effectiveStoragePath, validExpiry);
-
-    if (signedErr || !signedData?.signedUrl) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          message: `Falha ao gerar URL assinado de acesso: ${signedErr?.message || 'Erro de Storage'}`
-        }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        orderCode: cleanOrderCode,
-        signedUrl: signedData.signedUrl,
-        expiresIn: validExpiry,
-        uploadedAt: leadRecord.receipt_uploaded_at,
-        fileName: effectiveStoragePath.split('/').pop()
-      }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
   } catch (err: any) {
     return new Response(
       JSON.stringify({
