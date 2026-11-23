@@ -378,10 +378,29 @@ export async function createAndSaveOrder({
         municipality: customer.municipality || 'Luanda',
         address: customer.address,
         paymentMethod,
-        paymentStatus: 'Aguardando Pagamento'
+        paymentStatus: hasReceiptOnPurchase ? 'Comprovativo Recebido na Compra' : 'Aguardando Pagamento'
       },
       deduplicationKey: `company-wa-created-${orderId}`
     }).catch(waErr => console.warn('Aviso: Notificação WhatsApp empresa:', waErr));
+
+    // Se o cliente anexou o comprovativo PDF/Imagem na compra, notifica também com o documento
+    if (hasReceiptOnPurchase && uploadRes?.storagePath) {
+      notifyCompanyWhatsApp({
+        eventType: 'receipt_submitted',
+        orderData: {
+          id: orderId,
+          total,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          customerEmail: customer.email,
+          receiptStoragePath: uploadRes.storagePath,
+          receiptToken,
+          receiptDate: new Date().toLocaleString('pt-AO'),
+          paymentStatus: 'Comprovativo Recebido na Compra (Pendente de Validação)'
+        },
+        deduplicationKey: `company-wa-receipt-${orderId}`
+      }).catch(waErr => console.warn('Aviso: Notificação WhatsApp comprovativo compra:', waErr));
+    }
   }, 15);
 
   return orderRecord;
@@ -604,13 +623,13 @@ export function attachPaymentReceipt(orderId, receiptData) {
             receiptToken: targetOrder.receiptToken,
             storagePath: targetOrder.receiptStoragePath
           }
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
 
     // Regra Fundamental: Enviar e-mail de confirmação da recepção do comprovativo
     // O pagamento permanece PENDENTE até validação manual do administrador
-    const resolvedEmail = targetOrder?.customer?.email || 
+    const resolvedEmail = targetOrder?.customer?.email ||
       (targetOrder?.notes ? (targetOrder.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || targetOrder.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '') ||
       getSavedCustomerProfile()?.email || '';
 
@@ -804,7 +823,7 @@ export function updateOrderStatus(orderId, newStatus, driverInfo = null, customT
     localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(updated));
 
     // Notificações automáticas Brevo nas alterações de estado das encomendas
-    const resolvedEmail = targetOrder?.customer?.email || 
+    const resolvedEmail = targetOrder?.customer?.email ||
       (targetOrder?.notes ? (targetOrder.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || targetOrder.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/))?.[1] : '') ||
       getSavedCustomerProfile()?.email || '';
 

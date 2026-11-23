@@ -147,6 +147,51 @@ export async function checkWhatsAppApiStatus() {
 }
 
 /**
+ * Notifica a equipa da empresa (+244 950 752 933) sobre novos leads captados
+ */
+export async function notifyCompanyNewLead(leadData) {
+  if (!leadData) return { success: false, message: 'Dados do lead em falta.' };
+
+  const deduplicationKey = `lead-${leadData.phone || leadData.email || Date.now()}-${leadData.productName || 'geral'}`;
+  if (isDuplicate(deduplicationKey)) {
+    return { success: true, duplicate: true };
+  }
+  markAsSent(deduplicationKey);
+
+  if (isSupabaseConfigured && supabase?.functions) {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-api', {
+        body: {
+          action: 'notify-lead',
+          eventType: 'lead_captured',
+          leadData,
+          deduplicationKey
+        }
+      });
+
+      if (!error && data) {
+        addNotificationToFeed({
+          type: 'whatsapp_lead',
+          title: `WhatsApp Lead: ${leadData.name || 'Novo Contacto'}`,
+          message: data.configured
+            ? `Lead despachado para ${COMPANY_WHATSAPP_DISPLAY} via Cloud API.`
+            : `Lead formatado para o WhatsApp da empresa (${COMPANY_WHATSAPP_DISPLAY}).`,
+          link: data.waLink || null
+        });
+
+        return {
+          success: Boolean(data.success),
+          configured: Boolean(data.configured),
+          waLink: data.waLink
+        };
+      }
+    } catch (_err) {}
+  }
+
+  return { success: false, configured: false };
+}
+
+/**
  * Formatador local de mensagens com markdown do WhatsApp
  */
 export function formatLocalCompanyMessage(eventType, orderData) {

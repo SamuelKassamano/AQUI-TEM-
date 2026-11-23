@@ -126,7 +126,8 @@ export default function CustomerAreaPage() {
           setActiveTab('rastreio');
           setOrders(getLocalOrders());
         })
-        .catch(() => {});
+
+        .catch(() => { });
     } else if (localOrders.length > 0) {
       // Abre a encomenda mais recente por padrão
       setSelectedOrder(localOrders[0]);
@@ -565,26 +566,25 @@ export default function CustomerAreaPage() {
                           background: selectedOrder.status === 'Aguardando Pagamento'
                             ? 'rgba(245, 158, 11, 0.15)'
                             : selectedOrder.status === 'Comprovativo Recebido' || selectedOrder.status === 'Pendente de Confirmação'
-                            ? 'rgba(59, 130, 246, 0.15)'
-                            : selectedOrder.status === 'Em Preparação'
-                            ? 'rgba(168, 85, 247, 0.15)'
-                            : 'rgba(34, 197, 94, 0.15)',
+                              ? 'rgba(59, 130, 246, 0.15)'
+                              : selectedOrder.status === 'Em Preparação'
+                                ? 'rgba(168, 85, 247, 0.15)'
+                                : 'rgba(34, 197, 94, 0.15)',
                           color: selectedOrder.status === 'Aguardando Pagamento'
                             ? '#f59e0b'
                             : selectedOrder.status === 'Comprovativo Recebido' || selectedOrder.status === 'Pendente de Confirmação'
-                            ? '#60a5fa'
-                            : selectedOrder.status === 'Em Preparação'
-                            ? '#c084fc'
-                            : '#22c55e',
-                          border: `1px solid ${
-                            selectedOrder.status === 'Aguardando Pagamento'
-                              ? 'rgba(245, 158, 11, 0.35)'
-                              : selectedOrder.status === 'Comprovativo Recebido' || selectedOrder.status === 'Pendente de Confirmação'
+                              ? '#60a5fa'
+                              : selectedOrder.status === 'Em Preparação'
+                                ? '#c084fc'
+                                : '#22c55e',
+                          border: `1px solid ${selectedOrder.status === 'Aguardando Pagamento'
+                            ? 'rgba(245, 158, 11, 0.35)'
+                            : selectedOrder.status === 'Comprovativo Recebido' || selectedOrder.status === 'Pendente de Confirmação'
                               ? 'rgba(59, 130, 246, 0.35)'
                               : selectedOrder.status === 'Em Preparação'
-                              ? 'rgba(168, 85, 247, 0.35)'
-                              : 'rgba(34, 197, 94, 0.35)'
-                          }`,
+                                ? 'rgba(168, 85, 247, 0.35)'
+                                : 'rgba(34, 197, 94, 0.35)'
+                            }`,
                           padding: '6px 14px',
                           borderRadius: '9999px',
                           fontSize: '0.82rem',

@@ -4,6 +4,7 @@
 
 import { supabase, isSupabaseConfigured, requireAdminSession } from './supabase.js';
 import { getTrafficSource, getSessionDurationFormatted } from '../utils/crmTracker.js';
+import { notifyCompanyNewLead } from './whatsappNotificationService.js';
 
 const LOCAL_WEBHOOK_KEY = 'aqui_tem_crm_webhook_url';
 const LOCAL_LEADS_BACKUP_KEY = 'aqui_tem_crm_leads_backup';
@@ -237,6 +238,13 @@ export async function captureLeadInSupabase(leadPayload) {
 
   // Dispara automação webhook se configurada
   dispatchWebhookToExternalService(finalLead);
+
+  // Notificação WhatsApp para a empresa sobre o novo lead captado
+  try {
+    notifyCompanyNewLead(finalLead);
+  } catch (_waLeadErr) {
+    console.warn('Aviso ao notificar WhatsApp lead:', _waLeadErr);
+  }
 
   return finalLead;
 }

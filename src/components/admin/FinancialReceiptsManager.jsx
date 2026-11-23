@@ -36,6 +36,7 @@ import {
 import { calculateEstimatedDeliveryDate } from '../../utils/angolaLocations';
 import { updateOrderStatus } from '../../utils/customerOrders';
 import { sendBrevoTransactionalEmail } from '../../lib/brevoService';
+import { notifyCompanyWhatsApp } from '../../lib/whatsappNotificationService';
 import { supabase } from '../../lib/supabase';
 
 export default function FinancialReceiptsManager({
@@ -476,6 +477,29 @@ export default function FinancialReceiptsManager({
       } else {
         showToast(`✓ Pagamento da encomenda #${lead.orderCode} aprovado com sucesso!`);
       }
+
+      // 5. Notificação WhatsApp para a Empresa (+244 950 752 933) com comprovativo PDF
+      try {
+        notifyCompanyWhatsApp({
+          eventType: 'payment_confirmed',
+          orderData: {
+            id: lead.orderCode,
+            total: lead.totalValue,
+            customerName: lead.name,
+            customerPhone: lead.phone,
+            customerEmail: customerEmail || lead.email,
+            province: lead.city,
+            address: lead.address,
+            paymentMethod: lead.paymentMethod,
+            trackingNumber: trackingCode,
+            estimatedDeliveryDate: calc.formattedDate,
+            receiptStoragePath: lead.storagePath,
+            paymentStatus: 'Encomenda Agendada (Pagamento Confirmado)'
+          },
+          deduplicationKey: `company-wa-approved-${lead.orderCode}`
+        }).catch(waErr => console.warn('Aviso WhatsApp aprovação:', waErr));
+      } catch (_waEx) {}
+
       setApprovingLead(null);
       setApprovalNote('');
       if (selectedReceiptLead?.id === lead.id) {
