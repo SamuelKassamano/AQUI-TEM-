@@ -341,6 +341,52 @@ export async function simulateWhatsAppTestEvent(eventType) {
       },
       deduplicationKey: `mock-payment-${testId}-${Date.now()}`
     };
+  } else if (eventType === 'order_processing') {
+    body = {
+      action: 'notify-company',
+      eventType: 'order_processing',
+      orderData: {
+        id: testId,
+        customerName: 'Cliente Simulação Em Preparação',
+        customerPhone: '+244 923 000 000',
+        customerEmail: 'simulacao@aquitem.ao',
+        total: 25000,
+        isSimulation: true
+      },
+      deduplicationKey: `mock-processing-${testId}-${Date.now()}`
+    };
+  } else if (eventType === 'order_shipped') {
+    body = {
+      action: 'notify-company',
+      eventType: 'order_shipped',
+      orderData: {
+        id: testId,
+        customerName: 'Cliente Simulação Em Rota',
+        customerPhone: '+244 923 000 000',
+        customerEmail: 'simulacao@aquitem.ao',
+        province: 'Luanda',
+        municipality: 'Talatona',
+        address: 'Rua Principal de Teste, Edifício 3',
+        total: 25000,
+        trackingNumber: `AQT-TRK-${testId}`,
+        isSimulation: true
+      },
+      deduplicationKey: `mock-shipped-${testId}-${Date.now()}`
+    };
+  } else if (eventType === 'order_delivered') {
+    body = {
+      action: 'notify-company',
+      eventType: 'order_delivered',
+      orderData: {
+        id: testId,
+        customerName: 'Cliente Simulação Entregue',
+        customerPhone: '+244 923 000 000',
+        customerEmail: 'simulacao@aquitem.ao',
+        total: 25000,
+        isSimulation: true
+      },
+      deduplicationKey: `mock-delivered-${testId}-${Date.now()}`
+    };
   } else {
     // order_created por defeito
     body = {

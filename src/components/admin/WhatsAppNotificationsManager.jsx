@@ -24,7 +24,10 @@ import {
   Sparkles,
   Radio,
   Globe,
-  Activity
+  Activity,
+  Truck,
+  Box,
+  Gift
 } from 'lucide-react';
 import {
   checkWhatsAppApiStatus,
@@ -462,10 +465,10 @@ export default function WhatsAppNotificationsManager({
           <div>
             <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Terminal size={18} style={{ color: '#F37021' }} />
-              Testes de Simulação em 1-Clique (Sem Afetar Dados de Produção)
+              Área de Homologação dos 7 Eventos WhatsApp (MOCK Seguro — Sem Afetar Dados Reais)
             </h4>
             <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-              Dispare simulações completas para cada tipo de evento. Não cria encomendas, leads nem auditorias reais.
+              Execute simulações controladas para cada um dos 7 eventos do ciclo comercial. Não cria encomendas, leads nem altera auditorias financeiras.
             </p>
           </div>
           <span style={{ fontSize: '0.75rem', color: '#8B5CF6', background: 'rgba(139, 92, 246, 0.1)', padding: '4px 10px', borderRadius: '20px', fontWeight: 700 }}>
@@ -563,6 +566,75 @@ export default function WhatsAppNotificationsManager({
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Dispara evento <code>payment_confirmed</code> com dados de entrega.
+            </span>
+          </button>
+
+          <button
+            onClick={() => handleTriggerSimulation('order_processing')}
+            disabled={isSimulating}
+            style={{
+              padding: '14px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-primary)',
+              cursor: isSimulating ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#D97706', fontWeight: 700, fontSize: '0.9rem' }}>
+              <Box size={17} /> Simular Em Preparação
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Dispara evento <code>order_processing</code> de embalamento.
+            </span>
+          </button>
+
+          <button
+            onClick={() => handleTriggerSimulation('order_shipped')}
+            disabled={isSimulating}
+            style={{
+              padding: '14px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-primary)',
+              cursor: isSimulating ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#0284C7', fontWeight: 700, fontSize: '0.9rem' }}>
+              <Truck size={17} /> Simular Em Rota de Entrega
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Dispara evento <code>order_shipped</code> com estafeta a caminho.
+            </span>
+          </button>
+
+          <button
+            onClick={() => handleTriggerSimulation('order_delivered')}
+            disabled={isSimulating}
+            style={{
+              padding: '14px',
+              borderRadius: '12px',
+              border: '1px solid var(--border-light)',
+              background: 'var(--bg-primary)',
+              cursor: isSimulating ? 'not-allowed' : 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '6px',
+              textAlign: 'left'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#059669', fontWeight: 700, fontSize: '0.9rem' }}>
+              <Gift size={17} /> Simular Entregue com Sucesso
+            </div>
+            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              Dispara evento <code>order_delivered</code> e garantia de 7 dias.
             </span>
           </button>
         </div>
