@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS public.brevo_dispatch_locks (
   created_at TIMESTAMPTZ NOT NULL DEFAULT timezone('utc'::text, now())
 );
 
+
 CREATE INDEX IF NOT EXISTS idx_brevo_locks_until ON public.brevo_dispatch_locks(locked_until);
 
 -- ------------------------------------------------------------------------------

@@ -796,22 +796,22 @@ export async function uploadReceiptDocument(file, orderId = 'encomenda', receipt
     throw new Error('O ficheiro excede o tamanho máximo permitido de 10 MB.');
   }
 
-            // Identificação robusta de tipo (suporta PDF e imagens em qualquer SO/browser)
-            const rawExt = file.name ? file.name.split('.').pop() : '';
-            const ext = (rawExt || '').toLowerCase().replace(/[^a-z0-9]/g, '') || '';
-            const fileTypeLower = (file.type || '').toLowerCase();
-            const isPdf = ext === 'pdf' || fileTypeLower.includes('pdf');
-            const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) || fileTypeLower.startsWith('image/');
+  // Identificação robusta de tipo (suporta PDF e imagens em qualquer SO/browser)
+  const rawExt = file.name ? file.name.split('.').pop() : '';
+  const ext = (rawExt || '').toLowerCase().replace(/[^a-z0-9]/g, '') || '';
+  const fileTypeLower = (file.type || '').toLowerCase();
+  const isPdf = ext === 'pdf' || fileTypeLower.includes('pdf');
+  const isImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext) || fileTypeLower.startsWith('image/');
 
-            if (!isPdf && !isImage) {
-              throw new Error('Tipo de ficheiro não suportado. Envie apenas imagens (JPG, PNG) ou documento PDF.');
-            }
+  if (!isPdf && !isImage) {
+    throw new Error('Tipo de ficheiro não suportado. Envie apenas imagens (JPG, PNG) ou documento PDF.');
+  }
 
-            const finalExt = isPdf ? 'pdf' : (ext || 'jpg');
-            const cleanOrderId = (orderId || 'comprovativo').replace(/[^a-zA-Z0-9_-]/g, '');
-            const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-            const filePath = `${cleanOrderId}/${cleanOrderId}-${uniqueSuffix}.${finalExt}`;
-            const contentType = isPdf ? 'application/pdf' : (file.type || 'image/jpeg');
+  const finalExt = isPdf ? 'pdf' : (ext || 'jpg');
+  const cleanOrderId = (orderId || 'comprovativo').replace(/[^a-zA-Z0-9_-]/g, '');
+  const uniqueSuffix = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const filePath = `${cleanOrderId}/${cleanOrderId}-${uniqueSuffix}.${finalExt}`;
+  const contentType = isPdf ? 'application/pdf' : (file.type || 'image/jpeg');
 
   let signedUrl = null;
   let storedPath = null;
@@ -827,13 +827,13 @@ export async function uploadReceiptDocument(file, orderId = 'encomenda', receipt
           contentType
         });
 
-                if (uploadError) {
-                  console.error('Erro de upload em payment-receipts:', uploadError);
-                  throw new Error(`Erro ao armazenar documento: ${uploadError.message}`);
-                }
+      if (uploadError) {
+        console.error('Erro de upload em payment-receipts:', uploadError);
+        throw new Error(`Erro ao armazenar documento: ${uploadError.message}`);
+      }
 
-                if (uploadData?.path) {
-                  storedPath = uploadData.path;
+      if (uploadData?.path) {
+        storedPath = uploadData.path;
 
         // Registo atómico no backend via Edge Function receipt-access
         if (supabase?.functions) {

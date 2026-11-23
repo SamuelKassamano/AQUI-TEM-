@@ -30,7 +30,7 @@ interface OrderItem {
 }
 
 interface NotificationPayload {
-  action?: 'notify-company' | 'notify-lead' | 'check-status';
+  action?: 'notify-company' | 'notify-lead' | 'check-status' | 'list-logs' | 'get-receipt-url' | 'test-simulate';
   eventType?: 'order_created' | 'receipt_submitted' | 'payment_confirmed' | 'order_processing' | 'order_shipped' | 'order_delivered' | 'lead_captured';
   orderData?: {
     id: string;
@@ -52,6 +52,7 @@ interface NotificationPayload {
     receiptStoragePath?: string;
     receiptToken?: string;
     receiptDate?: string;
+    isSimulation?: boolean;
   };
   leadData?: {
     id?: string;
@@ -64,8 +65,13 @@ interface NotificationPayload {
     productPrice?: number | string;
     notes?: string;
     trafficSource?: string;
+    isSimulation?: boolean;
   };
   deduplicationKey?: string;
+  storagePath?: string;
+  limit?: number;
+  page?: number;
+  statusFilter?: string;
 }
 
 Deno.serve(async (req: Request) => {
@@ -78,6 +84,7 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  const whatsappMode = (Deno.env.get('WHATSAPP_MODE') || 'mock').toLowerCase().trim();
   const whatsappToken = Deno.env.get('WHATSAPP_TOKEN') || Deno.env.get('WHATSAPP_API_TOKEN') || '';
   const whatsappPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '';
   const webhookVerifyToken = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || DEFAULT_WEBHOOK_VERIFY_TOKEN;
@@ -92,7 +99,6 @@ Deno.serve(async (req: Request) => {
 
   // =========================================================================
   // 2. META WEBHOOK VERIFICATION (GET)
-  // Utilizado pela Meta para confirmar a titularidade do Webhook
   // =========================================================================
   if (req.method === 'GET') {
     const url = new URL(req.url);
@@ -126,7 +132,7 @@ Deno.serve(async (req: Request) => {
 
     // =========================================================================
     // 3. META WEBHOOK STATUS RECEIVER (POST da Meta com status de entrega)
-    // Atualiza whatsapp_dispatch_logs com sent, delivered, read, failed
+    // Atualiza status real apenas se mensagem foi despachada no modo cloud_api
     // =========================================================================
     if (body.object === 'whatsapp_business_account') {
       const entries = body.entry || [];
@@ -142,6 +148,7 @@ Deno.serve(async (req: Request) => {
 
             if (supabaseAdmin && metaId) {
               try {
+                // Atualiza apenas se não for SIMULATED
                 await supabaseAdmin
                   .from('whatsapp_dispatch_logs')
                   .update({
@@ -149,7 +156,8 @@ Deno.serve(async (req: Request) => {
                     last_error: errors ? JSON.stringify(errors) : null,
                     updated_at: timestamp
                   })
-                  .eq('meta_message_id', metaId);
+                  .eq('meta_message_id', metaId)
+                  .neq('status', 'SIMULATED');
               } catch (e: any) {
                 console.warn('Aviso ao atualizar status de webhook Meta:', e.message);
               }
@@ -167,7 +175,17 @@ Deno.serve(async (req: Request) => {
     // =========================================================================
     // 4. OPERAÇÕES INTERNAS DA APLICAÇÃO
     // =========================================================================
-    const { action = 'notify-company', eventType = 'order_created', orderData, leadData, deduplicationKey } = body as NotificationPayload;
+    const {
+      action = 'notify-company',
+      eventType = 'order_created',
+      orderData,
+      leadData,
+      deduplicationKey,
+      storagePath,
+      limit = 50,
+      page = 1,
+      statusFilter = 'all'
+    } = body as NotificationPayload;
 
     // 4.1 Verificação de Estado da Configuração
     if (action === 'check-status') {
@@ -175,21 +193,140 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: true,
+          mode: whatsappMode,
+          isMock: whatsappMode === 'mock',
           configured: isConfigured,
           destinationNumber: `+${COMPANY_WHATSAPP_NUMBER}`,
           missingCredentials: [
             ...(!whatsappToken ? ['WHATSAPP_TOKEN'] : []),
             ...(!whatsappPhoneNumberId ? ['WHATSAPP_PHONE_NUMBER_ID'] : [])
           ],
-          message: isConfigured
-            ? 'WhatsApp Business Cloud API está configurada com token e Phone Number ID.'
-            : 'WhatsApp Business Cloud API aguarda configuração nos secrets do Supabase (WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID).'
+          message: whatsappMode === 'mock'
+            ? 'Sistema a operar em MODO SIMULAÇÃO (MOCK). Nenhuma mensagem real é enviada à Meta.'
+            : (isConfigured
+                ? 'WhatsApp Business Cloud API está activa e configurada em modo de produção.'
+                : 'Modo cloud_api activo, mas credenciais Meta em falta nos secrets do Supabase.')
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 4.2 Notificação de Novo Lead Geral (Formulário / Contacto / Intenção de Compra)
+    // 4.2 Listagem de Logs de Despacho (Para o Painel Administrativo)
+    if (action === 'list-logs') {
+      if (!supabaseAdmin) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Cliente Supabase não inicializado.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const safeLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
+      const safePage = Math.max(Number(page) || 1, 1);
+      const from = (safePage - 1) * safeLimit;
+      const to = from + safeLimit - 1;
+
+      let query = supabaseAdmin
+        .from('whatsapp_dispatch_logs')
+        .select('*', { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(from, to);
+
+      if (statusFilter && statusFilter !== 'all') {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data: logs, count, error: fetchErr } = await query;
+
+      if (fetchErr) {
+        return new Response(
+          JSON.stringify({ success: false, error: fetchErr.message }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          mode: whatsappMode,
+          logs: logs || [],
+          totalCount: count || 0,
+          page: safePage,
+          limit: safeLimit
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 4.3 Obtenção de Signed URL Temporário sob Procura (Para visualização no Painel)
+    // Conforme regra de segurança: Nunca armazenar signed URLs no banco, apenas gerar sob demanda.
+    if (action === 'get-receipt-url') {
+      if (!storagePath) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'storagePath obrigatório.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!supabaseAdmin) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Cliente Supabase indisponível.' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Signed URL válido por 30 minutos (1800s)
+      const { data: signedData, error: signErr } = await supabaseAdmin.storage
+        .from('payment-receipts')
+        .createSignedUrl(storagePath, 1800);
+
+      if (signErr || !signedData?.signedUrl) {
+        return new Response(
+          JSON.stringify({ success: false, message: signErr?.message || 'Ficheiro não encontrado no bucket privado.' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, signedUrl: signedData.signedUrl, expiresIn: 1800 }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // 4.4 Validação Estrita do Modo de Operação
+    // Regra Obrigatória: O modo MOCK deve ser ativado exclusivamente através de WHATSAPP_MODE=mock.
+    // Se o modo cloud_api estiver ativo e faltarem credenciais, o sistema deve apresentar erro sem simular.
+    const isMockMode = whatsappMode === 'mock';
+
+    if (!isMockMode && whatsappMode === 'cloud_api') {
+      if (!whatsappToken || !whatsappPhoneNumberId) {
+        const missing = [
+          ...(!whatsappToken ? ['WHATSAPP_TOKEN'] : []),
+          ...(!whatsappPhoneNumberId ? ['WHATSAPP_PHONE_NUMBER_ID'] : [])
+        ];
+        return new Response(
+          JSON.stringify({
+            success: false,
+            configured: false,
+            mode: 'cloud_api',
+            error: `Modo cloud_api activo, mas faltam credenciais obrigatórias da Meta: ${missing.join(', ')}. Não é permitida simulação implícita no modo de produção.`,
+            missingCredentials: missing
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else if (!isMockMode) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Configuração inválida de WHATSAPP_MODE='${whatsappMode}'. Use 'mock' ou 'cloud_api'.`
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // =========================================================================
+    // 5. TRATAMENTO DE NOTIFICAÇÃO DE NOVO LEAD
+    // =========================================================================
     if (action === 'notify-lead' || eventType === 'lead_captured') {
       const lead = leadData || orderData || {};
       const leadName = lead.customerName || lead.name || 'Novo Contacto';
@@ -199,82 +336,146 @@ Deno.serve(async (req: Request) => {
       const leadNotes = lead.notes || '';
       const leadSource = lead.trafficSource || 'Loja Online';
 
-      const leadMsg = `🌟 *NOVO LEAD CAPTADO — AQUI TEM ANGOLA*\n\n` +
+      const prefix = isMockMode ? `🧪 *[SIMULAÇÃO / MOCK — AQUI TEM ANGOLA]*\n` : '';
+      const leadMsg = `${prefix}🌟 *NOVO LEAD CAPTADO — AQUI TEM ANGOLA*\n\n` +
         `👤 *Nome:* ${leadName}\n` +
         `📞 *Telefone:* ${leadPhone}\n` +
         `✉️ *E-mail:* ${leadEmail}\n` +
         `🛍️ *Artigo / Interesse:* ${leadProduct}\n` +
         `🌐 *Origem:* ${leadSource}\n` +
         (leadNotes ? `📝 *Observações:* ${leadNotes}\n` : '') +
-        `\n👉 _Contacto registado no CRM para atendimento pela equipa comercial._`;
+        (isMockMode ? `\n⚠️ _Registo gerado em ambiente de simulação. Nenhuma mensagem real foi enviada pela Meta._\n` : `\n👉 _Contacto registado no CRM para atendimento pela equipa comercial._`);
 
       const leadWaLink = `https://wa.me/${COMPANY_WHATSAPP_NUMBER}?text=${encodeURIComponent(leadMsg)}`;
+      const finalDeduplicationKey = deduplicationKey || `lead-${leadPhone || leadEmail}-${leadProduct}`;
 
-      if (whatsappToken && whatsappPhoneNumberId) {
+      // Deduplicação
+      if (supabaseAdmin) {
         try {
-          const metaRes = await fetch(`https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}/messages`, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${whatsappToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              messaging_product: 'whatsapp',
-              to: COMPANY_WHATSAPP_NUMBER,
-              type: 'text',
-              text: { preview_url: true, body: leadMsg }
-            })
-          });
+          const { data: existingLeadLog } = await supabaseAdmin
+            .from('whatsapp_dispatch_logs')
+            .select('id, status, meta_message_id, created_at')
+            .eq('deduplication_key', finalDeduplicationKey)
+            .maybeSingle();
 
-          const metaJson = await metaRes.json();
-          const metaMsgId = metaJson?.messages?.[0]?.id || null;
-
-          if (supabaseAdmin) {
-            try {
-              await supabaseAdmin.from('whatsapp_dispatch_logs').insert([{
-                event_type: 'lead_captured',
-                order_code: null,
-                recipient: COMPANY_WHATSAPP_NUMBER,
-                status: metaRes.ok ? 'SENT' : 'FAILED',
-                message_type: 'text',
-                meta_message_id: metaMsgId,
-                last_error: metaRes.ok ? null : JSON.stringify(metaJson),
-                payload: { leadName, leadPhone, leadProduct, source: leadSource }
-              }]);
-            } catch (_logErr) {}
+          if (existingLeadLog && (existingLeadLog.status === 'SENT' || existingLeadLog.status === 'SIMULATED')) {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                duplicate: true,
+                mode: isMockMode ? 'mock' : 'cloud_api',
+                status: existingLeadLog.status,
+                message: `Notificação de lead (${finalDeduplicationKey}) já registada anteriormente (${existingLeadLog.status}).`,
+                existingLog: existingLeadLog
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
           }
-
-          return new Response(JSON.stringify({
-            success: metaRes.ok,
-            apiUsed: true,
-            configured: true,
-            metaResponse: metaJson,
-            formattedMessage: leadMsg,
-            waLink: leadWaLink
-          }), { status: metaRes.ok ? 200 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        } catch (apiErr: any) {
-          return new Response(JSON.stringify({
-            success: false,
-            apiUsed: true,
-            configured: true,
-            error: apiErr.message,
-            formattedMessage: leadMsg,
-            waLink: leadWaLink
-          }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
+        } catch (_dedupErr) {}
       }
 
-      return new Response(JSON.stringify({
-        success: false,
-        apiUsed: false,
-        configured: false,
-        message: 'WhatsApp Business Cloud API aguarda secrets no Supabase. Link para despacho manual gerado.',
-        formattedMessage: leadMsg,
-        waLink: leadWaLink
-      }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      // MODO MOCK (SIMULAÇÃO PURA)
+      if (isMockMode) {
+        const mockMetaId = `mock_wamid_lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+        if (supabaseAdmin) {
+          try {
+            await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
+              event_type: 'lead_captured',
+              order_code: null,
+              recipient: COMPANY_WHATSAPP_NUMBER,
+              status: 'SIMULATED',
+              dispatch_mode: 'mock',
+              message_type: 'text',
+              meta_message_id: mockMetaId,
+              deduplication_key: finalDeduplicationKey,
+              formatted_body: leadMsg,
+              payload: { leadName, leadPhone, leadProduct, source: leadSource, isSimulation: true }
+            }], { onConflict: 'deduplication_key' });
+          } catch (logErr: any) {
+            console.warn('Aviso ao registar log de simulação de lead:', logErr.message);
+          }
+        }
+
+        return new Response(JSON.stringify({
+          success: true,
+          mode: 'mock',
+          status: 'SIMULATED',
+          simulated: true,
+          apiUsed: false,
+          configured: false,
+          metaMessageId: mockMetaId,
+          destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+          message: 'Lead simulado com sucesso em modo MOCK. Registado na base de dados com status SIMULATED.',
+          formattedMessage: leadMsg,
+          waLink: leadWaLink
+        }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+
+      // MODO CLOUD API REAL
+      try {
+        const metaRes = await fetch(`https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}/messages`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${whatsappToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to: COMPANY_WHATSAPP_NUMBER,
+            type: 'text',
+            text: { preview_url: true, body: leadMsg }
+          })
+        });
+
+        const metaJson = await metaRes.json();
+        const metaMsgId = metaJson?.messages?.[0]?.id || null;
+
+        if (supabaseAdmin) {
+          try {
+            await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
+              event_type: 'lead_captured',
+              order_code: null,
+              recipient: COMPANY_WHATSAPP_NUMBER,
+              status: metaRes.ok ? 'SENT' : 'FAILED',
+              dispatch_mode: 'cloud_api',
+              message_type: 'text',
+              meta_message_id: metaMsgId,
+              deduplication_key: finalDeduplicationKey,
+              formatted_body: leadMsg,
+              last_error: metaRes.ok ? null : JSON.stringify(metaJson),
+              payload: { leadName, leadPhone, leadProduct, source: leadSource }
+            }], { onConflict: 'deduplication_key' });
+          } catch (_logErr) {}
+        }
+
+        return new Response(JSON.stringify({
+          success: metaRes.ok,
+          mode: 'cloud_api',
+          status: metaRes.ok ? 'SENT' : 'FAILED',
+          apiUsed: true,
+          configured: true,
+          metaResponse: metaJson,
+          formattedMessage: leadMsg,
+          waLink: leadWaLink
+        }), { status: metaRes.ok ? 200 : 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      } catch (apiErr: any) {
+        return new Response(JSON.stringify({
+          success: false,
+          mode: 'cloud_api',
+          status: 'FAILED',
+          apiUsed: true,
+          configured: true,
+          error: apiErr.message,
+          formattedMessage: leadMsg,
+          waLink: leadWaLink
+        }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
     }
 
-    // 4.3 Notificação de Ciclo de Encomenda
+    // =========================================================================
+    // 6. TRATAMENTO DE NOTIFICAÇÃO DE CICLO DE ENCOMENDA
+    // =========================================================================
     if (!orderData || !orderData.id) {
       return new Response(
         JSON.stringify({ success: false, message: 'Dados da encomenda (orderData.id) são obrigatórios.' }),
@@ -300,12 +501,14 @@ Deno.serve(async (req: Request) => {
           .eq('deduplication_key', finalKey)
           .maybeSingle();
 
-        if (existingLog && existingLog.status === 'SENT') {
+        if (existingLog && (existingLog.status === 'SENT' || existingLog.status === 'SIMULATED')) {
           return new Response(
             JSON.stringify({
               success: true,
               duplicate: true,
-              message: `Notificação WhatsApp para ${orderId} (${eventType}) já foi enviada anteriormente.`,
+              mode: isMockMode ? 'mock' : 'cloud_api',
+              status: existingLog.status,
+              message: `Notificação WhatsApp para ${orderId} (${eventType}) já foi registada com status '${existingLog.status}'.`,
               existingLog
             }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -314,47 +517,58 @@ Deno.serve(async (req: Request) => {
       } catch (_dedupErr) {}
     }
 
-    // Resolução de Comprovativo Bancário (PDF ou Imagem) no Storage Privado
-    let secureReceiptUrl = '';
+    // Resolução do Comprovativo Bancário (Storage Privado)
+    let receiptRelativePath: string | null = orderData.receiptStoragePath || null;
     let isReceiptPdf = false;
     let isReceiptImage = false;
     let receiptFileName = `Recibo-${orderId}.pdf`;
+    let receiptMimeType = 'application/pdf';
+    let tempSignedUrlForMetaOrPreview = '';
 
     if ((eventType === 'receipt_submitted' || eventType === 'payment_confirmed') && supabaseAdmin) {
-      let path = orderData.receiptStoragePath;
-      if (!path) {
-        const { data: lead } = await supabaseAdmin
-          .from('crm_leads')
-          .select('receipt_storage_path')
-          .or(`lead_code.eq.${orderId},notes.ilike.%${orderId}%`)
-          .maybeSingle();
-        if (lead?.receipt_storage_path) {
-          path = lead.receipt_storage_path;
-        }
+      if (!receiptRelativePath) {
+        // Tentar buscar na tabela crm_leads se não fornecido directamente
+        try {
+          const { data: lead } = await supabaseAdmin
+            .from('crm_leads')
+            .select('receipt_storage_path')
+            .or(`lead_code.eq.${orderId},notes.ilike.%${orderId}%`)
+            .maybeSingle();
+          if (lead?.receipt_storage_path) {
+            receiptRelativePath = lead.receipt_storage_path;
+          }
+        } catch (_leadLookupErr) {}
       }
 
-      if (path) {
-        const ext = path.split('.').pop()?.toLowerCase() || '';
+      if (receiptRelativePath) {
+        const ext = receiptRelativePath.split('.').pop()?.toLowerCase() || '';
         isReceiptPdf = ext === 'pdf';
         isReceiptImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
-        receiptFileName = path.split('/').pop() || `Recibo-${orderId}.${isReceiptPdf ? 'pdf' : 'jpg'}`;
+        receiptMimeType = isReceiptPdf ? 'application/pdf' : (ext === 'png' ? 'image/png' : 'image/jpeg');
+        receiptFileName = receiptRelativePath.split('/').pop() || `Recibo-${orderId}.${isReceiptPdf ? 'pdf' : 'jpg'}`;
 
-        // Signed URL válido por 24 horas (86400s) para conferência da equipa
-        const { data: signedData } = await supabaseAdmin.storage
-          .from('payment-receipts')
-          .createSignedUrl(path, 86400);
+        // Gerar URL assinado temporário (apenas em memória, NUNCA armazenado no banco)
+        try {
+          const { data: signedData } = await supabaseAdmin.storage
+            .from('payment-receipts')
+            .createSignedUrl(receiptRelativePath, 86400); // 24h
 
-        if (signedData?.signedUrl) {
-          secureReceiptUrl = signedData.signedUrl;
+          if (signedData?.signedUrl) {
+            tempSignedUrlForMetaOrPreview = signedData.signedUrl;
+          }
+        } catch (signErr: any) {
+          console.warn('Aviso ao gerar URL assinado de comprovativo:', signErr.message);
         }
       }
     }
 
     // Formatação da Mensagem Estruturada
+    const prefix = isMockMode ? `🧪 *[SIMULAÇÃO / MOCK — AQUI TEM ANGOLA]*\n` : '';
     let formattedMessage = '';
+
     switch (eventType) {
       case 'order_created': {
-        formattedMessage = `🔔 *NOVA ENCOMENDA REGISTADA — AQUI TEM ANGOLA*\n\n` +
+        formattedMessage = `${prefix}🔔 *NOVA ENCOMENDA REGISTADA — AQUI TEM ANGOLA*\n\n` +
           `📦 *Código:* #${orderId}\n` +
           `👤 *Cliente:* ${clientName}\n` +
           `📞 *Telefone:* ${clientPhone}\n` +
@@ -377,38 +591,46 @@ Deno.serve(async (req: Request) => {
         formattedMessage += `💵 *VALOR TOTAL:* ${totalKz} Kz\n` +
           `💳 *Método de Pagamento:* ${paymentMeth}\n` +
           `⏳ *Estado:* Aguardando Pagamento\n\n` +
-          `⚠️ _Aguardando realização da transferência ou anexo de comprovativo._`;
+          (isMockMode
+            ? `⚠️ _[Simulação]: Notificação fictícia de teste de encomenda gerada no sistema._`
+            : `⚠️ _Aguardando realização da transferência ou anexo de comprovativo._`);
         break;
       }
 
       case 'receipt_submitted': {
         const nowFormatted = orderData.receiptDate || new Date().toLocaleString('pt-AO');
-        formattedMessage = `📄 *NOVO COMPROVATIVO RECEBIDO — AQUI TEM ANGOLA*\n\n` +
+        formattedMessage = `${prefix}📄 *NOVO COMPROVATIVO RECEBIDO — AQUI TEM ANGOLA*\n\n` +
           `📦 *Código da Encomenda:* #${orderId}\n` +
           `👤 *Cliente:* ${clientName} (${clientPhone})\n` +
           `💰 *Valor da Encomenda:* ${totalKz} Kz\n` +
           `🕒 *Data/Hora do Envio:* ${nowFormatted}\n\n` +
           `⚠️ *Estado:* PENDENTE DE VALIDAÇÃO FINANCEIRA\n` +
           `_Aviso de Segurança: O envio do comprovativo não confirma o pagamento automaticamente._\n\n` +
-          (secureReceiptUrl ? `🔐 *Ligação Segura para Conferência (Válida 24h):*\n${secureReceiptUrl}\n\n` : '') +
-          `👉 _Aceda ao Painel Administrativo para validar a entrada bancária e aprovar a entrega._`;
+          (receiptRelativePath ? `📁 *Documento no Bucket Privado:* ${receiptRelativePath}\n` : '') +
+          (tempSignedUrlForMetaOrPreview ? `🔐 *Ligação Segura Temporária (Painel Admin):*\n${tempSignedUrlForMetaOrPreview}\n\n` : '') +
+          (isMockMode
+            ? `🧪 _[Simulação]: Teste de recepção de comprovativo processado com sucesso._`
+            : `👉 _Aceda ao Painel Administrativo para validar a entrada bancária e aprovar a entrega._`);
         break;
       }
 
       case 'payment_confirmed': {
-        formattedMessage = `✅ *PAGAMENTO APROVADO & ENCOMENDA AGENDADA*\n\n` +
+        formattedMessage = `${prefix}✅ *PAGAMENTO APROVADO & ENCOMENDA AGENDADA*\n\n` +
           `📦 *Código:* #${orderId}\n` +
           `👤 *Cliente:* ${clientName}\n` +
           `💰 *Valor Confirmado:* ${totalKz} Kz\n` +
           (orderData.estimatedDeliveryDate ? `📅 *Previsão de Entrega (3 dias úteis):* ${orderData.estimatedDeliveryDate}\n` : '') +
           (orderData.trackingNumber ? `📍 *Código de Rastreio Oficial:* ${orderData.trackingNumber}\n` : '') +
-          (secureReceiptUrl ? `\n📄 *Recibo Anexado (Link Seguro 24h):*\n${secureReceiptUrl}\n` : '') +
-          `\n🚀 _A administração confirmou a entrada financeira. Encomenda agendada para expedição._`;
+          (receiptRelativePath ? `\n📁 *Recibo no Storage:* ${receiptRelativePath}\n` : '') +
+          (tempSignedUrlForMetaOrPreview ? `🔐 *Recibo Anexado (Link Seguro 24h):*\n${tempSignedUrlForMetaOrPreview}\n` : '') +
+          (isMockMode
+            ? `\n🧪 _[Simulação]: Aprovação financeira simulada. Auditoria real preservada._`
+            : `\n🚀 _A administração confirmou a entrada financeira. Encomenda agendada para expedição._`);
         break;
       }
 
       case 'order_processing': {
-        formattedMessage = `📦 *ENCOMENDA EM PREPARAÇÃO & CONTROLO DE QUALIDADE*\n\n` +
+        formattedMessage = `${prefix}📦 *ENCOMENDA EM PREPARAÇÃO & CONTROLO DE QUALIDADE*\n\n` +
           `📦 *Código:* #${orderId}\n` +
           `👤 *Cliente:* ${clientName} (${clientPhone})\n` +
           `🔍 *Estado:* Empacotamento anti-impacto e conferência técnica dos equipamentos em curso no centro de expedição.\n`;
@@ -416,7 +638,7 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'order_shipped': {
-        formattedMessage = `🚚 *ENCOMENDA EM ROTA DE ENTREGA*\n\n` +
+        formattedMessage = `${prefix}🚚 *ENCOMENDA EM ROTA DE ENTREGA*\n\n` +
           `📦 *Código:* #${orderId}\n` +
           `👤 *Cliente:* ${clientName} (${clientPhone})\n` +
           (addressStr ? `📍 *Endereço de Destino:* ${addressStr}\n` : '') +
@@ -425,7 +647,7 @@ Deno.serve(async (req: Request) => {
       }
 
       case 'order_delivered': {
-        formattedMessage = `🎉 *ENCOMENDA ENTREGUE COM SUCESSO*\n\n` +
+        formattedMessage = `${prefix}🎉 *ENCOMENDA ENTREGUE COM SUCESSO*\n\n` +
           `📦 *Código:* #${orderId}\n` +
           `👤 *Cliente:* ${clientName}\n` +
           `✅ *Estado:* Entrega concluída com sucesso no endereço do cliente. Garantia oficial de 7 dias activada.\n`;
@@ -433,170 +655,194 @@ Deno.serve(async (req: Request) => {
       }
 
       default: {
-        formattedMessage = `ℹ️ *NOTIFICAÇÃO DE ENCOMENDA #${orderId}*\nCliente: ${clientName}\nEstado: ${eventType}\nTotal: ${totalKz} Kz`;
+        formattedMessage = `${prefix}ℹ️ *NOTIFICAÇÃO DE ENCOMENDA #${orderId}*\nCliente: ${clientName}\nEstado: ${eventType}\nTotal: ${totalKz} Kz`;
       }
     }
 
     const waLink = `https://wa.me/${COMPANY_WHATSAPP_NUMBER}?text=${encodeURIComponent(formattedMessage)}`;
 
     // =========================================================================
-    // 5. ENVIO ATIVO VIA META WHATSAPP CLOUD API (Se credenciais configuradas)
+    // 7. EXECUÇÃO EM MODO MOCK (SIMULAÇÃO)
     // =========================================================================
-    if (whatsappToken && whatsappPhoneNumberId) {
-      const metaBaseUrl = `https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}/messages`;
-      let mediaMetaId = null;
-      let textMetaId = null;
+    if (isMockMode) {
+      const mockMetaId = `mock_wamid_${orderId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
-      // 5.1 Se houver comprovativo PDF/Imagem, enviar como documento/imagem nativo diretamente anexado
-      if (secureReceiptUrl && (isReceiptPdf || isReceiptImage)) {
-        try {
-          const mediaPayload = isReceiptPdf
-            ? {
-                messaging_product: 'whatsapp',
-                to: COMPANY_WHATSAPP_NUMBER,
-                type: 'document',
-                document: {
-                  link: secureReceiptUrl,
-                  caption: `📄 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`,
-                  filename: receiptFileName
-                }
-              }
-            : {
-                messaging_product: 'whatsapp',
-                to: COMPANY_WHATSAPP_NUMBER,
-                type: 'image',
-                image: {
-                  link: secureReceiptUrl,
-                  caption: `📷 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`
-                }
-              };
-
-          const mediaRes = await fetch(metaBaseUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${whatsappToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(mediaPayload)
-          });
-
-          const mediaJson = await mediaRes.json();
-          if (mediaRes.ok && mediaJson.messages?.[0]?.id) {
-            mediaMetaId = mediaJson.messages[0].id;
-          }
-        } catch (mediaErr: any) {
-          console.warn('Aviso no envio do ficheiro de comprovativo via WhatsApp Cloud API:', mediaErr.message);
-        }
-      }
-
-      // 5.2 Envio da mensagem de texto completa com detalhes e link de segurança
-      const textPayload = {
-        messaging_product: 'whatsapp',
-        to: COMPANY_WHATSAPP_NUMBER,
-        type: 'text',
-        text: {
-          preview_url: true,
-          body: formattedMessage
-        }
-      };
-
-      const textRes = await fetch(metaBaseUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${whatsappToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(textPayload)
-      });
-
-      const textJson = await textRes.json();
-      if (textRes.ok && textJson.messages?.[0]?.id) {
-        textMetaId = textJson.messages[0].id;
-      }
-
-      const isOverallSuccess = textRes.ok;
-
-      // Gravação do log no PostgreSQL
       if (supabaseAdmin) {
         try {
           await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
             event_type: eventType,
             order_code: orderId,
             recipient: COMPANY_WHATSAPP_NUMBER,
-            status: isOverallSuccess ? 'SENT' : 'FAILED',
-            message_type: secureReceiptUrl ? (isReceiptPdf ? 'document' : 'image') : 'text',
-            meta_message_id: textMetaId || mediaMetaId,
-            document_url: secureReceiptUrl || null,
+            status: 'SIMULATED',
+            dispatch_mode: 'mock',
+            message_type: receiptRelativePath ? (isReceiptPdf ? 'document' : 'image') : 'text',
+            meta_message_id: mockMetaId,
+            document_storage_path: receiptRelativePath || null,
+            document_filename: receiptRelativePath ? receiptFileName : null,
+            document_mime_type: receiptRelativePath ? receiptMimeType : null,
             deduplication_key: finalKey,
-            last_error: isOverallSuccess ? null : JSON.stringify(textJson),
-            payload: { orderId, clientName, total: totalKz, eventType }
+            formatted_body: formattedMessage,
+            payload: { orderId, clientName, total: totalKz, eventType, isSimulation: true }
           }], { onConflict: 'deduplication_key' });
-        } catch (_logErr) {}
-      }
-
-      if (!isOverallSuccess) {
-        return new Response(
-          JSON.stringify({
-            success: false,
-            apiUsed: true,
-            configured: true,
-            destination: `+${COMPANY_WHATSAPP_NUMBER}`,
-            metaStatus: textRes.status,
-            metaError: textJson,
-            message: 'Erro na chamada à WhatsApp Cloud API da Meta.',
-            formattedMessage,
-            waLink
-          }),
-          { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        } catch (logErr: any) {
+          console.warn('Aviso ao registar log de simulação WhatsApp:', logErr.message);
+        }
       }
 
       return new Response(
         JSON.stringify({
           success: true,
-          apiUsed: true,
-          configured: true,
+          mode: 'mock',
+          status: 'SIMULATED',
+          simulated: true,
+          apiUsed: false,
+          configured: false,
           destination: `+${COMPANY_WHATSAPP_NUMBER}`,
-          metaResponse: textJson,
-          mediaSent: Boolean(mediaMetaId),
-          message: 'Notificação enviada com sucesso para o WhatsApp da empresa via WhatsApp Cloud API.',
+          metaMessageId: mockMetaId,
+          documentProcessed: receiptRelativePath ? {
+            storagePath: receiptRelativePath,
+            fileName: receiptFileName,
+            mimeType: receiptMimeType,
+            hasTemporarySignedUrl: Boolean(tempSignedUrlForMetaOrPreview)
+          } : null,
+          message: `Notificação #${orderId} (${eventType}) simulada com sucesso em modo MOCK. Registada com status SIMULATED.`,
           formattedMessage,
-          waLink
+          waLink,
+          temporarySignedUrl: tempSignedUrlForMetaOrPreview || null
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // =========================================================================
-    // 6. TRATAMENTO QUANDO AS CREDENCIAIS META AINDA ESTÃO PENDENTES
-    // Registo de estado PENDING_CONFIG e devolução transparente do waLink
+    // 8. EXECUÇÃO EM MODO CLOUD API REAL (Meta Graph API)
     // =========================================================================
+    const metaBaseUrl = `https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}/messages`;
+    let mediaMetaId = null;
+    let textMetaId = null;
+
+    // 8.1 Envio de Comprovativo como Documento/Imagem Nativo
+    if (tempSignedUrlForMetaOrPreview && (isReceiptPdf || isReceiptImage)) {
+      try {
+        const mediaPayload = isReceiptPdf
+          ? {
+              messaging_product: 'whatsapp',
+              to: COMPANY_WHATSAPP_NUMBER,
+              type: 'document',
+              document: {
+                link: tempSignedUrlForMetaOrPreview,
+                caption: `📄 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`,
+                filename: receiptFileName
+              }
+            }
+          : {
+              messaging_product: 'whatsapp',
+              to: COMPANY_WHATSAPP_NUMBER,
+              type: 'image',
+              image: {
+                link: tempSignedUrlForMetaOrPreview,
+                caption: `📷 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`
+              }
+            };
+
+        const mediaRes = await fetch(metaBaseUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${whatsappToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(mediaPayload)
+        });
+
+        const mediaJson = await mediaRes.json();
+        if (mediaRes.ok && mediaJson.messages?.[0]?.id) {
+          mediaMetaId = mediaJson.messages[0].id;
+        }
+      } catch (mediaErr: any) {
+        console.warn('Aviso no envio do comprovativo via WhatsApp Cloud API:', mediaErr.message);
+      }
+    }
+
+    // 8.2 Envio da Mensagem de Texto
+    const textPayload = {
+      messaging_product: 'whatsapp',
+      to: COMPANY_WHATSAPP_NUMBER,
+      type: 'text',
+      text: {
+        preview_url: true,
+        body: formattedMessage
+      }
+    };
+
+    const textRes = await fetch(metaBaseUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${whatsappToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(textPayload)
+    });
+
+    const textJson = await textRes.json();
+    if (textRes.ok && textJson.messages?.[0]?.id) {
+      textMetaId = textJson.messages[0].id;
+    }
+
+    const isOverallSuccess = textRes.ok;
+
     if (supabaseAdmin) {
       try {
         await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
           event_type: eventType,
           order_code: orderId,
           recipient: COMPANY_WHATSAPP_NUMBER,
-          status: 'PENDING_CONFIG',
-          message_type: secureReceiptUrl ? (isReceiptPdf ? 'document' : 'image') : 'text',
-          document_url: secureReceiptUrl || null,
+          status: isOverallSuccess ? 'SENT' : 'FAILED',
+          dispatch_mode: 'cloud_api',
+          message_type: receiptRelativePath ? (isReceiptPdf ? 'document' : 'image') : 'text',
+          meta_message_id: textMetaId || mediaMetaId,
+          document_storage_path: receiptRelativePath || null,
+          document_filename: receiptRelativePath ? receiptFileName : null,
+          document_mime_type: receiptRelativePath ? receiptMimeType : null,
           deduplication_key: finalKey,
-          last_error: 'Aguardando configuração de WHATSAPP_TOKEN e WHATSAPP_PHONE_NUMBER_ID nos secrets do Supabase.',
+          formatted_body: formattedMessage,
+          last_error: isOverallSuccess ? null : JSON.stringify(textJson),
           payload: { orderId, clientName, total: totalKz, eventType }
         }], { onConflict: 'deduplication_key' });
       } catch (_logErr) {}
     }
 
+    if (!isOverallSuccess) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          mode: 'cloud_api',
+          status: 'FAILED',
+          apiUsed: true,
+          configured: true,
+          destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+          metaStatus: textRes.status,
+          metaError: textJson,
+          message: 'Erro na chamada à WhatsApp Cloud API da Meta.',
+          formattedMessage,
+          waLink
+        }),
+        { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
-        success: false,
-        apiUsed: false,
-        configured: false,
+        success: true,
+        mode: 'cloud_api',
+        status: 'SENT',
+        apiUsed: true,
+        configured: true,
         destination: `+${COMPANY_WHATSAPP_NUMBER}`,
-        message: 'WhatsApp Business Cloud API aguarda configuração de credenciais no Supabase. Notificação formatada pronta para despacho manual ou automático.',
+        metaResponse: textJson,
+        mediaSent: Boolean(mediaMetaId),
+        message: 'Notificação enviada com sucesso para o WhatsApp da empresa via WhatsApp Cloud API.',
         formattedMessage,
-        waLink,
-        secureReceiptUrl: secureReceiptUrl || null
+        waLink
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

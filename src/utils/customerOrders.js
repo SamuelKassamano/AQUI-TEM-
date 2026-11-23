@@ -285,7 +285,7 @@ export async function createAndSaveOrder({
             statusLabel: 'Comprovativo Recebido (Em Validação Financeira)'
           }
         });
-      } catch (_e) {}
+      } catch (_e) { }
     }, 1500);
   }
 
