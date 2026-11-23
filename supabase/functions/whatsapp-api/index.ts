@@ -349,6 +349,168 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    // 4.1.1 Diagnóstico Autenticado do Token e Activos Meta (Sem Envio de Mensagens)
+    // Permite auditar validade, permissões (scopes), WABA e Phone Number sem expor credenciais
+    if (action === 'diagnose-token') {
+      const isAdmin = Boolean(
+        (body.adminSecret && webhookVerifyToken && body.adminSecret === webhookVerifyToken) ||
+        (await verifyAdminSession(req))
+      );
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            securityBlock: true,
+            message: 'Acesso negado: apenas administradores autorizados podem executar o diagnóstico de credenciais.'
+          }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      if (!whatsappToken) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            isValid: false,
+            configured: false,
+            message: 'Secret WHATSAPP_TOKEN não configurado no Supabase.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const diagnosticResults: any = {
+        success: false,
+        timestamp: new Date().toISOString(),
+        tokenInspection: null,
+        phoneNumberInspection: null,
+        wabaInspection: null,
+        readiness: {
+          tokenValid: false,
+          hasMessagingPermission: false,
+          hasManagementPermission: false,
+          phoneNumberAccessible: false,
+          wabaAccessible: false,
+          phoneMatchesWaba: false,
+          readyForSend: false
+        }
+      };
+
+      // 1. Diagnóstico de Token via debug_token
+      try {
+        const debugRes = await fetch(
+          `https://graph.facebook.com/v21.0/debug_token?input_token=${encodeURIComponent(whatsappToken)}&access_token=${encodeURIComponent(whatsappToken)}`
+        );
+        const debugJson = await debugRes.json();
+
+        if (debugRes.ok && debugJson?.data) {
+          const d = debugJson.data;
+          const scopes: string[] = Array.isArray(d.scopes) ? d.scopes : [];
+          const hasMessaging = scopes.includes('whatsapp_business_messaging');
+          const hasManagement = scopes.includes('whatsapp_business_management');
+          const isNeverExpiring = d.expires_at === 0 || !d.expires_at;
+          const expiresAtIso = d.expires_at ? new Date(d.expires_at * 1000).toISOString() : null;
+          const hoursRemaining = d.expires_at ? Math.max(0, Math.round(((d.expires_at * 1000) - Date.now()) / (1000 * 60 * 60) * 10) / 10) : null;
+
+          diagnosticResults.tokenInspection = {
+            isValid: Boolean(d.is_valid),
+            appId: d.app_id || null,
+            applicationName: d.application || null,
+            type: d.type || null,
+            isNeverExpiring,
+            expiresAt: expiresAtIso,
+            hoursRemaining,
+            scopesDetected: scopes
+          };
+
+          diagnosticResults.readiness.tokenValid = Boolean(d.is_valid);
+          diagnosticResults.readiness.hasMessagingPermission = hasMessaging;
+          diagnosticResults.readiness.hasManagementPermission = hasManagement;
+        } else {
+          diagnosticResults.tokenInspection = {
+            isValid: false,
+            error: debugJson?.error || 'Token inválido ou não inspecionável'
+          };
+        }
+      } catch (e: any) {
+        diagnosticResults.tokenInspection = { isValid: false, error: e.message };
+      }
+
+      // 2. Diagnóstico do Phone Number ID
+      if (whatsappPhoneNumberId) {
+        try {
+          const phoneRes = await fetch(
+            `https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}?fields=id,display_phone_number,verified_name,code_verification_status,quality_rating`,
+            { headers: { 'Authorization': `Bearer ${whatsappToken}` } }
+          );
+          const phoneJson = await phoneRes.json();
+          if (phoneRes.ok && phoneJson?.id) {
+            diagnosticResults.phoneNumberInspection = {
+              accessible: true,
+              id: phoneJson.id,
+              displayPhoneNumber: phoneJson.display_phone_number || null,
+              verifiedName: phoneJson.verified_name || null,
+              verificationStatus: phoneJson.code_verification_status || null,
+              qualityRating: phoneJson.quality_rating || null
+            };
+            diagnosticResults.readiness.phoneNumberAccessible = true;
+          } else {
+            diagnosticResults.phoneNumberInspection = {
+              accessible: false,
+              id: whatsappPhoneNumberId,
+              error: phoneJson?.error || 'Não acessível com este token'
+            };
+          }
+        } catch (e: any) {
+          diagnosticResults.phoneNumberInspection = { accessible: false, error: e.message };
+        }
+      }
+
+      // 3. Diagnóstico do WABA ID e Correspondência com o Número
+      if (whatsappBusinessAccountId) {
+        try {
+          const wabaRes = await fetch(
+            `https://graph.facebook.com/v21.0/${whatsappBusinessAccountId}/phone_numbers?fields=id,display_phone_number`,
+            { headers: { 'Authorization': `Bearer ${whatsappToken}` } }
+          );
+          const wabaJson = await wabaRes.json();
+          if (wabaRes.ok && Array.isArray(wabaJson?.data)) {
+            const numbers = wabaJson.data;
+            const matchesPhone = numbers.some((n: any) => n.id === whatsappPhoneNumberId);
+            diagnosticResults.wabaInspection = {
+              accessible: true,
+              wabaId: whatsappBusinessAccountId,
+              phoneNumbersCount: numbers.length,
+              matchesConfiguredPhoneId: matchesPhone
+            };
+            diagnosticResults.readiness.wabaAccessible = true;
+            diagnosticResults.readiness.phoneMatchesWaba = matchesPhone;
+          } else {
+            diagnosticResults.wabaInspection = {
+              accessible: false,
+              wabaId: whatsappBusinessAccountId,
+              error: wabaJson?.error || 'WABA não acessível com este token'
+            };
+          }
+        } catch (e: any) {
+          diagnosticResults.wabaInspection = { accessible: false, error: e.message };
+        }
+      }
+
+      // Avaliação final de prontidão
+      diagnosticResults.readiness.readyForSend = Boolean(
+        diagnosticResults.readiness.tokenValid &&
+        diagnosticResults.readiness.hasMessagingPermission &&
+        diagnosticResults.readiness.phoneNumberAccessible
+      );
+      diagnosticResults.success = diagnosticResults.readiness.readyForSend;
+
+      return new Response(JSON.stringify(diagnosticResults), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
     // 4.2 DISPARO DE TESTE REAL CONTROLADO (AUTORIZADO PELA ADMINISTRAÇÃO)
     // - Mantém WHATSAPP_MODE=mock globalmente
     // - Envia EXCLUSIVAMENTE para +244 950 752 933
