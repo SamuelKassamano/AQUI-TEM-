@@ -218,7 +218,7 @@ export async function notifyCompanyNewLead(leadData) {
 /**
  * Lista os registos históricos de despacho de notificações WhatsApp
  */
-export async function fetchWhatsAppLogs({ page = 1, limit = 50, statusFilter = 'all' } = {}) {
+export async function fetchWhatsAppLogs({ page = 1, limit = 50, statusFilter = 'all', originFilter = 'all' } = {}) {
   if (!isSupabaseConfigured || !supabase?.functions) {
     return { success: false, logs: [], totalCount: 0 };
   }
@@ -229,7 +229,8 @@ export async function fetchWhatsAppLogs({ page = 1, limit = 50, statusFilter = '
         action: 'list-logs',
         page,
         limit,
-        statusFilter
+        statusFilter,
+        originFilter
       }
     });
 

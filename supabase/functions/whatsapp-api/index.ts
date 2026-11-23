@@ -14,7 +14,7 @@ function getCorsHeaders(req: Request) {
   const isAllowed = ALLOWED_ORIGINS.includes(origin) || origin.endsWith('.vercel.app');
   return {
     'Access-Control-Allow-Origin': isAllowed ? origin : ALLOWED_ORIGINS[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-hub-signature-256',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   };
 }
@@ -31,7 +31,7 @@ interface OrderItem {
 
 interface NotificationPayload {
   action?: 'notify-company' | 'notify-lead' | 'check-status' | 'list-logs' | 'get-receipt-url' | 'test-simulate';
-  eventType?: 'order_created' | 'receipt_submitted' | 'payment_confirmed' | 'order_processing' | 'order_shipped' | 'order_delivered' | 'lead_captured';
+  eventType?: 'order_created' | 'receipt_submitted' | 'payment_confirmed' | 'order_processing' | 'order_shipped' | 'order_delivered' | 'lead_captured' | 'external_meta';
   orderData?: {
     id: string;
     orderDate?: string;
@@ -72,6 +72,39 @@ interface NotificationPayload {
   limit?: number;
   page?: number;
   statusFilter?: string;
+  originFilter?: string;
+}
+
+/**
+ * Validação criptográfica da assinatura HMAC-SHA256 da Meta (X-Hub-Signature-256)
+ */
+async function verifyMetaHmac(rawBody: string, signatureHeader: string | null, secret: string): Promise<boolean> {
+  if (!signatureHeader || !signatureHeader.startsWith('sha256=')) {
+    return false;
+  }
+  const expectedHash = signatureHeader.substring(7).trim().toLowerCase();
+  try {
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(secret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signatureBytes = await crypto.subtle.sign(
+      'HMAC',
+      key,
+      encoder.encode(rawBody)
+    );
+    const hashHex = Array.from(new Uint8Array(signatureBytes))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    return hashHex.toLowerCase() === expectedHash;
+  } catch (err: any) {
+    console.warn('Erro ao calcular HMAC da Meta:', err.message);
+    return false;
+  }
 }
 
 Deno.serve(async (req: Request) => {
@@ -88,6 +121,7 @@ Deno.serve(async (req: Request) => {
   const whatsappToken = Deno.env.get('WHATSAPP_TOKEN') || Deno.env.get('WHATSAPP_API_TOKEN') || '';
   const whatsappPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '';
   const webhookVerifyToken = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || DEFAULT_WEBHOOK_VERIFY_TOKEN;
+  const metaAppSecret = Deno.env.get('META_APP_SECRET') || Deno.env.get('WHATSAPP_APP_SECRET') || '';
 
   // Inicializar cliente administrativo Supabase com service_role
   let supabaseAdmin: any = null;
@@ -98,7 +132,7 @@ Deno.serve(async (req: Request) => {
   }
 
   // =========================================================================
-  // 2. META WEBHOOK VERIFICATION (GET)
+  // 2. META WEBHOOK VERIFICATION (GET Challenge)
   // =========================================================================
   if (req.method === 'GET') {
     const url = new URL(req.url);
@@ -128,13 +162,35 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const body: any = await req.json();
+    const rawBodyText = await req.text();
+    let body: any = {};
+    try {
+      body = JSON.parse(rawBodyText);
+    } catch (_e) {
+      return new Response(JSON.stringify({ success: false, message: 'JSON inválido.' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
     // =========================================================================
     // 3. META WEBHOOK STATUS RECEIVER (POST da Meta com status de entrega)
-    // Atualiza status real apenas se mensagem foi despachada no modo cloud_api
+    // Suporta mensagens internas e eventos externos (ex: testes directos na Meta)
     // =========================================================================
     if (body.object === 'whatsapp_business_account') {
+      // 3.1 Validação de Assinatura Criptográfica HMAC da Meta se o Secret estiver configurado
+      if (metaAppSecret) {
+        const sigHeader = req.headers.get('x-hub-signature-256');
+        const isSigValid = await verifyMetaHmac(rawBodyText, sigHeader, metaAppSecret);
+        if (!isSigValid) {
+          console.warn('Webhook Meta rejeitado: Assinatura HMAC inválida.');
+          return new Response('Assinatura Meta inválida.', {
+            status: 401,
+            headers: { ...corsHeaders, 'Content-Type': 'text/plain' }
+          });
+        }
+      }
+
       const entries = body.entry || [];
       for (const entry of entries) {
         const changes = entry.changes || [];
@@ -144,22 +200,82 @@ Deno.serve(async (req: Request) => {
             const metaId = st.id;
             const metaStatus = (st.status || '').toUpperCase(); // SENT, DELIVERED, READ, FAILED
             const timestamp = st.timestamp ? new Date(Number(st.timestamp) * 1000).toISOString() : new Date().toISOString();
+            const recipientId = st.recipient_id || '';
             const errors = st.errors || null;
+            const firstErr = Array.isArray(errors) && errors.length > 0 ? errors[0] : null;
+            const errorCode = firstErr?.code ? String(firstErr.code) : null;
+            const errorTitle = firstErr?.title || firstErr?.message || null;
+            const errorDetails = firstErr?.error_data?.details || null;
+            const fbtraceId = firstErr?.fbtrace_id || null;
+            const fullErrorText = errors ? JSON.stringify(errors) : null;
 
             if (supabaseAdmin && metaId) {
               try {
-                // Atualiza apenas se não for SIMULATED
-                await supabaseAdmin
+                // A) Verificar se a mensagem já existe no sistema
+                const { data: existingMsg } = await supabaseAdmin
                   .from('whatsapp_dispatch_logs')
-                  .update({
-                    status: metaStatus === 'FAILED' ? 'FAILED' : (metaStatus === 'DELIVERED' ? 'DELIVERED' : (metaStatus === 'READ' ? 'READ' : 'SENT')),
-                    last_error: errors ? JSON.stringify(errors) : null,
-                    updated_at: timestamp
-                  })
+                  .select('id, status, dispatch_mode')
                   .eq('meta_message_id', metaId)
-                  .neq('status', 'SIMULATED');
+                  .maybeSingle();
+
+                if (existingMsg) {
+                  // Se existir e não for SIMULATED, atualizar o ciclo de entrega real
+                  if (existingMsg.status !== 'SIMULATED') {
+                    await supabaseAdmin
+                      .from('whatsapp_dispatch_logs')
+                      .update({
+                        status: metaStatus === 'FAILED' ? 'FAILED' : (metaStatus === 'DELIVERED' ? 'DELIVERED' : (metaStatus === 'READ' ? 'READ' : 'SENT')),
+                        raw_meta_status: st.status,
+                        last_error: fullErrorText,
+                        error_code: errorCode,
+                        error_details: errorDetails,
+                        fbtrace_id: fbtraceId,
+                        updated_at: timestamp
+                      })
+                      .eq('id', existingMsg.id);
+                  }
+                } else {
+                  // B) Não existe registo prévio: persistir como EVENTO EXTERNO META
+                  const extDedupKey = `meta-ext-${metaId}-${st.status}`;
+                  const formattedNotice = `📡 *[EVENTO EXTERNO META]*\n\n` +
+                    `🆔 *WAMID:* ${metaId}\n` +
+                    `📱 *Destinatário:* +${recipientId || COMPANY_WHATSAPP_NUMBER}\n` +
+                    `📊 *Estado Meta:* ${metaStatus}\n` +
+                    `🕒 *Data/Hora:* ${new Date(timestamp).toLocaleString('pt-AO')}\n` +
+                    (errorCode ? `\n⚠️ *Código de Erro:* ${errorCode}${errorTitle ? ` (${errorTitle})` : ''}\n` : '') +
+                    (errorDetails ? `📝 *Detalhes:* ${errorDetails}\n` : '') +
+                    (fbtraceId ? `🔍 *FB Trace ID:* ${fbtraceId}\n` : '');
+
+                  await supabaseAdmin
+                    .from('whatsapp_dispatch_logs')
+                    .upsert([{
+                      event_type: 'external_meta',
+                      order_code: null,
+                      lead_id: null,
+                      recipient: recipientId || COMPANY_WHATSAPP_NUMBER,
+                      status: metaStatus === 'FAILED' ? 'FAILED' : (metaStatus === 'DELIVERED' ? 'DELIVERED' : (metaStatus === 'READ' ? 'READ' : 'SENT')),
+                      dispatch_mode: 'external_meta',
+                      message_type: 'status_update',
+                      meta_message_id: metaId,
+                      deduplication_key: extDedupKey,
+                      raw_meta_status: st.status,
+                      error_code: errorCode,
+                      error_details: errorDetails,
+                      fbtrace_id: fbtraceId,
+                      last_error: fullErrorText,
+                      formatted_body: formattedNotice,
+                      payload: {
+                        source: 'external_meta',
+                        recipientId,
+                        timestamp,
+                        rawStatus: st
+                      },
+                      created_at: timestamp,
+                      updated_at: timestamp
+                    }], { onConflict: 'deduplication_key' });
+                }
               } catch (e: any) {
-                console.warn('Aviso ao atualizar status de webhook Meta:', e.message);
+                console.warn('Aviso ao processar status de webhook Meta:', e.message);
               }
             }
           }
@@ -184,7 +300,8 @@ Deno.serve(async (req: Request) => {
       storagePath,
       limit = 50,
       page = 1,
-      statusFilter = 'all'
+      statusFilter = 'all',
+      originFilter = 'all'
     } = body as NotificationPayload;
 
     // 4.1 Verificação de Estado da Configuração
@@ -201,6 +318,7 @@ Deno.serve(async (req: Request) => {
             ...(!whatsappToken ? ['WHATSAPP_TOKEN'] : []),
             ...(!whatsappPhoneNumberId ? ['WHATSAPP_PHONE_NUMBER_ID'] : [])
           ],
+          hasAppSecretConfigured: Boolean(metaAppSecret),
           message: whatsappMode === 'mock'
             ? 'Sistema a operar em MODO SIMULAÇÃO (MOCK). Nenhuma mensagem real é enviada à Meta.'
             : (isConfigured
@@ -235,6 +353,10 @@ Deno.serve(async (req: Request) => {
         query = query.eq('status', statusFilter);
       }
 
+      if (originFilter && originFilter !== 'all') {
+        query = query.eq('dispatch_mode', originFilter);
+      }
+
       const { data: logs, count, error: fetchErr } = await query;
 
       if (fetchErr) {
@@ -258,7 +380,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // 4.3 Obtenção de Signed URL Temporário sob Procura (Para visualização no Painel)
-    // Conforme regra de segurança: Nunca armazenar signed URLs no banco, apenas gerar sob demanda.
     if (action === 'get-receipt-url') {
       if (!storagePath) {
         return new Response(
@@ -293,8 +414,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // 4.4 Validação Estrita do Modo de Operação
-    // Regra Obrigatória: O modo MOCK deve ser ativado exclusivamente através de WHATSAPP_MODE=mock.
-    // Se o modo cloud_api estiver ativo e faltarem credenciais, o sistema deve apresentar erro sem simular.
     const isMockMode = whatsappMode === 'mock';
 
     if (!isMockMode && whatsappMode === 'cloud_api') {
@@ -374,7 +493,7 @@ Deno.serve(async (req: Request) => {
         } catch (_dedupErr) {}
       }
 
-      // MODO MOCK (SIMULAÇÃO PURA)
+      // MODO MOCK
       if (isMockMode) {
         const mockMetaId = `mock_wamid_lead_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
@@ -527,7 +646,6 @@ Deno.serve(async (req: Request) => {
 
     if ((eventType === 'receipt_submitted' || eventType === 'payment_confirmed') && supabaseAdmin) {
       if (!receiptRelativePath) {
-        // Tentar buscar na tabela crm_leads se não fornecido directamente
         try {
           const { data: lead } = await supabaseAdmin
             .from('crm_leads')
@@ -547,7 +665,7 @@ Deno.serve(async (req: Request) => {
         receiptMimeType = isReceiptPdf ? 'application/pdf' : (ext === 'png' ? 'image/png' : 'image/jpeg');
         receiptFileName = receiptRelativePath.split('/').pop() || `Recibo-${orderId}.${isReceiptPdf ? 'pdf' : 'jpg'}`;
 
-        // Gerar URL assinado temporário (apenas em memória, NUNCA armazenado no banco)
+        // Gerar URL assinado temporário em memória (NUNCA gravado no banco)
         try {
           const { data: signedData } = await supabaseAdmin.storage
             .from('payment-receipts')
