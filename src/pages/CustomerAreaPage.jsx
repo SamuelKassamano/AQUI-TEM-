@@ -222,6 +222,31 @@ export default function CustomerAreaPage() {
   };
 
   const [openingReceipt, setOpeningReceipt] = useState(false);
+  const [uploadingReceiptId, setUploadingReceiptId] = useState(null);
+
+  // Upload de Comprovativo a partir da Área do Cliente
+  const handleCustomerUploadReceipt = async (order, file) => {
+    if (!order || !file) return;
+    try {
+      setUploadingReceiptId(order.id);
+      const uploadRes = await uploadReceiptDocument(file, order.id, order.receiptToken);
+      const updated = attachPaymentReceipt(order.id, {
+        fileName: uploadRes.fileName,
+        storagePath: uploadRes.storagePath,
+        url: uploadRes.url,
+        source: 'customer-area'
+      });
+      if (updated) {
+        setSelectedOrder(updated);
+        setOrders(getLocalOrders());
+        alert('Comprovativo enviado com sucesso! O documento está em validação pela tesouraria.');
+      }
+    } catch (err) {
+      alert(`Erro ao enviar comprovativo: ${err.message || 'Falha no ficheiro'}`);
+    } finally {
+      setUploadingReceiptId(null);
+    }
+  };
 
   // Visualização Segura do Comprovativo (Exclusivamente via Backend Signed URL)
   const handleViewReceipt = async (order) => {
@@ -760,9 +785,42 @@ export default function CustomerAreaPage() {
                         </div>
                       </div>
 
-                      {selectedOrder.receiptFileName && (
-                        <div style={{ marginTop: '14px', padding: '10px 12px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.78rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <FileText size={14} color="#22c55e" /> Comprovativo anexado: <strong style={{ color: '#ffffff' }}>{selectedOrder.receiptFileName}</strong>
+                      {selectedOrder.receiptFileName || selectedOrder.receiptStoragePath ? (
+                        <div style={{ marginTop: '14px', padding: '10px 14px', background: 'rgba(255, 255, 255, 0.04)', borderRadius: '10px', border: '1px solid rgba(255, 255, 255, 0.08)', fontSize: '0.80rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FileText size={16} color="#22c55e" />
+                            <span>Comprovativo anexado: <strong style={{ color: '#ffffff' }}>{selectedOrder.receiptFileName || 'Comprovativo Bancário (PDF/Foto)'}</strong></span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleViewReceipt(selectedOrder)}
+                            disabled={openingReceipt}
+                            style={{ background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px', padding: '5px 12px', fontSize: '0.76rem', fontWeight: 700, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                          >
+                            <ExternalLink size={12} /> {openingReceipt ? 'A abrir...' : 'Ver Documento'}
+                          </button>
+                        </div>
+                      ) : !selectedOrder.paymentConfirmedAt && (
+                        <div style={{ marginTop: '14px', padding: '12px 14px', background: 'rgba(255, 101, 0, 0.06)', borderRadius: '10px', border: '1px dashed #ff6500' }}>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 800, color: '#ff6500', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Upload size={14} /> Anexar Comprovativo Bancário (PDF ou Foto)
+                          </div>
+                          <p style={{ fontSize: '0.74rem', color: '#94a3b8', margin: '0 0 8px 0' }}>
+                            Envie a fotografia ou documento digital PDF do comprovativo para validação da sua encomenda pela tesouraria.
+                          </p>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            disabled={uploadingReceiptId === selectedOrder.id}
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) handleCustomerUploadReceipt(selectedOrder, f);
+                            }}
+                            style={{ fontSize: '0.78rem', color: '#ffffff' }}
+                          />
+                          {uploadingReceiptId === selectedOrder.id && (
+                            <span style={{ fontSize: '0.75rem', color: '#ff6500', display: 'block', marginTop: '4px' }}>A enviar comprovativo...</span>
+                          )}
                         </div>
                       )}
                     </div>

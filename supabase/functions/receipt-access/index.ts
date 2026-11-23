@@ -230,9 +230,9 @@ Deno.serve(async (req: Request) => {
         action: h.action || 'Actualização de Estado',
         details: h.details
           ? h.details
-              .replace(/\b\d{9}\b/g, '***')
-              .replace(/IBAN\s+[A-Z0-9.]+/gi, '***')
-              .replace(/motorista:[^|.]+/gi, '')
+            .replace(/\b\d{9}\b/g, '***')
+            .replace(/IBAN\s+[A-Z0-9.]+/gi, '***')
+            .replace(/motorista:[^|.]+/gi, '')
           : ''
       }));
 
@@ -361,7 +361,7 @@ Deno.serve(async (req: Request) => {
               receipt_uploaded_at: file.createdAt
             }).eq('id', matchedLead.id);
             matchedLead.receipt_storage_path = file.path;
-          } catch (_syncErr) {}
+          } catch (_syncErr) { }
         }
 
         // Gera signed URL (válido por 1 hora)
@@ -371,7 +371,7 @@ Deno.serve(async (req: Request) => {
             .from('payment-receipts')
             .createSignedUrl(file.path, 3600);
           if (signRes?.signedUrl) signedUrl = signRes.signedUrl;
-        } catch (_sErr) {}
+        } catch (_sErr) { }
 
         const isPdf = file.name.toLowerCase().endsWith('.pdf') || file.mimetype === 'application/pdf';
         const emailMatch = matchedLead?.notes ? (matchedLead.notes.match(/Email:\s*([^\s|]+@[^\s|]+)/i) || matchedLead.notes.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/)) : null;
@@ -402,7 +402,7 @@ Deno.serve(async (req: Request) => {
           try {
             const { data: sRes } = await adminClient.storage.from('payment-receipts').createSignedUrl(lead.receipt_storage_path, 3600);
             if (sRes?.signedUrl) signedUrl = sRes.signedUrl;
-          } catch (_e) {}
+          } catch (_e) { }
 
           const ext = lead.receipt_storage_path.split('.').pop()?.toLowerCase();
           const isPdf = ext === 'pdf';
@@ -454,10 +454,22 @@ Deno.serve(async (req: Request) => {
       // Actualiza crm_leads de forma segura com adminClient (ignora RLS do anon)
       if (cleanCode) {
         try {
-          const { data: matchedLeads } = await adminClient
+          let { data: matchedLeads } = await adminClient
             .from('crm_leads')
             .select('id, history, notes')
-            .or(`lead_code.eq.${cleanCode},notes.ilike.%${cleanCode}%`);
+            .or(`lead_code.ilike.%${cleanCode}%,notes.ilike.%${cleanCode}%,tracking_number.ilike.%${cleanCode}%`);
+
+          // Se não encontrou pelo código completo, tenta pela parte numérica (ex: 7816)
+          if (!matchedLeads || matchedLeads.length === 0) {
+            const numericPart = cleanCode.replace(/\D/g, '');
+            if (numericPart.length >= 4) {
+              const { data: fallbackLeads } = await adminClient
+                .from('crm_leads')
+                .select('id, history, notes')
+                .or(`lead_code.ilike.%${numericPart}%,notes.ilike.%${numericPart}%`);
+              matchedLeads = fallbackLeads;
+            }
+          }
 
           if (matchedLeads && matchedLeads.length > 0) {
             for (const l of matchedLeads) {
@@ -478,7 +490,7 @@ Deno.serve(async (req: Request) => {
               }).eq('id', l.id);
             }
           }
-        } catch (_regErr) {}
+        } catch (_regErr) { }
       }
 
       // Também gera imediatamente o URL assinado
@@ -526,7 +538,7 @@ Deno.serve(async (req: Request) => {
           if (folderFiles && folderFiles.length > 0 && folderFiles[0].name) {
             targetPath = `${cleanCode}/${folderFiles[0].name}`;
           }
-        } catch (_fErr) {}
+        } catch (_fErr) { }
       }
 
       if (!targetPath) {
@@ -555,7 +567,7 @@ Deno.serve(async (req: Request) => {
           await adminClient.from('crm_leads')
             .update({ receipt_storage_path: targetPath, receipt_uploaded_at: new Date().toISOString() })
             .or(`lead_code.eq.${cleanCode},notes.ilike.%${cleanCode}%`);
-        } catch (_e) {}
+        } catch (_e) { }
       }
 
       return new Response(

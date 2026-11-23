@@ -17,7 +17,8 @@ import {
   MapPin,
   ExternalLink,
   ChevronRight,
-  Info
+  Info,
+  X
 } from 'lucide-react';
 
 import Layout from '../components/Layout';
@@ -151,10 +152,14 @@ export default function CheckoutPage() {
           fee: deliveryFee
         },
         paymentMethod,
-        notes: formData.notes.trim()
+        notes: formData.notes.trim(),
+        receiptFile: receiptFile || null
       });
 
       setCreatedOrder(order);
+      if (order?.receiptAttached) {
+        setReceiptUploaded(true);
+      }
       if (clearCart && !directCheckoutItem) {
         clearCart();
       }
@@ -169,15 +174,16 @@ export default function CheckoutPage() {
   };
 
   // Upload do Comprovativo Bancário (Imagem / PDF)
-  const handleUploadReceipt = async () => {
-    if (!receiptFile || !createdOrder) return;
+  const handleUploadReceipt = async (explicitFile = null) => {
+    const fileToUpload = explicitFile && explicitFile.target ? explicitFile.target.files?.[0] : (explicitFile || receiptFile);
+    if (!fileToUpload || !createdOrder) return;
 
     setUploadingReceipt(true);
     setReceiptError('');
 
     try {
       const uploadRes = await uploadReceiptDocument(
-        receiptFile,
+        fileToUpload,
         createdOrder.id,
         createdOrder.receiptToken
       );
@@ -432,13 +438,19 @@ export default function CheckoutPage() {
                           type="file"
                           id="receipt-file-input"
                           accept="image/jpeg,image/png,image/webp,application/pdf"
-                          onChange={e => setReceiptFile(e.target.files?.[0] || null)}
+                          onChange={e => {
+                            const f = e.target.files?.[0];
+                            if (f) {
+                              setReceiptFile(f);
+                              handleUploadReceipt(f);
+                            }
+                          }}
                           style={{ fontSize: '0.85rem' }}
                         />
 
                         <button
                           type="button"
-                          onClick={handleUploadReceipt}
+                          onClick={() => handleUploadReceipt()}
                           disabled={!receiptFile || uploadingReceipt}
                           className="nav-btn nav-btn-orange"
                           style={{
@@ -451,7 +463,7 @@ export default function CheckoutPage() {
                           }}
                         >
                           <Upload size={16} />
-                          <span>{uploadingReceipt ? 'A Enviar...' : 'ENVIAR COMPROVATIVO'}</span>
+                          <span>{uploadingReceipt ? 'A Enviar Documento...' : 'ENVIAR COMPROVATIVO'}</span>
                         </button>
                       </div>
 
@@ -716,6 +728,106 @@ export default function CheckoutPage() {
                           </div>
                         </div>
                       </label>
+                    </div>
+
+                    {/* Coordenadas Oficiais para Pagamento Imediato */}
+                    <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)' }}>
+                      <div style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--primary-orange)', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <CreditCard size={15} /> Coordenadas Oficiais de Pagamento
+                      </div>
+
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-light)', flexWrap: 'wrap', gap: '6px' }}>
+                          <div>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>EXPRESS / PAYPAY:</span>
+                            <span style={{ fontWeight: 800, color: '#1E5C9E', fontFamily: 'monospace', fontSize: '0.95rem' }}>931396515</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy('931396515', 'mcx-chk')}
+                            className="nav-btn"
+                            style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                          >
+                            {copiedKey === 'mcx-chk' ? 'Copiado!' : 'Copiar'}
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--border-light)', flexWrap: 'wrap', gap: '6px' }}>
+                          <div>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block' }}>BANCO BFA (IBAN):</span>
+                            <span style={{ fontWeight: 800, color: 'var(--text-main)', fontFamily: 'monospace', fontSize: '0.82rem' }}>AO06.0006.0000.9803.5265.3011.9</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleCopy('AO06000600009803526530119', 'bfa-chk')}
+                            className="nav-btn"
+                            style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                          >
+                            {copiedKey === 'bfa-chk' ? 'Copiado!' : 'Copiar'}
+                          </button>
+                        </div>
+
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          Titular: <strong>SAMUEL JOÃO AGOSTINHO KASSAMANO</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Caixa de Upload do Comprovativo na Hora da Compra */}
+                    <div style={{ marginTop: '16px', padding: '16px', borderRadius: '12px', background: 'rgba(255, 101, 0, 0.03)', border: '1px dashed var(--primary-orange)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                        <Upload size={18} color="var(--primary-orange)" />
+                        <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-main)' }}>
+                          Anexar Comprovativo Bancário (PDF ou Foto) — Na hora da compra
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
+                        Se já fez o envio por Multicaixa Express ou transferência BFA, selecione o ficheiro PDF ou fotografia do recibo. Será armazenado com segurança no painel administrativo e validado pela tesouraria.
+                      </p>
+
+                      {receiptFile ? (
+                        <div style={{ background: 'var(--bg-card)', border: '1px solid #10B981', padding: '12px 14px', borderRadius: '10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            {receiptFile.name.toLowerCase().endsWith('.pdf') ? (
+                              <FileText size={24} color="#EF4444" />
+                            ) : (
+                              <CheckCircle size={24} color="#10B981" />
+                            )}
+                            <div>
+                              <div style={{ fontWeight: 800, fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                                {receiptFile.name}
+                              </div>
+                              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                                {receiptFile.name.toLowerCase().endsWith('.pdf') ? 'Documento PDF' : 'Imagem'} • {(receiptFile.size / 1024).toFixed(1)} KB • Pronto para submeter com a encomenda
+                              </div>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setReceiptFile(null)}
+                            className="nav-btn"
+                            style={{ padding: '4px 10px', fontSize: '0.75rem', color: '#DC2626', borderColor: 'rgba(220, 38, 38, 0.3)' }}
+                          >
+                            <X size={13} /> Remover
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,application/pdf"
+                            id="checkout-direct-receipt-input"
+                            onChange={e => {
+                              const f = e.target.files?.[0];
+                              if (f) setReceiptFile(f);
+                            }}
+                            style={{ fontSize: '0.82rem', width: '100%' }}
+                          />
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+                            Formatos suportados: PDF, JPG, PNG, WEBP (máx. 10 MB).
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '10px 14px', borderRadius: '8px' }}>

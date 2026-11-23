@@ -168,8 +168,13 @@ export default function StoreDrawers() {
           fee: deliveryFee
         },
         paymentMethod: checkoutForm.paymentMethod,
-        notes: checkoutForm.notes.trim()
+        notes: checkoutForm.notes.trim(),
+        receiptFile: receiptFileModal || null
       });
+
+      if (orderRecord?.receiptAttached) {
+        setReceiptUploadedModal(true);
+      }
 
       // Adicionar notificação in-app
       addNotificationToFeed({
@@ -192,13 +197,14 @@ export default function StoreDrawers() {
   };
 
   // Upload do Comprovativo Bancário a partir do Modal
-  const handleModalUploadReceipt = async () => {
-    if (!receiptFileModal || !createdOrderModal) return;
+  const handleModalUploadReceipt = async (explicitFile = null) => {
+    const fileToUpload = explicitFile && explicitFile.target ? explicitFile.target.files?.[0] : (explicitFile || receiptFileModal);
+    if (!fileToUpload || !createdOrderModal) return;
 
     setUploadingReceiptModal(true);
     try {
       const uploadRes = await uploadReceiptDocument(
-        receiptFileModal,
+        fileToUpload,
         createdOrderModal.id,
         createdOrderModal.receiptToken
       );
@@ -673,12 +679,18 @@ export default function StoreDrawers() {
                       <input
                         type="file"
                         accept="image/jpeg,image/png,image/webp,application/pdf"
-                        onChange={e => setReceiptFileModal(e.target.files?.[0] || null)}
+                        onChange={e => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            setReceiptFileModal(f);
+                            handleModalUploadReceipt(f);
+                          }
+                        }}
                         style={{ fontSize: '0.82rem', marginBottom: '10px', width: '100%' }}
                       />
                       <button
                         type="button"
-                        onClick={handleModalUploadReceipt}
+                        onClick={() => handleModalUploadReceipt()}
                         disabled={!receiptFileModal || uploadingReceiptModal}
                         className="nav-btn nav-btn-orange"
                         style={{ width: '100%', padding: '10px', justifyContent: 'center', fontWeight: 800, fontSize: '0.88rem' }}
@@ -839,6 +851,29 @@ export default function StoreDrawers() {
                       <option value="Transferência Bancária">Transferência Bancária (Banco BFA)</option>
                       <option value="Multicaixa Express">Multicaixa Express / PayPay (931396515)</option>
                     </select>
+                  </div>
+
+                  {/* Coordenadas e Anexo do Comprovativo na hora da compra */}
+                  <div style={{ background: 'rgba(255, 101, 0, 0.04)', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(255, 101, 0, 0.2)', marginBottom: '14px' }}>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--primary-orange)', marginBottom: '6px' }}>
+                      PAGAMENTO: 931396515 (Express) • BFA: AO06.0006.0000.9803.5265.3011.9
+                    </div>
+                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '4px' }}>
+                      Anexar Comprovativo (PDF / Foto) — Opcional na hora da compra:
+                    </label>
+                    {receiptFileModal ? (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--bg-card)', padding: '6px 10px', borderRadius: '6px', fontSize: '0.76rem', border: '1px solid #10B981' }}>
+                        <span style={{ fontWeight: 700, color: '#10B981' }}>✓ {receiptFileModal.name}</span>
+                        <button type="button" onClick={() => setReceiptFileModal(null)} style={{ border: 'none', background: 'none', color: '#DC2626', cursor: 'pointer', fontSize: '0.72rem', fontWeight: 700 }}>Remover</button>
+                      </div>
+                    ) : (
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,application/pdf"
+                        onChange={e => setReceiptFileModal(e.target.files?.[0] || null)}
+                        style={{ fontSize: '0.76rem', width: '100%' }}
+                      />
+                    )}
                   </div>
 
                   {/* Resumo da Encomenda */}

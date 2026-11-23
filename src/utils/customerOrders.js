@@ -57,14 +57,15 @@ export function getLocalOrders() {
   }
 }
 
-// Salvar nova encomenda
+// Salvar nova encomenda (com suporte a comprovativo na hora da compra)
 export async function createAndSaveOrder({
   customer,
   items,
   subtotal,
   deliveryZone,
   paymentMethod,
-  notes
+  notes,
+  receiptFile = null
 }) {
   const orderId = generateOrderCode();
   const receiptToken = generateReceiptToken();
@@ -79,6 +80,18 @@ export async function createAndSaveOrder({
     hour: '2-digit',
     minute: '2-digit'
   });
+
+  // Se o cliente anexou comprovativo (PDF ou Imagem) na hora da compra, realiza o upload prévio
+  let uploadRes = null;
+  if (receiptFile) {
+    try {
+      uploadRes = await uploadReceiptDocument(receiptFile, orderId, receiptToken);
+    } catch (uploadErr) {
+      console.warn('Aviso no upload inicial do comprovativo na hora da compra:', uploadErr);
+    }
+  }
+
+  const hasReceiptOnPurchase = Boolean(uploadRes?.storagePath);
 
   // Fluxo oficial de 7 estados:
   // 1. Aguardando Pagamento
@@ -99,9 +112,11 @@ export async function createAndSaveOrder({
     {
       step: 2,
       title: 'Comprovativo Recebido',
-      description: 'Comprovativo de pagamento submetido com sucesso pelo cliente.',
-      date: 'Pendente',
-      completed: false
+      description: hasReceiptOnPurchase
+        ? `Comprovativo de pagamento (${uploadRes.fileName}) anexado na hora da compra. Aguardando validação financeira.`
+        : 'Comprovativo de pagamento submetido com sucesso pelo cliente.',
+      date: hasReceiptOnPurchase ? formattedDate : 'Pendente',
+      completed: hasReceiptOnPurchase
     },
     {
       step: 3,
@@ -146,8 +161,13 @@ export async function createAndSaveOrder({
     trackingNumber: `AQT-TRK-${orderId}`,
     receiptToken,
     createdAt: now,
-    status: 'Aguardando Pagamento',
-    statusLabel: 'Aguardando Pagamento',
+    status: hasReceiptOnPurchase ? 'Comprovativo Recebido' : 'Aguardando Pagamento',
+    statusLabel: hasReceiptOnPurchase ? 'Comprovativo Recebido (Pendente de Validação Financeira)' : 'Aguardando Pagamento',
+    receiptAttached: hasReceiptOnPurchase,
+    receiptStoragePath: uploadRes?.storagePath || null,
+    receiptFileName: uploadRes?.fileName || null,
+    receiptUrl: uploadRes?.url || null,
+    receiptDate: hasReceiptOnPurchase ? now : null,
     estimatedDeliveryDate: '3 dias úteis após validação do pagamento',
     customer: {
       name: customer.name || '',
@@ -217,18 +237,25 @@ export async function createAndSaveOrder({
         address: customer.address || 'Angola',
         product_name: items.map(i => `${i.name} (x${i.quantity || 1})`).join(' + '),
         total_value: total,
-        status: 'Novo Lead',
+        status: hasReceiptOnPurchase ? 'Comprovativo Recebido' : 'Novo Lead',
+        receipt_storage_path: uploadRes?.storagePath || null,
+        receipt_uploaded_at: hasReceiptOnPurchase ? now : null,
         payment_method: paymentMethod || 'Transferência Bancária (Banco BFA)',
         tracking_number: `AQT-TRK-${orderId}`,
         estimated_delivery_date: '3 dias úteis após validação do pagamento',
         traffic_source: 'Loja Online (Novo Checkout)',
-        notes: `Código: ${orderId} | Email: ${customer.email} | Telefone: ${customer.phone} | Província: ${customer.province || 'Luanda'} | Município: ${customer.municipality || 'Luanda'} | Frete: ${deliveryFee} Kz | Pagamento: ${paymentMethod}${notes ? ` | Obs: ${notes}` : ''}`,
+        notes: `Código: ${orderId} | Email: ${customer.email} | Telefone: ${customer.phone} | Província: ${customer.province || 'Luanda'} | Município: ${customer.municipality || 'Luanda'} | Frete: ${deliveryFee} Kz | Pagamento: ${paymentMethod}${hasReceiptOnPurchase ? ` | Comprovativo: ${uploadRes.fileName}` : ''}${notes ? ` | Obs: ${notes}` : ''}`,
         history: [
           {
             date: now,
             action: 'Pedido Registado no Checkout',
-            details: `Código: #${orderId} | Total: ${total.toLocaleString('pt-AO')} Kz | Método: ${paymentMethod} | Status: Aguardando Pagamento`
-          }
+            details: `Código: #${orderId} | Total: ${total.toLocaleString('pt-AO')} Kz | Método: ${paymentMethod} | Status: ${hasReceiptOnPurchase ? 'Comprovativo Recebido' : 'Aguardando Pagamento'}`
+          },
+          ...(hasReceiptOnPurchase ? [{
+            date: now,
+            action: 'Comprovativo de Pagamento Anexado na Compra',
+            details: `Ficheiro: ${uploadRes.fileName} no bucket privado payment-receipts`
+          }] : [])
         ]
       };
 
@@ -242,6 +269,24 @@ export async function createAndSaveOrder({
     }
   } catch (err) {
     console.warn('Aviso: Sincronização Supabase em modo local:', err);
+  }
+
+  // Se o cliente anexou o comprovativo na compra e tem e-mail, enviar notificação de recepção
+  if (hasReceiptOnPurchase && customer.email && customer.email.includes('@')) {
+    setTimeout(async () => {
+      try {
+        await sendBrevoTransactionalEmail({
+          templateType: 'receipt_submitted',
+          to: customer.email,
+          recipientName: customer.name || 'Cliente AQUI TEM',
+          orderData: {
+            id: orderId,
+            total,
+            statusLabel: 'Comprovativo Recebido (Em Validação Financeira)'
+          }
+        });
+      } catch (_e) {}
+    }, 1500);
   }
 
   // 3. Sincronização Segura e Não-Bloqueante com o Brevo (Fail-Safe)
