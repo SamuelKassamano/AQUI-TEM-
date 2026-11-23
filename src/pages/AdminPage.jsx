@@ -1779,6 +1779,16 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
               </button>
             )}
 
+            {currentTab === 'whatsapp' && (
+              <button
+                className="nav-btn"
+                onClick={() => window.location.reload()}
+                title="Recarregar notificações WhatsApp"
+              >
+                <RefreshCw size={15} /> Atualizar WhatsApp
+              </button>
+            )}
+
             <Link to="/" className="nav-btn" style={{ textDecoration: 'none' }}>
               <ArrowLeft size={15} /> Ver Loja
             </Link>
@@ -1916,6 +1926,18 @@ CREATE POLICY "Admins can manage crm_settings" ON public.crm_settings FOR ALL TO
             }}
           >
             <MessageCircle size={17} /> WhatsApp Notificações
+            <span
+              style={{
+                fontSize: '0.68rem',
+                padding: '2px 6px',
+                borderRadius: '8px',
+                background: currentTab === 'whatsapp' ? 'rgba(37, 211, 102, 0.2)' : 'rgba(139, 92, 246, 0.15)',
+                color: currentTab === 'whatsapp' ? '#16A34A' : '#8B5CF6',
+                fontWeight: 800
+              }}
+            >
+              MOCK / META
+            </span>
           </button>
 
           <button

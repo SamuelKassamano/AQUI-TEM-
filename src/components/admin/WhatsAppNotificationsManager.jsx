@@ -75,13 +75,14 @@ export default function WhatsAppNotificationsManager({
     setIsLoadingStatus(true);
     setIsLoadingLogs(true);
     try {
+      // Carrega o conjunto completo dos últimos 100 registos para manter contadores estáveis entre abas
       const [statusRes, logsRes] = await Promise.all([
         checkWhatsAppApiStatus(),
         fetchWhatsAppLogs({
-          page: currentPage,
-          limit: pageSize,
-          statusFilter: statusFilter !== 'all' ? statusFilter : undefined,
-          originFilter: originTab !== 'all' ? originTab : undefined
+          page: 1,
+          limit: 100,
+          statusFilter: undefined,
+          originFilter: undefined
         })
       ]);
 
@@ -100,7 +101,7 @@ export default function WhatsAppNotificationsManager({
       setIsLoadingStatus(false);
       setIsLoadingLogs(false);
     }
-  }, [currentPage, pageSize, statusFilter, originTab, showToast]);
+  }, [showToast]);
 
   useEffect(() => {
     loadStatusAndLogs();
