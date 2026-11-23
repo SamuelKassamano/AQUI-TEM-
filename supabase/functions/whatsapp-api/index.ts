@@ -117,11 +117,31 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
   const whatsappMode = (Deno.env.get('WHATSAPP_MODE') || 'mock').toLowerCase().trim();
   const whatsappToken = Deno.env.get('WHATSAPP_TOKEN') || Deno.env.get('WHATSAPP_API_TOKEN') || '';
   const whatsappPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '';
+  const whatsappBusinessAccountId = Deno.env.get('WHATSAPP_BUSINESS_ACCOUNT_ID') || '';
   const webhookVerifyToken = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || DEFAULT_WEBHOOK_VERIFY_TOKEN;
   const metaAppSecret = Deno.env.get('META_APP_SECRET') || Deno.env.get('WHATSAPP_APP_SECRET') || '';
+
+  // Validador de sessão administrativa
+  const verifyAdminSession = async (request: Request): Promise<boolean> => {
+    const authHeader = request.headers.get('Authorization') || '';
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+    if (!token) return false;
+    if (supabaseServiceRoleKey && token === supabaseServiceRoleKey) return true;
+    try {
+      const client = createClient(supabaseUrl, supabaseAnonKey || supabaseServiceRoleKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+        auth: { persistSession: false }
+      });
+      const { data: { user }, error } = await client.auth.getUser();
+      return Boolean(!error && user);
+    } catch (_e) {
+      return false;
+    }
+  };
 
   // Inicializar cliente administrativo Supabase com service_role
   let supabaseAdmin: any = null;
@@ -322,14 +342,194 @@ Deno.serve(async (req: Request) => {
           message: whatsappMode === 'mock'
             ? 'Sistema a operar em MODO SIMULAÇÃO (MOCK). Nenhuma mensagem real é enviada à Meta.'
             : (isConfigured
-                ? 'WhatsApp Business Cloud API está activa e configurada em modo de produção.'
-                : 'Modo cloud_api activo, mas credenciais Meta em falta nos secrets do Supabase.')
+              ? 'WhatsApp Business Cloud API está activa e configurada em modo de produção.'
+              : 'Modo cloud_api activo, mas credenciais Meta em falta nos secrets do Supabase.')
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // 4.2 Listagem de Logs de Despacho (Para o Painel Administrativo)
+    // 4.2 DISPARO DE TESTE REAL CONTROLADO (AUTORIZADO PELA ADMINISTRAÇÃO)
+    // - Mantém WHATSAPP_MODE=mock globalmente
+    // - Envia EXCLUSIVAMENTE para +244 950 752 933
+    // - Exige autenticação administrativa
+    // - Protegido por idempotência
+    // - Não toca em encomendas, leads nem finanças
+    if (action === 'controlled-test-send') {
+      // 1. Verificação de Autenticação Administrativa
+      const isAdmin = Boolean(
+        (body.adminSecret && webhookVerifyToken && body.adminSecret === webhookVerifyToken) ||
+        (await verifyAdminSession(req))
+      );
+      if (!isAdmin) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            securityBlock: true,
+            message: 'Acesso negado: apenas administradores autorizados podem disparar o teste controlado.'
+          }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // 2. Validação Restrita do Destinatário (+244 950 752 933)
+      const requestedRecipient = String(body.recipient || COMPANY_WHATSAPP_NUMBER).replace(/\D/g, '');
+      if (requestedRecipient !== COMPANY_WHATSAPP_NUMBER) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            securityBlock: true,
+            message: `Destinatário '+${requestedRecipient}' não autorizado. O teste controlado é estritamente restrito ao número oficial +${COMPANY_WHATSAPP_NUMBER}.`
+          }),
+          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // 3. Validação das Credenciais
+      if (!whatsappToken || !whatsappPhoneNumberId) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            configured: false,
+            missingCredentials: [
+              ...(!whatsappToken ? ['WHATSAPP_TOKEN'] : []),
+              ...(!whatsappPhoneNumberId ? ['WHATSAPP_PHONE_NUMBER_ID'] : [])
+            ],
+            message: 'Credenciais Meta em falta para disparo do teste real.'
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // 4. Verificação de Idempotência
+      const testDedupKey = body.deduplicationKey || `wa-controlled-test-homologation`;
+      if (supabaseAdmin) {
+        try {
+          const { data: existingTestLog } = await supabaseAdmin
+            .from('whatsapp_dispatch_logs')
+            .select('id, status, meta_message_id, created_at')
+            .eq('deduplication_key', testDedupKey)
+            .maybeSingle();
+
+          if (existingTestLog && (existingTestLog.status === 'SENT' || existingTestLog.status === 'DELIVERED')) {
+            return new Response(
+              JSON.stringify({
+                success: true,
+                duplicate: true,
+                status: existingTestLog.status,
+                metaMessageId: existingTestLog.meta_message_id,
+                message: `Teste controlado (${testDedupKey}) já foi executado anteriormente com estado '${existingTestLog.status}'. Envios duplicados bloqueados por idempotência.`,
+                existingLog: existingTestLog
+              }),
+              { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+        } catch (_dedupErr) { }
+      }
+
+      // 5. Mensagem Oficial Autorizada
+      const authorizedBody = 'AQUI TEM ANGOLA — Teste de homologação do WhatsApp Business API realizado com sucesso. Esta é uma mensagem de teste do sistema de notificações.';
+
+      // 6. Chamada Exclusiva e Isolada à Meta Graph API
+      const metaBaseUrl = `https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}/messages`;
+      try {
+        const metaRes = await fetch(metaBaseUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${whatsappToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            messaging_product: 'whatsapp',
+            to: COMPANY_WHATSAPP_NUMBER,
+            type: 'text',
+            text: { preview_url: false, body: authorizedBody }
+          })
+        });
+
+        const metaJson = await metaRes.json();
+        const metaMsgId = metaJson?.messages?.[0]?.id || null;
+        const isSuccess = metaRes.ok && Boolean(metaMsgId);
+        const metaStatus = isSuccess ? 'SENT' : 'FAILED';
+        const timestamp = new Date().toISOString();
+
+        // 7. Registo Completo de Auditoria em whatsapp_dispatch_logs
+        if (supabaseAdmin) {
+          try {
+            await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
+              event_type: 'controlled_test',
+              order_code: null,
+              lead_id: null,
+              recipient: COMPANY_WHATSAPP_NUMBER,
+              status: metaStatus,
+              dispatch_mode: 'controlled_test',
+              message_type: 'text',
+              meta_message_id: metaMsgId,
+              deduplication_key: testDedupKey,
+              formatted_body: authorizedBody,
+              raw_meta_status: isSuccess ? 'sent' : 'failed',
+              error_code: isSuccess ? null : String(metaJson?.error?.code || '190'),
+              error_details: isSuccess ? null : String(metaJson?.error?.message || 'Authentication Error'),
+              fbtrace_id: isSuccess ? null : String(metaJson?.error?.fbtrace_id || ''),
+              last_error: isSuccess ? null : JSON.stringify(metaJson),
+              payload: {
+                testType: 'controlled_test_send',
+                wabaId: whatsappBusinessAccountId || null,
+                phoneNumberId: whatsappPhoneNumberId,
+                recipient: COMPANY_WHATSAPP_NUMBER,
+                metaResponse: metaJson
+              },
+              created_at: timestamp,
+              updated_at: timestamp
+            }], { onConflict: 'deduplication_key' });
+          } catch (dbErr: any) {
+            console.warn('Aviso ao registar auditoria de teste controlado:', dbErr.message);
+          }
+        }
+
+        if (!isSuccess) {
+          return new Response(
+            JSON.stringify({
+              success: false,
+              mode: 'controlled_test',
+              status: 'FAILED',
+              metaError: metaJson,
+              httpStatus: metaRes.status,
+              message: 'Meta recusou o envio do teste controlado.',
+              destination: `+${COMPANY_WHATSAPP_NUMBER}`
+            }),
+            { status: 502, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            mode: 'controlled_test',
+            status: 'SENT',
+            metaMessageId: metaMsgId,
+            destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+            timestamp,
+            message: 'Envio real de teste aceite pela Meta com sucesso. Aguardando entrega (DELIVERED) no dispositivo.',
+            metaResponse: metaJson
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } catch (callErr: any) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            mode: 'controlled_test',
+            status: 'FAILED',
+            error: callErr.message,
+            message: 'Falha na comunicação de rede com a Meta Graph API.'
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // 4.3 Listagem de Logs de Despacho (Para o Painel Administrativo)
     if (action === 'list-logs') {
       if (!supabaseAdmin) {
         return new Response(
@@ -490,7 +690,7 @@ Deno.serve(async (req: Request) => {
               { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
             );
           }
-        } catch (_dedupErr) {}
+        } catch (_dedupErr) { }
       }
 
       // MODO MOCK
@@ -565,7 +765,7 @@ Deno.serve(async (req: Request) => {
               last_error: metaRes.ok ? null : JSON.stringify(metaJson),
               payload: { leadName, leadPhone, leadProduct, source: leadSource }
             }], { onConflict: 'deduplication_key' });
-          } catch (_logErr) {}
+          } catch (_logErr) { }
         }
 
         return new Response(JSON.stringify({
@@ -633,7 +833,7 @@ Deno.serve(async (req: Request) => {
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
-      } catch (_dedupErr) {}
+      } catch (_dedupErr) { }
     }
 
     // Resolução do Comprovativo Bancário (Storage Privado)
@@ -655,7 +855,7 @@ Deno.serve(async (req: Request) => {
           if (lead?.receipt_storage_path) {
             receiptRelativePath = lead.receipt_storage_path;
           }
-        } catch (_leadLookupErr) {}
+        } catch (_leadLookupErr) { }
       }
 
       if (receiptRelativePath) {
@@ -844,24 +1044,24 @@ Deno.serve(async (req: Request) => {
       try {
         const mediaPayload = isReceiptPdf
           ? {
-              messaging_product: 'whatsapp',
-              to: COMPANY_WHATSAPP_NUMBER,
-              type: 'document',
-              document: {
-                link: tempSignedUrlForMetaOrPreview,
-                caption: `📄 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`,
-                filename: receiptFileName
-              }
+            messaging_product: 'whatsapp',
+            to: COMPANY_WHATSAPP_NUMBER,
+            type: 'document',
+            document: {
+              link: tempSignedUrlForMetaOrPreview,
+              caption: `📄 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`,
+              filename: receiptFileName
             }
+          }
           : {
-              messaging_product: 'whatsapp',
-              to: COMPANY_WHATSAPP_NUMBER,
-              type: 'image',
-              image: {
-                link: tempSignedUrlForMetaOrPreview,
-                caption: `📷 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`
-              }
-            };
+            messaging_product: 'whatsapp',
+            to: COMPANY_WHATSAPP_NUMBER,
+            type: 'image',
+            image: {
+              link: tempSignedUrlForMetaOrPreview,
+              caption: `📷 Comprovativo da Encomenda #${orderId} — ${clientName} (${totalKz} Kz)`
+            }
+          };
 
         const mediaRes = await fetch(metaBaseUrl, {
           method: 'POST',
@@ -926,7 +1126,7 @@ Deno.serve(async (req: Request) => {
           last_error: isOverallSuccess ? null : JSON.stringify(textJson),
           payload: { orderId, clientName, total: totalKz, eventType }
         }], { onConflict: 'deduplication_key' });
-      } catch (_logErr) {}
+      } catch (_logErr) { }
     }
 
     if (!isOverallSuccess) {

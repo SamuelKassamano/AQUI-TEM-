@@ -180,7 +180,7 @@ export default function WhatsAppNotificationsManager({
 
     logs.forEach((log) => {
       if (log.dispatch_mode === 'mock' || log.status === 'SIMULATED') simulated++;
-      else if (log.dispatch_mode === 'cloud_api') website++;
+      else if (log.dispatch_mode === 'cloud_api' || log.dispatch_mode === 'controlled_test') website++;
       else if (log.dispatch_mode === 'external_meta') externalMeta++;
 
       if (log.status === 'FAILED' || log.error_code) failed++;
@@ -207,7 +207,7 @@ export default function WhatsAppNotificationsManager({
     return logs.filter((log) => {
       // Filtro por aba de Origem
       if (originTab === 'mock' && log.dispatch_mode !== 'mock') return false;
-      if (originTab === 'cloud_api' && log.dispatch_mode !== 'cloud_api') return false;
+      if (originTab === 'cloud_api' && log.dispatch_mode !== 'cloud_api' && log.dispatch_mode !== 'controlled_test') return false;
       if (originTab === 'external_meta' && log.dispatch_mode !== 'external_meta') return false;
 
       // Filtro por Tipo de Evento
@@ -834,7 +834,13 @@ export default function WhatsAppNotificationsManager({
                             color: isExternal ? '#D97706' : isSimulated ? '#8B5CF6' : '#10B981'
                           }}
                         >
-                          {isExternal ? '📡 Meta Externo' : isSimulated ? '🧪 Mock' : '🌐 Website'}
+                          {log.dispatch_mode === 'controlled_test'
+                            ? '🧪 Teste Real'
+                            : isExternal
+                            ? '📡 Meta Externo'
+                            : isSimulated
+                            ? '🧪 Mock'
+                            : '🌐 Website'}
                         </span>
                       </td>
 
