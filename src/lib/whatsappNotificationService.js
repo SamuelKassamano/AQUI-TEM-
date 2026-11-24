@@ -18,6 +18,8 @@ import { addNotificationToFeed } from '../utils/notificationSystem.js';
 
 export const COMPANY_WHATSAPP_NUMBER = '244950752933';
 export const COMPANY_WHATSAPP_DISPLAY = '+244 950 752 933';
+export const API_SENDER_NUMBER = '244931396515';
+export const API_SENDER_DISPLAY = '+244 931 396 515';
 
 // Cache em memória para prevenção estrita de notificações duplicadas no cliente
 const deduplicationCache = new Set();

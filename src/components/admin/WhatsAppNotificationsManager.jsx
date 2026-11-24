@@ -395,11 +395,20 @@ export default function WhatsAppNotificationsManager({
                 borderRadius: '10px',
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border-light)',
-                fontSize: '0.82rem'
+                fontSize: '0.82rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px'
               }}
             >
-              <span style={{ color: 'var(--text-muted)' }}>Destinatário Oficial: </span>
-              <strong style={{ color: '#25D366' }}>{COMPANY_WHATSAPP_DISPLAY}</strong>
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Remetente Cloud API: </span>
+                <strong style={{ color: '#0284C7' }}>+244 931 396 515 (Unitel)</strong>
+              </div>
+              <div>
+                <span style={{ color: 'var(--text-muted)' }}>Destinatário Interno: </span>
+                <strong style={{ color: '#25D366' }}>{COMPANY_WHATSAPP_DISPLAY}</strong>
+              </div>
             </div>
 
             <button
@@ -780,10 +789,10 @@ export default function WhatsAppNotificationsManager({
             </div>
             <div>
               <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
-                WhatsApp Business App Coexistence — Embedded Signup
+                Arquitectura WhatsApp: Remetente Único Cloud API (+244 931 396 515 Unitel)
               </h4>
               <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                Preparação do fluxo oficial da Meta para associar <strong>{OFFICIAL_PHONE_NUMBER}</strong> preservando a aplicação no telemóvel.
+                Todas as notificações automáticas são disparadas pela Cloud API a partir do número <strong>+244 931 396 515</strong>. O número <strong>+244 950 752 933</strong> é o destinatário exclusivo de alertas internos e comprovativos PDF (preservado no telemóvel).
               </p>
             </div>
           </div>
@@ -795,11 +804,11 @@ export default function WhatsAppNotificationsManager({
                 borderRadius: '20px',
                 fontSize: '0.75rem',
                 fontWeight: 700,
-                background: sdkStatus === 'ready' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                color: sdkStatus === 'ready' ? '#059669' : '#D97706'
+                background: 'rgba(2, 132, 199, 0.15)',
+                color: '#0284C7'
               }}
             >
-              SDK Meta: {sdkStatus === 'ready' ? 'Carregado' : (sdkStatus === 'failed' ? 'Indisponível' : 'A Inicializar...')}
+              Remetente: +244 931 396 515
             </span>
           </div>
         </div>
@@ -807,115 +816,59 @@ export default function WhatsAppNotificationsManager({
         {/* Informações de Activos Meta */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
           <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Meta App ID:</div>
-            <strong style={{ fontSize: '0.88rem' }}>{META_APP_ID}</strong>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Remetente Cloud API:</div>
+            <strong style={{ fontSize: '0.88rem', color: '#0284C7' }}>+244 931 396 515 (Unitel)</strong>
+          </div>
+          <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Destinatário Interno Exclusivo:</div>
+            <strong style={{ fontSize: '0.88rem', color: '#25D366' }}>+244 950 752 933 (Telemóvel)</strong>
           </div>
           <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>WABA ID da Empresa:</div>
             <strong style={{ fontSize: '0.88rem' }}>{OFFICIAL_WABA_ID}</strong>
           </div>
           <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Número Oficial Alvo:</div>
-            <strong style={{ fontSize: '0.88rem', color: '#25D366' }}>{OFFICIAL_PHONE_NUMBER}</strong>
-          </div>
-          <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Número de Teste Actual:</div>
-            <strong style={{ fontSize: '0.88rem', color: '#8B5CF6' }}>+1 555-183-2801 (Preservado)</strong>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID Remetente Activo (Mock/Fallback):</div>
+            <strong style={{ fontSize: '0.88rem', color: '#8B5CF6' }}>1527292017127020 (+1 555-183-2801)</strong>
           </div>
         </div>
 
-        {/* Input de Configuration ID & Disparo */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
-          <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
-            Meta Configuration ID (<code style={{ color: '#F37021' }}>config_id</code> gerado no portal Meta for Developers):
-          </label>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-            <input
-              type="text"
-              placeholder="Ex: 1234567890123456"
-              value={embeddedConfigId}
-              onChange={(e) => setEmbeddedConfigId(e.target.value)}
+        {/* Procedimento para Adicionar o Remetente +244 931 396 515 na Meta */}
+        <div style={{ background: 'var(--bg-primary)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'grid', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+            <strong style={{ fontSize: '0.88rem', color: '#0284C7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Terminal size={16} /> Procedimento Meta: Registo do Remetente Cloud API (+244 931 396 515)
+            </strong>
+            <a
+              href="https://business.facebook.com/wa/manage/phone-numbers/"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
-                flex: 1,
-                minWidth: '240px',
-                padding: '10px 14px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-light)',
-                background: 'var(--bg-primary)',
-                color: 'var(--text-main)',
-                fontSize: '0.85rem'
-              }}
-            />
-            <button
-              onClick={handleStartEmbeddedSignup}
-              disabled={isEmbeddedLoading || !embeddedConfigId.trim()}
-              style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px',
-                padding: '10px 20px',
+                gap: '6px',
+                padding: '6px 12px',
                 borderRadius: '8px',
-                border: 'none',
-                background: embeddedConfigId.trim() ? '#25D366' : 'var(--border-light)',
-                color: embeddedConfigId.trim() ? '#FFFFFF' : 'var(--text-muted)',
+                background: '#0284C7',
+                color: '#FFFFFF',
+                fontSize: '0.78rem',
                 fontWeight: 700,
-                fontSize: '0.85rem',
-                cursor: (isEmbeddedLoading || !embeddedConfigId.trim()) ? 'not-allowed' : 'pointer'
+                textDecoration: 'none'
               }}
             >
-              <Smartphone size={16} />
-              {isEmbeddedLoading ? 'A abrir modal Meta...' : 'Iniciar Embedded Signup'}
-            </button>
+              <LinkIcon size={13} /> Abrir Meta WhatsApp Manager
+            </a>
           </div>
+
+          <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+            <li>No Meta Business Suite, seleccione a WABA <strong>{OFFICIAL_WABA_ID}</strong> (AQUI TEM ANGOLA).</li>
+            <li>No menu <strong>Phone Numbers</strong> (Números de telefone), clique no botão azul <strong>Add Phone Number</strong>.</li>
+            <li>Defina o Nome de Exibição do Perfil como: <strong>AQUI TEM ANGOLA</strong> (Categoria: Comércio/Compras).</li>
+            <li>Insira o número: <strong>+244 931 396 515</strong> (Unitel).</li>
+            <li>Escolha a verificação por <strong>SMS</strong> e introduza o código OTP de 6 dígitos recebido no chip 931.</li>
+            <li>A Meta atribui de imediato o novo <strong>Phone Number ID</strong> oficial da Cloud API.</li>
+          </ol>
         </div>
-
-        {/* Dados Capturados em Tempo Real da Meta */}
-        {embeddedCapturedData && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '16px', display: 'grid', gap: '12px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-              <strong style={{ fontSize: '0.9rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircle2 size={18} /> Sessão do Embedded Signup Concluída com Sucesso!
-              </strong>
-              <span style={{ fontSize: '0.75rem', background: '#10B981', color: '#FFFFFF', padding: '3px 8px', borderRadius: '12px', fontWeight: 700 }}>
-                Pronto para Confirmação
-              </span>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '4px' }}>
-              <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>WABA ID Confirmado:</div>
-                <strong style={{ fontSize: '0.92rem', color: '#059669' }}>
-                  {embeddedCapturedData.wabaId || OFFICIAL_WABA_ID}
-                </strong>
-              </div>
-              <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Novo Phone Number ID:</div>
-                <strong style={{ fontSize: '0.92rem', color: embeddedCapturedData.phoneNumberId ? '#25D366' : '#F59E0B' }}>
-                  {embeddedCapturedData.phoneNumberId || 'Pendente de validação pela Meta'}
-                </strong>
-              </div>
-            </div>
-
-            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
-              ℹ️ <strong>Protecção de Segurança:</strong> Os dados capturados acima foram isolados em memória. O sistema permanece a operar em modo <code>MOCK</code> com o número de teste até que o administrador aprove expressamente a substituição nos Secrets do Supabase.
-            </p>
-
-            <details style={{ marginTop: '4px' }}>
-              <summary style={{ fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                Ver payload JSON bruto da Meta
-              </summary>
-              <pre style={{ margin: '8px 0 0', fontSize: '0.72rem', overflowX: 'auto', background: 'var(--bg-primary)', padding: '10px', borderRadius: '6px' }}>
-                {JSON.stringify(embeddedCapturedData, null, 2)}
-              </pre>
-            </details>
-          </div>
-        )}
-
-        {embeddedError && (
-          <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '12px', fontSize: '0.82rem', color: '#DC2626' }}>
-            <strong>Aviso:</strong> {embeddedError}
-          </div>
-        )}
       </div>
 
       {/* ===================================================================== */}

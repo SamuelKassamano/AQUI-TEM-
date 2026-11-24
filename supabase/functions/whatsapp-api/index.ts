@@ -137,11 +137,11 @@ Deno.serve(async (req: Request) => {
   const whatsappMode = (Deno.env.get('WHATSAPP_MODE') || 'mock').toLowerCase().trim();
   const whatsappToken = Deno.env.get('WHATSAPP_TOKEN') || Deno.env.get('WHATSAPP_API_TOKEN') || '';
   const whatsappPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '';
-  // Arquitectura de Dois Canais Independentes
-  // Canal 1 (Interno): Remetente pretendido +244 931 396 515 (exclusivo para administração e comprovativos PDF)
-  // Canal 2 (Clientes): Remetente pretendido +244 950 752 933 (notificações aos clientes, consentimento e opt-out)
-  const internalPhoneNumberId = Deno.env.get('WHATSAPP_INTERNAL_PHONE_NUMBER_ID') || whatsappPhoneNumberId;
-  const customerPhoneNumberId = Deno.env.get('WHATSAPP_CUSTOMER_PHONE_NUMBER_ID') || whatsappPhoneNumberId;
+  // Arquitectura Invertida: Remetente Único Cloud API (+244 931 396 515 Unitel) para notificações automáticas
+  // Destinatário Interno Exclusivo: +244 950 752 933 (smartphone da administração preservado, sem migrações)
+  const apiSenderPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || Deno.env.get('WHATSAPP_INTERNAL_PHONE_NUMBER_ID') || '';
+  const internalPhoneNumberId = apiSenderPhoneNumberId;
+  const customerPhoneNumberId = apiSenderPhoneNumberId;
   const whatsappBusinessAccountId = Deno.env.get('WHATSAPP_BUSINESS_ACCOUNT_ID') || '';
   const webhookVerifyToken = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || DEFAULT_WEBHOOK_VERIFY_TOKEN;
   
@@ -495,20 +495,21 @@ Deno.serve(async (req: Request) => {
           hasAppSecretConfigured: Boolean(metaAppSecret),
           channels: {
             channel1_internal: {
-              name: 'Canal 1 — Notificações Internas',
-              senderPhoneNumberId: internalPhoneNumberId,
-              intendedSender: '+244 931 396 515',
-              destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+              name: 'Canal 1 — Notificações Internas & Gestão',
+              senderNumber: '+244 931 396 515 (Unitel Cloud API)',
+              destinationNumber: `+${COMPANY_WHATSAPP_NUMBER} (Telemóvel Administração)`,
+              senderPhoneNumberId: apiSenderPhoneNumberId,
               supportsPdfReceipts: true,
-              description: 'Eventos administrativos, encomendas e comprovativos PDF exclusivamente para o destino interno.'
+              description: 'Alertas de gestão, novas encomendas e comprovativos PDF exclusivamente para o destino interno.'
             },
             channel2_customer: {
               name: 'Canal 2 — Notificações a Clientes',
-              senderPhoneNumberId: customerPhoneNumberId,
-              intendedSender: '+244 950 752 933',
+              senderNumber: '+244 931 396 515 (Unitel Cloud API)',
+              senderPhoneNumberId: apiSenderPhoneNumberId,
               requiresConsent: true,
               supportsPdfReceipts: false,
-              description: 'Actualizações de estado e pagamentos aos clientes, respeitando consentimento voluntário e comandos PARAR.'
+              optOutSupported: true,
+              description: 'Actualizações automáticas de encomenda e envio a partir do remetente 931, respeitando consentimento voluntário e STOP/PARAR/CANCELAR.'
             }
           },
           envSecretKeysDetected: Object.keys(Deno.env.toObject()).map(k => k.trim()).filter(k => {
