@@ -80,6 +80,18 @@ interface NotificationPayload {
 }
 
 /**
+ * Comparação em tempo constante para protecção contra Timing Attacks
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
  * Validação criptográfica da assinatura HMAC-SHA256 da Meta (X-Hub-Signature-256)
  */
 async function verifyMetaHmac(rawBody: string, signatureHeader: string | null, secret: string): Promise<boolean> {
@@ -104,7 +116,7 @@ async function verifyMetaHmac(rawBody: string, signatureHeader: string | null, s
     const hashHex = Array.from(new Uint8Array(signatureBytes))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
-    return hashHex.toLowerCase() === expectedHash;
+    return timingSafeEqual(hashHex.toLowerCase(), expectedHash);
   } catch (err: any) {
     console.warn('Erro ao calcular HMAC da Meta:', err.message);
     return false;
@@ -202,17 +214,43 @@ Deno.serve(async (req: Request) => {
     // Suporta mensagens internas e eventos externos (ex: testes directos na Meta)
     // =========================================================================
     if (body.object === 'whatsapp_business_account') {
-      // 3.1 Validação de Assinatura Criptográfica HMAC da Meta se o Secret estiver configurado
-      if (metaAppSecret) {
-        const sigHeader = req.headers.get('x-hub-signature-256');
-        const isSigValid = await verifyMetaHmac(rawBodyText, sigHeader, metaAppSecret);
-        if (!isSigValid) {
-          console.warn('Webhook Meta rejeitado: Assinatura HMAC inválida.');
-          return new Response('Assinatura Meta inválida.', {
-            status: 401,
-            headers: { ...corsHeaders, 'Content-Type': 'text/plain' }
-          });
-        }
+      // 3.1 Validação de Assinatura Criptográfica HMAC da Meta Obrigatória (X-Hub-Signature-256)
+      if (!metaAppSecret) {
+        console.warn('Webhook Meta rejeitado: META_APP_SECRET não está configurado.');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'MISSING_META_APP_SECRET',
+            message: 'Webhook rejeitado: Secret META_APP_SECRET não configurado no backend. Configure nas definições do Supabase.'
+          }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const sigHeader = req.headers.get('x-hub-signature-256');
+      if (!sigHeader) {
+        console.warn('Webhook Meta rejeitado: Cabeçalho X-Hub-Signature-256 ausente.');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'MISSING_SIGNATURE',
+            message: 'Webhook rejeitado: Cabeçalho de assinatura X-Hub-Signature-256 ausente.'
+          }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const isSigValid = await verifyMetaHmac(rawBodyText, sigHeader, metaAppSecret);
+      if (!isSigValid) {
+        console.warn('Webhook Meta rejeitado: Assinatura HMAC inválida.');
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'INVALID_SIGNATURE',
+            message: 'Webhook rejeitado: Assinatura HMAC-SHA256 inválida.'
+          }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       const entries = body.entry || [];
@@ -1115,32 +1153,73 @@ Deno.serve(async (req: Request) => {
       // Chave de Idempotência Independente para o Canal do Cliente
       const finalCustomerKey = deduplicationKey || `customer-${eventType}-${orderId}-${finalRecipient}`;
 
-      // Regra 3: Verificação de Opt-Out no CRM Leads
+      // Regra 3: Regra Cronológica Obrigatória de Consentimento e Opt-Out
+      // 1. Se whatsapp_opt_in_at for posterior a whatsapp_opt_out_at, permitir notificações.
+      // 2. Se whatsapp_opt_out_at for posterior a whatsapp_opt_in_at, bloquear notificações.
+      // 3. Sem consentimento válido, bloquear o envio.
+      // 4. Uma nova encomenda não elimina um opt-out anterior sem nova autorização explícita (customerConsent === true).
+
       let isOptedOut = false;
+      let hasValidConsent = Boolean(customerConsent);
+
       if (supabaseAdmin) {
         try {
           const { data: leadRecord } = await supabaseAdmin
             .from('crm_leads')
-            .select('whatsapp_opt_out, whatsapp_consent')
+            .select('whatsapp_opt_out, whatsapp_consent, whatsapp_opt_in_at, whatsapp_opt_out_at')
             .or(`phone.ilike.%${finalRecipient.slice(-9)}%,lead_code.eq.${orderId}`)
+            .order('updated_at', { ascending: false })
+            .limit(1)
             .maybeSingle();
 
-          if (leadRecord?.whatsapp_opt_out) {
-            isOptedOut = true;
-          }
+          if (leadRecord) {
+            const inTime = leadRecord.whatsapp_opt_in_at ? new Date(leadRecord.whatsapp_opt_in_at).getTime() : 0;
+            const outTime = leadRecord.whatsapp_opt_out_at ? new Date(leadRecord.whatsapp_opt_out_at).getTime() : 0;
 
-          // Verificação adicional no histórico de auditoria de opt-out (whatsapp_dispatch_logs)
-          if (!isOptedOut) {
-            const { data: optLog } = await supabaseAdmin
-              .from('whatsapp_dispatch_logs')
-              .select('id')
-              .eq('recipient', finalRecipient)
-              .eq('event_type', 'customer_opt_out')
-              .limit(1)
-              .maybeSingle();
+            if (outTime > inTime) {
+              // Opt-out registado é mais recente que o opt-in histórico
+              if (customerConsent === true) {
+                // Reautorização Explícita na nova encomenda: cliente marcou novamente a caixa voluntária!
+                const nowIso = new Date().toISOString();
+                await supabaseAdmin
+                  .from('crm_leads')
+                  .update({
+                    whatsapp_opt_out: false,
+                    whatsapp_consent: true,
+                    whatsapp_opt_in_at: nowIso,
+                    whatsapp_consent_source: consentSource || 'checkout_re_opt_in'
+                  })
+                  .or(`phone.ilike.%${finalRecipient.slice(-9)}%,lead_code.eq.${orderId}`);
 
-            if (optLog) {
-              isOptedOut = true;
+                isOptedOut = false;
+                hasValidConsent = true;
+              } else {
+                // Não houve nova autorização explícita: mantém bloqueado pelo opt-out anterior!
+                isOptedOut = true;
+              }
+            } else if (inTime > outTime) {
+              // Opt-in é mais recente que o opt-out
+              isOptedOut = false;
+              if (customerConsent !== false) {
+                hasValidConsent = true;
+              }
+            } else if (leadRecord.whatsapp_opt_out) {
+              if (customerConsent === true) {
+                const nowIso = new Date().toISOString();
+                await supabaseAdmin
+                  .from('crm_leads')
+                  .update({
+                    whatsapp_opt_out: false,
+                    whatsapp_consent: true,
+                    whatsapp_opt_in_at: nowIso,
+                    whatsapp_consent_source: consentSource || 'checkout_re_opt_in'
+                  })
+                  .or(`phone.ilike.%${finalRecipient.slice(-9)}%,lead_code.eq.${orderId}`);
+                isOptedOut = false;
+                hasValidConsent = true;
+              } else {
+                isOptedOut = true;
+              }
             }
           }
         } catch (_optErr) { }
@@ -1181,7 +1260,7 @@ Deno.serve(async (req: Request) => {
       }
 
       // Regra 4: Verificação de Consentimento Voluntário do Cliente
-      if (!customerConsent) {
+      if (!hasValidConsent) {
         if (supabaseAdmin) {
           try {
             await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
