@@ -666,11 +666,12 @@ Deno.serve(async (req: Request) => {
         diagnosticResults.tokenInspection = { isValid: false, error: e.message };
       }
 
-      // 2. Diagnóstico do Phone Number ID
-      if (whatsappPhoneNumberId) {
+      // 2. Diagnóstico do Phone Number ID (suporta targetPhoneNumberId passado no pedido)
+      const targetPhoneId = body.targetPhoneNumberId || whatsappPhoneNumberId;
+      if (targetPhoneId) {
         try {
           const phoneRes = await fetch(
-            `https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}?fields=id,display_phone_number,verified_name,code_verification_status,quality_rating`,
+            `https://graph.facebook.com/v21.0/${targetPhoneId}?fields=id,display_phone_number,verified_name,code_verification_status,quality_rating,name_status,messaging_limit_tier,status,platform_type,account_mode`,
             { headers: { 'Authorization': `Bearer ${whatsappToken}` } }
           );
           const phoneJson = await phoneRes.json();
@@ -681,13 +682,19 @@ Deno.serve(async (req: Request) => {
               displayPhoneNumber: phoneJson.display_phone_number || null,
               verifiedName: phoneJson.verified_name || null,
               verificationStatus: phoneJson.code_verification_status || null,
-              qualityRating: phoneJson.quality_rating || null
+              qualityRating: phoneJson.quality_rating || null,
+              nameStatus: phoneJson.name_status || null,
+              messagingLimitTier: phoneJson.messaging_limit_tier || null,
+              status: phoneJson.status || null,
+              platformType: phoneJson.platform_type || null,
+              accountMode: phoneJson.account_mode || null,
+              rawDetails: phoneJson
             };
             diagnosticResults.readiness.phoneNumberAccessible = true;
           } else {
             diagnosticResults.phoneNumberInspection = {
               accessible: false,
-              id: whatsappPhoneNumberId,
+              id: targetPhoneId,
               error: phoneJson?.error || 'Não acessível com este token'
             };
           }
@@ -696,22 +703,24 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // 3. Diagnóstico do WABA ID e Correspondência com o Número
+      // 3. Diagnóstico do WABA ID e Lista de Números da WABA
       if (whatsappBusinessAccountId) {
         try {
           const wabaRes = await fetch(
-            `https://graph.facebook.com/v21.0/${whatsappBusinessAccountId}/phone_numbers?fields=id,display_phone_number`,
+            `https://graph.facebook.com/v21.0/${whatsappBusinessAccountId}/phone_numbers?fields=id,display_phone_number,verified_name,quality_rating,code_verification_status,name_status,status,platform_type`,
             { headers: { 'Authorization': `Bearer ${whatsappToken}` } }
           );
           const wabaJson = await wabaRes.json();
           if (wabaRes.ok && Array.isArray(wabaJson?.data)) {
             const numbers = wabaJson.data;
-            const matchesPhone = numbers.some((n: any) => n.id === whatsappPhoneNumberId);
+            const matchesPhone = numbers.some((n: any) => n.id === targetPhoneId);
             diagnosticResults.wabaInspection = {
               accessible: true,
               wabaId: whatsappBusinessAccountId,
               phoneNumbersCount: numbers.length,
-              matchesConfiguredPhoneId: matchesPhone
+              phoneNumbersList: numbers,
+              matchesConfiguredPhoneId: matchesPhone,
+              targetPhoneFoundInWaba: numbers.find((n: any) => n.id === targetPhoneId) || null
             };
             diagnosticResults.readiness.wabaAccessible = true;
             diagnosticResults.readiness.phoneMatchesWaba = matchesPhone;
