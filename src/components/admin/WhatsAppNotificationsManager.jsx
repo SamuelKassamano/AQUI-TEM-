@@ -47,7 +47,8 @@ import {
   META_APP_ID,
   OFFICIAL_PHONE_NUMBER,
   OFFICIAL_WABA_ID,
-  TEST_PHONE_NUMBER_ID
+  TEST_PHONE_NUMBER_ID,
+  DEFAULT_CONFIG_ID
 } from '../../lib/metaEmbeddedSignup';
 
 export default function WhatsAppNotificationsManager({
@@ -84,7 +85,7 @@ export default function WhatsAppNotificationsManager({
   const [loadingReceiptId, setLoadingReceiptId] = useState(null);
 
   // Estado de Preparação do Embedded Signup Coexistence (Fase 4.4)
-  const [embeddedConfigId, setEmbeddedConfigId] = useState('');
+  const [embeddedConfigId, setEmbeddedConfigId] = useState(DEFAULT_CONFIG_ID || '1814605586868556');
   const [isEmbeddedLoading, setIsEmbeddedLoading] = useState(false);
   const [embeddedCapturedData, setEmbeddedCapturedData] = useState(null);
   const [embeddedError, setEmbeddedError] = useState(null);
@@ -868,15 +869,45 @@ export default function WhatsAppNotificationsManager({
           </div>
         </div>
 
-        {/* Dados Capturados em Tempo Real */}
+        {/* Dados Capturados em Tempo Real da Meta */}
         {embeddedCapturedData && (
-          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '10px', padding: '14px' }}>
-            <strong style={{ fontSize: '0.85rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <CheckCircle2 size={16} /> Dados Capturados do Modal Meta:
-            </strong>
-            <pre style={{ margin: '8px 0 0', fontSize: '0.75rem', overflowX: 'auto', background: 'var(--bg-primary)', padding: '10px', borderRadius: '6px' }}>
-              {JSON.stringify(embeddedCapturedData, null, 2)}
-            </pre>
+          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '12px', padding: '16px', display: 'grid', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+              <strong style={{ fontSize: '0.9rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <CheckCircle2 size={18} /> Sessão do Embedded Signup Concluída com Sucesso!
+              </strong>
+              <span style={{ fontSize: '0.75rem', background: '#10B981', color: '#FFFFFF', padding: '3px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                Pronto para Confirmação
+              </span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px', marginTop: '4px' }}>
+              <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>WABA ID Confirmado:</div>
+                <strong style={{ fontSize: '0.92rem', color: '#059669' }}>
+                  {embeddedCapturedData.wabaId || OFFICIAL_WABA_ID}
+                </strong>
+              </div>
+              <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-light)' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Novo Phone Number ID:</div>
+                <strong style={{ fontSize: '0.92rem', color: embeddedCapturedData.phoneNumberId ? '#25D366' : '#F59E0B' }}>
+                  {embeddedCapturedData.phoneNumberId || 'Pendente de validação pela Meta'}
+                </strong>
+              </div>
+            </div>
+
+            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.4' }}>
+              ℹ️ <strong>Protecção de Segurança:</strong> Os dados capturados acima foram isolados em memória. O sistema permanece a operar em modo <code>MOCK</code> com o número de teste até que o administrador aprove expressamente a substituição nos Secrets do Supabase.
+            </p>
+
+            <details style={{ marginTop: '4px' }}>
+              <summary style={{ fontSize: '0.75rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                Ver payload JSON bruto da Meta
+              </summary>
+              <pre style={{ margin: '8px 0 0', fontSize: '0.72rem', overflowX: 'auto', background: 'var(--bg-primary)', padding: '10px', borderRadius: '6px' }}>
+                {JSON.stringify(embeddedCapturedData, null, 2)}
+              </pre>
+            </details>
           </div>
         )}
 

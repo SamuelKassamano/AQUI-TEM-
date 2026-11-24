@@ -11,6 +11,7 @@ export const META_APP_ID = '1695258538801599';
 export const OFFICIAL_WABA_ID = '1230360799324390';
 export const OFFICIAL_PHONE_NUMBER = '+244 950 752 933';
 export const TEST_PHONE_NUMBER_ID = '1527292017127020';
+export const DEFAULT_CONFIG_ID = '1814605586868556';
 
 let sdkLoadingPromise = null;
 
@@ -69,17 +70,29 @@ export function listenForEmbeddedSignupEvents(onEventReceived) {
   if (typeof window === 'undefined') return () => { };
 
   const messageHandler = (event) => {
-    // A Meta emite mensagens com origem no domínio facebook.com
+    // A Meta emite mensagens com origem no domínio facebook.com ou meta.com
     if (!event.origin.includes('facebook.com') && !event.origin.includes('meta.com')) {
       return;
     }
 
     try {
-      const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
-      if (data && (data.type === 'WA_EMBEDDED_SIGNUP' || data.event === 'FINISH')) {
-        console.log('[Meta Embedded Signup Event]:', data);
+      const rawData = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+      if (rawData && (rawData.type === 'WA_EMBEDDED_SIGNUP' || rawData.event === 'FINISH' || rawData.data)) {
+        console.log('[Meta Embedded Signup Event Capturado]:', rawData);
+
+        const inner = rawData.data || rawData;
+        const normalized = {
+          type: rawData.type || 'WA_EMBEDDED_SIGNUP',
+          event: rawData.event || 'FINISH',
+          wabaId: inner.waba_id || inner.wabaId || null,
+          phoneNumberId: inner.phone_number_id || inner.phoneNumberId || null,
+          currentStep: inner.current_step || inner.currentStep || null,
+          timestamp: new Date().toISOString(),
+          raw: rawData
+        };
+
         if (typeof onEventReceived === 'function') {
-          onEventReceived(data);
+          onEventReceived(normalized);
         }
       }
     } catch (_e) {
@@ -93,17 +106,16 @@ export function listenForEmbeddedSignupEvents(onEventReceived) {
 
 /**
  * Dispara o modal de Embedded Signup da Meta utilizando o FB.login com o Configuration ID
- * 
- * Requer que o administrador forneça o config_id gerado no portal Meta for Developers
- * em Facebook Login for Business > Configurations.
+ * Configurado especificamente para WhatsApp Business App Coexistence
  */
-export async function launchEmbeddedSignupPopup({ configId, onSessionInfo, onError }) {
+export async function launchEmbeddedSignupPopup({ configId = DEFAULT_CONFIG_ID, onError }) {
   const fb = await loadMetaFacebookSdk();
   if (!fb) {
     throw new Error('Facebook SDK não disponível. Verifique bloqueadores de anúncios ou scripts externos.');
   }
 
-  if (!configId) {
+  const effectiveConfigId = configId || DEFAULT_CONFIG_ID;
+  if (!effectiveConfigId) {
     throw new Error('Configuration ID (config_id) da Meta é obrigatório para iniciar o Embedded Signup.');
   }
 
@@ -120,15 +132,15 @@ export async function launchEmbeddedSignupPopup({ configId, onSessionInfo, onErr
         }
       },
       {
-        config_id: configId,
+        config_id: effectiveConfigId,
         response_type: 'code',
         override_default_response_type: true,
         extras: {
           feature: 'whatsapp_embedded_signup',
+          featureType: 'whatsapp_business_app_onboarding',
           version: 2,
           sessionInfoVersion: 2,
           setup: {
-            // Instruções de configuração para o fluxo de Coexistência
             phone_number: OFFICIAL_PHONE_NUMBER
           }
         }
