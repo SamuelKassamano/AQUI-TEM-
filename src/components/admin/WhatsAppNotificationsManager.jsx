@@ -27,7 +27,10 @@ import {
   Activity,
   Truck,
   Box,
-  Gift
+  Gift,
+  Smartphone,
+  KeyRound,
+  ExternalLink as LinkIcon
 } from 'lucide-react';
 import {
   checkWhatsAppApiStatus,
@@ -37,6 +40,15 @@ import {
   COMPANY_WHATSAPP_DISPLAY,
   COMPANY_WHATSAPP_NUMBER
 } from '../../lib/whatsappNotificationService';
+import {
+  loadMetaFacebookSdk,
+  launchEmbeddedSignupPopup,
+  listenForEmbeddedSignupEvents,
+  META_APP_ID,
+  OFFICIAL_PHONE_NUMBER,
+  OFFICIAL_WABA_ID,
+  TEST_PHONE_NUMBER_ID
+} from '../../lib/metaEmbeddedSignup';
 
 export default function WhatsAppNotificationsManager({
   session = null,
@@ -70,6 +82,48 @@ export default function WhatsAppNotificationsManager({
 
   // Estado de Abertura de Recibo
   const [loadingReceiptId, setLoadingReceiptId] = useState(null);
+
+  // Estado de Preparação do Embedded Signup Coexistence (Fase 4.4)
+  const [embeddedConfigId, setEmbeddedConfigId] = useState('');
+  const [isEmbeddedLoading, setIsEmbeddedLoading] = useState(false);
+  const [embeddedCapturedData, setEmbeddedCapturedData] = useState(null);
+  const [embeddedError, setEmbeddedError] = useState(null);
+  const [sdkStatus, setSdkStatus] = useState('pending'); // 'pending' | 'ready' | 'failed'
+
+  useEffect(() => {
+    loadMetaFacebookSdk()
+      .then(fb => setSdkStatus(fb ? 'ready' : 'failed'))
+      .catch(() => setSdkStatus('failed'));
+
+    const unlisten = listenForEmbeddedSignupEvents((eventData) => {
+      setEmbeddedCapturedData(eventData);
+      showToast('Dados de sessão da Meta capturados com sucesso!', 'success');
+    });
+
+    return () => unlisten();
+  }, [showToast]);
+
+  const handleStartEmbeddedSignup = async () => {
+    if (!embeddedConfigId.trim()) {
+      showToast('Por favor, introduza o Configuration ID (config_id) da Meta.', 'warning');
+      return;
+    }
+    setIsEmbeddedLoading(true);
+    setEmbeddedError(null);
+    try {
+      const res = await launchEmbeddedSignupPopup({
+        configId: embeddedConfigId.trim(),
+        onError: (err) => setEmbeddedError(err.message)
+      });
+      showToast('Janela do Embedded Signup concluída com sucesso!', 'success');
+      setEmbeddedCapturedData(prev => ({ ...(prev || {}), authCode: res.code }));
+    } catch (err) {
+      setEmbeddedError(err.message);
+      showToast(`Embedded Signup: ${err.message}`, 'error');
+    } finally {
+      setIsEmbeddedLoading(false);
+    }
+  };
 
   // ---------------------------------------------------------------------------
   // 1. CARREGAMENTO INICIAL E ATUALIZAÇÃO
@@ -690,6 +744,145 @@ export default function WhatsAppNotificationsManager({
             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-main)', lineHeight: '1.5' }}>
               {simulationResult.message || simulationResult.error}
             </p>
+          </div>
+        )}
+      </div>
+
+      {/* ===================================================================== */}
+      {/* PAINEL DE PREPARAÇÃO WHATSAPP COEXISTENCE (EMBEDDED SIGNUP)           */}
+      {/* ===================================================================== */}
+      <div
+        style={{
+          background: 'var(--bg-card)',
+          borderRadius: '16px',
+          border: '1px solid rgba(37, 211, 102, 0.35)',
+          padding: '24px',
+          display: 'grid',
+          gap: '16px'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: 'rgba(37, 211, 102, 0.15)',
+                color: '#25D366',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Smartphone size={22} />
+            </div>
+            <div>
+              <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>
+                WhatsApp Business App Coexistence — Embedded Signup
+              </h4>
+              <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                Preparação do fluxo oficial da Meta para associar <strong>{OFFICIAL_PHONE_NUMBER}</strong> preservando a aplicação no telemóvel.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span
+              style={{
+                padding: '4px 10px',
+                borderRadius: '20px',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                background: sdkStatus === 'ready' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                color: sdkStatus === 'ready' ? '#059669' : '#D97706'
+              }}
+            >
+              SDK Meta: {sdkStatus === 'ready' ? 'Carregado' : (sdkStatus === 'failed' ? 'Indisponível' : 'A Inicializar...')}
+            </span>
+          </div>
+        </div>
+
+        {/* Informações de Activos Meta */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '12px' }}>
+          <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Meta App ID:</div>
+            <strong style={{ fontSize: '0.88rem' }}>{META_APP_ID}</strong>
+          </div>
+          <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>WABA ID da Empresa:</div>
+            <strong style={{ fontSize: '0.88rem' }}>{OFFICIAL_WABA_ID}</strong>
+          </div>
+          <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Número Oficial Alvo:</div>
+            <strong style={{ fontSize: '0.88rem', color: '#25D366' }}>{OFFICIAL_PHONE_NUMBER}</strong>
+          </div>
+          <div style={{ background: 'var(--bg-primary)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Número de Teste Actual:</div>
+            <strong style={{ fontSize: '0.88rem', color: '#8B5CF6' }}>+1 555-183-2801 (Preservado)</strong>
+          </div>
+        </div>
+
+        {/* Input de Configuration ID & Disparo */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+          <label style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-main)' }}>
+            Meta Configuration ID (<code style={{ color: '#F37021' }}>config_id</code> gerado no portal Meta for Developers):
+          </label>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              placeholder="Ex: 1234567890123456"
+              value={embeddedConfigId}
+              onChange={(e) => setEmbeddedConfigId(e.target.value)}
+              style={{
+                flex: 1,
+                minWidth: '240px',
+                padding: '10px 14px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-light)',
+                background: 'var(--bg-primary)',
+                color: 'var(--text-main)',
+                fontSize: '0.85rem'
+              }}
+            />
+            <button
+              onClick={handleStartEmbeddedSignup}
+              disabled={isEmbeddedLoading || !embeddedConfigId.trim()}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                borderRadius: '8px',
+                border: 'none',
+                background: embeddedConfigId.trim() ? '#25D366' : 'var(--border-light)',
+                color: embeddedConfigId.trim() ? '#FFFFFF' : 'var(--text-muted)',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+                cursor: (isEmbeddedLoading || !embeddedConfigId.trim()) ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <Smartphone size={16} />
+              {isEmbeddedLoading ? 'A abrir modal Meta...' : 'Iniciar Embedded Signup'}
+            </button>
+          </div>
+        </div>
+
+        {/* Dados Capturados em Tempo Real */}
+        {embeddedCapturedData && (
+          <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '10px', padding: '14px' }}>
+            <strong style={{ fontSize: '0.85rem', color: '#059669', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckCircle2 size={16} /> Dados Capturados do Modal Meta:
+            </strong>
+            <pre style={{ margin: '8px 0 0', fontSize: '0.75rem', overflowX: 'auto', background: 'var(--bg-primary)', padding: '10px', borderRadius: '6px' }}>
+              {JSON.stringify(embeddedCapturedData, null, 2)}
+            </pre>
+          </div>
+        )}
+
+        {embeddedError && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', padding: '12px', fontSize: '0.82rem', color: '#DC2626' }}>
+            <strong>Aviso:</strong> {embeddedError}
           </div>
         )}
       </div>
