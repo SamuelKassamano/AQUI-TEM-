@@ -137,6 +137,11 @@ Deno.serve(async (req: Request) => {
   const whatsappMode = (Deno.env.get('WHATSAPP_MODE') || 'mock').toLowerCase().trim();
   const whatsappToken = Deno.env.get('WHATSAPP_TOKEN') || Deno.env.get('WHATSAPP_API_TOKEN') || '';
   const whatsappPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '';
+  // Arquitectura de Dois Canais Independentes
+  // Canal 1 (Interno): Remetente pretendido +244 931 396 515 (exclusivo para administração e comprovativos PDF)
+  // Canal 2 (Clientes): Remetente pretendido +244 950 752 933 (notificações aos clientes, consentimento e opt-out)
+  const internalPhoneNumberId = Deno.env.get('WHATSAPP_INTERNAL_PHONE_NUMBER_ID') || whatsappPhoneNumberId;
+  const customerPhoneNumberId = Deno.env.get('WHATSAPP_CUSTOMER_PHONE_NUMBER_ID') || whatsappPhoneNumberId;
   const whatsappBusinessAccountId = Deno.env.get('WHATSAPP_BUSINESS_ACCOUNT_ID') || '';
   const webhookVerifyToken = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || DEFAULT_WEBHOOK_VERIFY_TOKEN;
   
@@ -488,6 +493,24 @@ Deno.serve(async (req: Request) => {
             ...(!whatsappPhoneNumberId ? ['WHATSAPP_PHONE_NUMBER_ID'] : [])
           ],
           hasAppSecretConfigured: Boolean(metaAppSecret),
+          channels: {
+            channel1_internal: {
+              name: 'Canal 1 — Notificações Internas',
+              senderPhoneNumberId: internalPhoneNumberId,
+              intendedSender: '+244 931 396 515',
+              destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+              supportsPdfReceipts: true,
+              description: 'Eventos administrativos, encomendas e comprovativos PDF exclusivamente para o destino interno.'
+            },
+            channel2_customer: {
+              name: 'Canal 2 — Notificações a Clientes',
+              senderPhoneNumberId: customerPhoneNumberId,
+              intendedSender: '+244 950 752 933',
+              requiresConsent: true,
+              supportsPdfReceipts: false,
+              description: 'Actualizações de estado e pagamentos aos clientes, respeitando consentimento voluntário e comandos PARAR.'
+            }
+          },
           envSecretKeysDetected: Object.keys(Deno.env.toObject()).map(k => k.trim()).filter(k => {
             const u = k.toUpperCase();
             return u.includes('META') || u.includes('SECRET') || u.includes('WHATSAPP');
@@ -1132,9 +1155,9 @@ Deno.serve(async (req: Request) => {
         }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
 
-      // MODO CLOUD API REAL
+      // MODO CLOUD API REAL (Canal Interno utiliza internalPhoneNumberId)
       try {
-        const metaRes = await fetch(`https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}/messages`, {
+        const metaRes = await fetch(`https://graph.facebook.com/v21.0/${internalPhoneNumberId}/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${whatsappToken}`,
@@ -1712,8 +1735,10 @@ Deno.serve(async (req: Request) => {
 
     // =========================================================================
     // 8. EXECUÇÃO EM MODO CLOUD API REAL (Meta Graph API)
+    // Selecção independente do remetente conforme o Canal (Interno vs Cliente)
     // =========================================================================
-    const metaBaseUrl = `https://graph.facebook.com/v21.0/${whatsappPhoneNumberId}/messages`;
+    const channelSenderPhoneNumberId = (channel === 'internal') ? internalPhoneNumberId : customerPhoneNumberId;
+    const metaBaseUrl = `https://graph.facebook.com/v21.0/${channelSenderPhoneNumberId}/messages`;
     let mediaMetaId = null;
     let textMetaId = null;
 
