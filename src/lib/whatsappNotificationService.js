@@ -54,23 +54,25 @@ export async function notifyCompanyWhatsApp({
     return { success: false, message: 'Dados da encomenda em falta.' };
   }
 
-  const finalKey = deduplicationKey || `wa-${orderData.id}-${eventType}`;
+  const finalKey = deduplicationKey || `internal-${eventType}-${orderData.id}`;
   if (isDuplicate(finalKey)) {
     return {
       success: true,
       duplicate: true,
-      message: `Notificação WhatsApp para ${orderData.id} (${eventType}) já foi despachada anteriormente.`
+      channel: 'internal',
+      message: `Notificação interna WhatsApp para ${orderData.id} (${eventType}) já foi despachada anteriormente.`
     };
   }
 
   markAsSent(finalKey);
 
-  // 1. Despachar via Edge Function oficial 'whatsapp-api'
+  // 1. Despachar via Edge Function oficial 'whatsapp-api' (Canal Interno)
   if (isSupabaseConfigured && supabase?.functions) {
     try {
       const { data, error } = await supabase.functions.invoke('whatsapp-api', {
         body: {
           action: 'notify-company',
+          channel: 'internal',
           eventType,
           orderData,
           deduplicationKey: finalKey
@@ -82,17 +84,18 @@ export async function notifyCompanyWhatsApp({
 
         addNotificationToFeed({
           type: 'whatsapp_company',
-          title: `WhatsApp (${isMock ? 'MOCK' : 'API'}): #${orderData.id}`,
+          title: `WhatsApp Interno (${isMock ? 'MOCK' : 'API'}): #${orderData.id}`,
           message: isMock
-            ? `[Simulação] Notificação de ${eventType} registada com sucesso no painel.`
+            ? `[Simulação Interna] Notificação de ${eventType} registada no painel.`
             : (data.configured
-                ? `Notificação enviada com sucesso para ${COMPANY_WHATSAPP_DISPLAY} via Cloud API.`
-                : `Mensagem formatada para envio manual (${COMPANY_WHATSAPP_DISPLAY}).`),
+                ? `Notificação interna enviada para ${COMPANY_WHATSAPP_DISPLAY} via Cloud API.`
+                : `Mensagem interna formatada (${COMPANY_WHATSAPP_DISPLAY}).`),
           link: data.waLink || null
         });
 
         return {
           success: Boolean(data.success),
+          channel: 'internal',
           mode: data.mode || (isMock ? 'mock' : 'cloud_api'),
           status: data.status || (isMock ? 'SIMULATED' : 'SENT'),
           isMock,
@@ -105,7 +108,7 @@ export async function notifyCompanyWhatsApp({
         };
       }
     } catch (edgeErr) {
-      console.warn('Aviso ao contactar Edge Function whatsapp-api:', edgeErr.message);
+      console.warn('Aviso ao contactar Edge Function whatsapp-api (interno):', edgeErr.message);
     }
   }
 
@@ -115,14 +118,115 @@ export async function notifyCompanyWhatsApp({
 
   return {
     success: false,
+    channel: 'internal',
     mode: 'mock',
     status: 'SIMULATED',
     fallback: true,
     destination: COMPANY_WHATSAPP_DISPLAY,
     formattedMessage: formatted,
     waLink: fallbackWaLink,
-    message: 'Edge Function indisponível; mensagem formatada localmente para teste.'
+    message: 'Edge Function indisponível; mensagem interna formatada localmente.'
   };
+}
+
+/**
+ * Dispara uma notificação WhatsApp automática para o CLIENTE (Modelo B)
+ * Requer consentimento voluntário (customerConsent === true) e número de telemóvel válido.
+ * Utiliza templates oficiais da Meta e NÃO anexa comprovativos financeiros.
+ */
+export async function notifyCustomerWhatsApp({
+  eventType,
+  orderData,
+  customerConsent = false,
+  consentSource = 'checkout_checkbox',
+  deduplicationKey
+}) {
+  if (!orderData || !orderData.id) {
+    console.warn('Aviso: notifyCustomerWhatsApp chamado sem orderData.id válido.');
+    return { success: false, message: 'Dados da encomenda em falta.' };
+  }
+
+  const rawPhone = (orderData.customerPhone || '').replace(/\D/g, '');
+  if (!rawPhone || rawPhone.length < 9) {
+    return {
+      success: false,
+      blocked: true,
+      reason: 'INVALID_PHONE',
+      message: 'Telefone do cliente inválido para WhatsApp. Envio não realizado.'
+    };
+  }
+
+  const finalKey = deduplicationKey || `customer-${eventType}-${orderData.id}-${rawPhone}`;
+  if (isDuplicate(finalKey)) {
+    return {
+      success: true,
+      duplicate: true,
+      channel: 'customer',
+      message: `Notificação WhatsApp cliente para ${orderData.id} (${eventType}) já foi despachada anteriormente.`
+    };
+  }
+
+  markAsSent(finalKey);
+
+  if (isSupabaseConfigured && supabase?.functions) {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-api', {
+        body: {
+          action: 'notify-customer',
+          channel: 'customer',
+          eventType,
+          orderData,
+          customerConsent: Boolean(customerConsent),
+          consentSource,
+          deduplicationKey: finalKey
+        }
+      });
+
+      if (!error && data) {
+        return {
+          success: Boolean(data.success),
+          channel: 'customer',
+          mode: data.mode || 'mock',
+          status: data.status || 'SIMULATED',
+          blocked: Boolean(data.blocked),
+          reason: data.reason || null,
+          destination: data.destination,
+          templateName: data.templateName,
+          formattedMessage: data.formattedMessage,
+          waLink: data.waLink,
+          message: data.message
+        };
+      }
+      return { success: false, error: error?.message || 'Falha ao notificar cliente.' };
+    } catch (err) {
+      console.warn('Aviso ao notificar cliente via WhatsApp:', err.message);
+      return { success: false, error: err.message };
+    }
+  }
+
+  return { success: false, message: 'Supabase functions não disponível para canal cliente.' };
+}
+
+/**
+ * Regista o opt-out voluntário de notificações WhatsApp por parte do cliente (PARAR)
+ */
+export async function optOutCustomerWhatsApp(phone) {
+  if (!phone) return { success: false, message: 'Número de telefone em falta.' };
+  if (isSupabaseConfigured && supabase?.functions) {
+    try {
+      const { data, error } = await supabase.functions.invoke('whatsapp-api', {
+        body: {
+          action: 'customer-opt-out',
+          phone
+        }
+      });
+      if (!error && data) return data;
+      return { success: false, error: error?.message };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+  return { success: false, message: 'Supabase functions indisponível.' };
 }
 
 /**

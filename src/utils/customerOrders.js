@@ -8,7 +8,7 @@ import {
   sendBrevoTransactionalEmail,
   trackBrevoCommerceEvent
 } from '../lib/brevoService.js';
-import { notifyCompanyWhatsApp } from '../lib/whatsappNotificationService.js';
+import { notifyCompanyWhatsApp, notifyCustomerWhatsApp } from '../lib/whatsappNotificationService.js';
 import { calculateEstimatedDeliveryDate } from './angolaLocations.js';
 
 const ORDERS_STORAGE_KEY = 'aquitem_customer_orders_v1';
@@ -244,6 +244,10 @@ export async function createAndSaveOrder({
         tracking_number: `AQT-TRK-${orderId}`,
         estimated_delivery_date: '3 dias úteis após validação do pagamento',
         traffic_source: 'Loja Online (Novo Checkout)',
+        whatsapp_consent: Boolean(customer.whatsappConsent),
+        whatsapp_opt_out: false,
+        whatsapp_opt_in_at: customer.whatsappConsent ? now : null,
+        whatsapp_consent_source: 'checkout_checkbox',
         notes: `Código: ${orderId} | Email: ${customer.email} | Telefone: ${customer.phone} | Província: ${customer.province || 'Luanda'} | Município: ${customer.municipality || 'Luanda'} | Frete: ${deliveryFee} Kz | Pagamento: ${paymentMethod}${hasReceiptOnPurchase ? ` | Comprovativo: ${uploadRes.fileName}` : ''}${notes ? ` | Obs: ${notes}` : ''}`,
         history: [
           {
@@ -380,8 +384,27 @@ export async function createAndSaveOrder({
         paymentMethod,
         paymentStatus: hasReceiptOnPurchase ? 'Comprovativo Recebido na Compra' : 'Aguardando Pagamento'
       },
-      deduplicationKey: `company-wa-created-${orderId}`
+      deduplicationKey: `internal-order_created-${orderId}`
     }).catch(waErr => console.warn('Aviso: Notificação WhatsApp empresa:', waErr));
+
+    // Notificação WhatsApp para o Cliente (Canal B) — Apenas se houver consentimento explícito
+    if (customer.whatsappConsent) {
+      notifyCustomerWhatsApp({
+        eventType: 'order_created',
+        orderData: {
+          id: orderId,
+          orderDate: formattedDate,
+          total,
+          customerName: customer.name,
+          customerPhone: customer.phone,
+          customerEmail: customer.email,
+          paymentMethod
+        },
+        customerConsent: true,
+        consentSource: 'checkout_checkbox',
+        deduplicationKey: `customer-order_created-${orderId}-${(customer.phone || '').replace(/\D/g, '')}`
+      }).catch(custErr => console.warn('Aviso: Notificação WhatsApp cliente:', custErr));
+    }
 
     // Se o cliente anexou o comprovativo PDF/Imagem na compra, notifica também com o documento
     if (hasReceiptOnPurchase && uploadRes?.storagePath) {
@@ -398,8 +421,23 @@ export async function createAndSaveOrder({
           receiptDate: new Date().toLocaleString('pt-AO'),
           paymentStatus: 'Comprovativo Recebido na Compra (Pendente de Validação)'
         },
-        deduplicationKey: `company-wa-receipt-${orderId}`
+        deduplicationKey: `internal-receipt_submitted-${orderId}`
       }).catch(waErr => console.warn('Aviso: Notificação WhatsApp comprovativo compra:', waErr));
+
+      if (customer.whatsappConsent) {
+        notifyCustomerWhatsApp({
+          eventType: 'receipt_submitted',
+          orderData: {
+            id: orderId,
+            total,
+            customerName: customer.name,
+            customerPhone: customer.phone
+          },
+          customerConsent: true,
+          consentSource: 'checkout_checkbox',
+          deduplicationKey: `customer-receipt_submitted-${orderId}-${(customer.phone || '').replace(/\D/g, '')}`
+        }).catch(custErr => console.warn('Aviso: Notificação WhatsApp comprovativo cliente:', custErr));
+      }
     }
   }, 15);
 
@@ -694,8 +732,23 @@ export function attachPaymentReceipt(orderId, receiptData) {
             receiptDate: new Date().toLocaleString('pt-AO'),
             paymentStatus: 'Comprovativo Recebido (Pendente de Validação)'
           },
-          deduplicationKey: `company-wa-receipt-${orderId}`
+          deduplicationKey: `internal-receipt_submitted-${orderId}`
         }).catch(waErr => console.warn('Aviso: Notificação WhatsApp comprovativo empresa:', waErr));
+
+        if (targetOrder.customer?.whatsappConsent) {
+          notifyCustomerWhatsApp({
+            eventType: 'receipt_submitted',
+            orderData: {
+              id: targetOrder.id,
+              total: targetOrder.total,
+              customerName: targetOrder.customer?.name,
+              customerPhone: targetOrder.customer?.phone
+            },
+            customerConsent: true,
+            consentSource: 'checkout_checkbox',
+            deduplicationKey: `customer-receipt_submitted-${orderId}-${(targetOrder.customer?.phone || '').replace(/\D/g, '')}`
+          }).catch(custErr => console.warn('Aviso: Notificação WhatsApp comprovativo cliente:', custErr));
+        }
       }, 15);
     }
 
@@ -904,8 +957,31 @@ export function updateOrderStatus(orderId, newStatus, driverInfo = null, customT
               estimatedDeliveryDate: targetOrder.estimatedDeliveryDate || estimatedDate,
               paymentStatus: canonicalStatus
             },
-            deduplicationKey: `company-wa-${canonicalStatus}-${orderId}`
+            deduplicationKey: `internal-${waEvent}-${orderId}`
           }).catch(err => console.warn('Aviso no envio WhatsApp empresa:', err));
+
+          // Notificação WhatsApp para o Cliente (Canal B) se autorizado
+          if (targetOrder.customer?.whatsappConsent) {
+            notifyCustomerWhatsApp({
+              eventType: waEvent,
+              orderData: {
+                id: targetOrder.id,
+                total: targetOrder.total,
+                customerName: targetOrder.customer?.name,
+                customerPhone: targetOrder.customer?.phone,
+                customerEmail: targetOrder.customer?.email,
+                province: targetOrder.customer?.province,
+                municipality: targetOrder.customer?.municipality,
+                address: targetOrder.customer?.address,
+                trackingNumber: targetOrder.trackingNumber || `AQT-EXP-${orderId}`,
+                estimatedDeliveryDate: targetOrder.estimatedDeliveryDate || estimatedDate,
+                paymentStatus: canonicalStatus
+              },
+              customerConsent: true,
+              consentSource: 'checkout_checkbox',
+              deduplicationKey: `customer-${waEvent}-${orderId}-${(targetOrder.customer?.phone || '').replace(/\D/g, '')}`
+            }).catch(custErr => console.warn('Aviso no envio WhatsApp cliente:', custErr));
+          }
         }, 15);
       }
     }

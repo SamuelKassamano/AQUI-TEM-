@@ -41,7 +41,7 @@ import {
 export default function WhatsAppNotificationsManager({
   session = null,
   formatPriceKz = (v) => `${Number(v || 0).toLocaleString('pt-AO')} Kz`,
-  showToast = () => {}
+  showToast = () => { }
 }) {
   // Estado de configuração e modo
   const [apiStatus, setApiStatus] = useState(null);
@@ -777,8 +777,8 @@ export default function WhatsAppNotificationsManager({
               {originTab === 'external_meta'
                 ? 'Auditoria de Eventos Externos Recebidos da Meta'
                 : originTab === 'mock'
-                ? 'Registo de Notificações em Modo Simulação'
-                : 'Registo Histórico de Notificações WhatsApp'}
+                  ? 'Registo de Notificações em Modo Simulação'
+                  : 'Registo Histórico de Notificações WhatsApp'}
             </h4>
             <p style={{ margin: '4px 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
               {originTab === 'external_meta'
@@ -901,18 +901,18 @@ export default function WhatsAppNotificationsManager({
                             background: isExternal
                               ? 'rgba(245, 158, 11, 0.15)'
                               : isSimulated
-                              ? 'rgba(139, 92, 246, 0.12)'
-                              : 'rgba(16, 185, 129, 0.12)',
+                                ? 'rgba(139, 92, 246, 0.12)'
+                                : 'rgba(16, 185, 129, 0.12)',
                             color: isExternal ? '#D97706' : isSimulated ? '#8B5CF6' : '#10B981'
                           }}
                         >
                           {log.dispatch_mode === 'controlled_test'
                             ? '🧪 Teste Real'
                             : isExternal
-                            ? '📡 Meta Externo'
-                            : isSimulated
-                            ? '🧪 Mock'
-                            : '🌐 Website'}
+                              ? '📡 Meta Externo'
+                              : isSimulated
+                                ? '🧪 Mock'
+                                : '🌐 Website'}
                         </span>
                       </td>
 
@@ -932,7 +932,20 @@ export default function WhatsAppNotificationsManager({
 
                       {/* Destinatário */}
                       <td style={{ padding: '12px 8px', fontSize: '0.82rem' }}>
-                        +{log.recipient}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                          <span style={{
+                            alignSelf: 'flex-start',
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            padding: '1px 6px',
+                            borderRadius: '4px',
+                            backgroundColor: log.channel === 'customer' ? 'rgba(59, 130, 246, 0.12)' : 'rgba(107, 114, 128, 0.12)',
+                            color: log.channel === 'customer' ? '#2563EB' : '#4B5563'
+                          }}>
+                            {log.channel === 'customer' ? '👤 Cliente' : '🏢 Interno'}
+                          </span>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 600 }}>+{log.recipient}</span>
+                        </div>
                       </td>
 
                       {/* Estado */}
@@ -949,13 +962,13 @@ export default function WhatsAppNotificationsManager({
                             background: isSimulated
                               ? 'rgba(139, 92, 246, 0.18)'
                               : isFailed
-                              ? 'rgba(239, 68, 68, 0.18)'
-                              : 'rgba(16, 185, 129, 0.18)',
+                                ? 'rgba(239, 68, 68, 0.18)'
+                                : 'rgba(16, 185, 129, 0.18)',
                             color: isSimulated
                               ? '#8B5CF6'
                               : isFailed
-                              ? '#DC2626'
-                              : '#059669'
+                                ? '#DC2626'
+                                : '#059669'
                           }}
                         >
                           {isSimulated ? '🧪 SIMULATED' : isFailed ? '✗ FAILED' : '✓ ' + log.status}

@@ -55,7 +55,8 @@ export default function CheckoutPage() {
     province: savedProfile.province || 'Luanda',
     municipality: savedProfile.municipality || 'Luanda',
     address: savedProfile.address || '',
-    notes: ''
+    notes: '',
+    whatsappConsent: false // Consentimento voluntário desmarcado por defeito
   });
 
   const [paymentMethod, setPaymentMethod] = useState('Transferência Bancária');
@@ -142,7 +143,8 @@ export default function CheckoutPage() {
           province: formData.province,
           municipality: formData.municipality,
           address: formData.address.trim(),
-          city: `${formData.province} — ${formData.municipality}`
+          city: `${formData.province} — ${formData.municipality}`,
+          whatsappConsent: Boolean(formData.whatsappConsent)
         },
         items: itemsToCheckout,
         subtotal: itemsSubtotal,
@@ -578,6 +580,47 @@ export default function CheckoutPage() {
                             onChange={e => setFormData({ ...formData, email: e.target.value })}
                           />
                         </div>
+                      </div>
+
+                      {/* Consentimento Voluntário para Notificações WhatsApp (Desmarcado por Defeito) */}
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        gap: '10px',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        backgroundColor: 'var(--surface-color, #f8fafc)',
+                        border: '1px solid var(--border-color, #e2e8f0)',
+                        marginBottom: '8px'
+                      }}>
+                        <input
+                          type="checkbox"
+                          id="whatsappConsent"
+                          checked={formData.whatsappConsent}
+                          onChange={e => setFormData({ ...formData, whatsappConsent: e.target.checked })}
+                          style={{
+                            marginTop: '2px',
+                            width: '16px',
+                            height: '16px',
+                            cursor: 'pointer',
+                            accentColor: '#10b981'
+                          }}
+                        />
+                        <label
+                          htmlFor="whatsappConsent"
+                          style={{
+                            fontSize: '0.82rem',
+                            color: 'var(--text-main)',
+                            cursor: 'pointer',
+                            lineHeight: '1.45',
+                            userSelect: 'none'
+                          }}
+                        >
+                          Desejo receber actualizações voluntárias do estado da minha encomenda e entrega no WhatsApp ({formData.phone ? formData.phone : 'número acima indicado'}).
+                          <span style={{ display: 'block', fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            Poderá cancelar a qualquer momento respondendo <strong>PARAR</strong>.
+                          </span>
+                        </label>
                       </div>
 
                       {/* Província & Município */}

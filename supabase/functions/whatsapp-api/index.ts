@@ -30,8 +30,12 @@ interface OrderItem {
 }
 
 interface NotificationPayload {
-  action?: 'notify-company' | 'notify-lead' | 'check-status' | 'list-logs' | 'get-receipt-url' | 'test-simulate';
-  eventType?: 'order_created' | 'receipt_submitted' | 'payment_confirmed' | 'order_processing' | 'order_shipped' | 'order_delivered' | 'lead_captured' | 'external_meta';
+  action?: 'notify-company' | 'notify-customer' | 'notify-lead' | 'check-status' | 'list-logs' | 'get-receipt-url' | 'test-simulate' | 'diagnose-token' | 'controlled-test-send' | 'customer-opt-out';
+  channel?: 'internal' | 'customer';
+  customerConsent?: boolean;
+  consentSource?: string;
+  eventType?: 'order_created' | 'receipt_submitted' | 'payment_confirmed' | 'order_processing' | 'order_shipped' | 'order_delivered' | 'lead_captured' | 'external_meta' | 'customer_opt_out';
+  phone?: string;
   orderData?: {
     id: string;
     orderDate?: string;
@@ -299,6 +303,47 @@ Deno.serve(async (req: Request) => {
               }
             }
           }
+
+          // 3.2 Processamento de Mensagens Recebidas (Opt-Out / Cancelamento voluntário com "PARAR")
+          const incomingMessages = change.value?.messages || [];
+          for (const msg of incomingMessages) {
+            const fromNum = (msg.from || '').replace(/\D/g, '');
+            const textContent = (msg.text?.body || '').trim().toUpperCase();
+            if (fromNum && (textContent === 'PARAR' || textContent === 'STOP' || textContent === 'CANCELAR')) {
+              console.log(`[OPT-OUT] Comando ${textContent} recebido do número ${fromNum}`);
+              if (supabaseAdmin) {
+                try {
+                  const nowIso = new Date().toISOString();
+                  await supabaseAdmin
+                    .from('crm_leads')
+                    .update({
+                      whatsapp_opt_out: true,
+                      whatsapp_consent: false,
+                      whatsapp_opt_out_at: nowIso
+                    })
+                    .or(`phone.ilike.%${fromNum}%,phone.ilike.%${fromNum.slice(-9)}%`);
+
+                  await supabaseAdmin
+                    .from('whatsapp_dispatch_logs')
+                    .insert([{
+                      event_type: 'customer_opt_out',
+                      channel: 'customer',
+                      recipient: fromNum,
+                      status: 'BLOCKED_OPT_OUT',
+                      dispatch_mode: 'external_meta',
+                      message_type: 'text',
+                      formatted_body: `🚫 Opt-out via WhatsApp Webhook: cliente enviou '${textContent}'. Notificações canceladas.`,
+                      deduplication_key: `webhook-optout-${fromNum}-${Date.now()}`,
+                      customer_consent: false,
+                      consent_source: 'webhook_stop_keyword',
+                      payload: { from: fromNum, message: textContent, raw: msg }
+                    }]);
+                } catch (optErr: any) {
+                  console.warn('Erro ao processar opt-out no banco:', optErr.message);
+                }
+              }
+            }
+          }
         }
       }
 
@@ -313,16 +358,68 @@ Deno.serve(async (req: Request) => {
     // =========================================================================
     const {
       action = 'notify-company',
+      channel: requestedChannel,
+      customerConsent = false,
+      consentSource = 'checkout_checkbox',
       eventType = 'order_created',
       orderData,
       leadData,
       deduplicationKey,
       storagePath,
+      phone: directPhone,
       limit = 50,
       page = 1,
       statusFilter = 'all',
       originFilter = 'all'
     } = body as NotificationPayload;
+
+    const channel: 'internal' | 'customer' = requestedChannel || (action === 'notify-customer' ? 'customer' : 'internal');
+
+    // 4.0 Acção Administrativa / Programática de Opt-Out do Cliente (PARAR)
+    if (action === 'customer-opt-out') {
+      const phoneToOptOut = (directPhone || orderData?.customerPhone || '').replace(/\D/g, '');
+      if (!phoneToOptOut || phoneToOptOut.length < 9) {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Número de telefone inválido para registo de opt-out.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      if (supabaseAdmin) {
+        try {
+          const nowIso = new Date().toISOString();
+          await supabaseAdmin
+            .from('crm_leads')
+            .update({
+              whatsapp_opt_out: true,
+              whatsapp_consent: false,
+              whatsapp_opt_out_at: nowIso
+            })
+            .or(`phone.ilike.%${phoneToOptOut}%,phone.ilike.%${phoneToOptOut.slice(-9)}%`);
+
+          await supabaseAdmin
+            .from('whatsapp_dispatch_logs')
+            .insert([{
+              event_type: 'customer_opt_out',
+              channel: 'customer',
+              recipient: phoneToOptOut,
+              status: 'BLOCKED_OPT_OUT',
+              dispatch_mode: whatsappMode,
+              message_type: 'text',
+              formatted_body: `🚫 Opt-out de notificações WhatsApp registado com sucesso (PARAR) para +${phoneToOptOut}.`,
+              deduplication_key: `opt-out-${phoneToOptOut}-${Date.now()}`,
+              customer_consent: false,
+              consent_source: 'opt_out_action',
+              payload: { phone: phoneToOptOut, action: 'customer-opt-out', timestamp: nowIso }
+            }]);
+        } catch (dbErr: any) {
+          console.warn('Aviso no registo de opt-out:', dbErr.message);
+        }
+      }
+      return new Response(
+        JSON.stringify({ success: true, message: `Opt-out registado com sucesso para +${phoneToOptOut}.` }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // 4.1 Verificação de Estado da Configuração
     if (action === 'check-status') {
@@ -955,7 +1052,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // =========================================================================
-    // 6. TRATAMENTO DE NOTIFICAÇÃO DE CICLO DE ENCOMENDA
+    // 6. TRATAMENTO DE NOTIFICAÇÃO DE CICLO DE ENCOMENDA (MODELO A E MODELO B)
     // =========================================================================
     if (!orderData || !orderData.id) {
       return new Response(
@@ -966,19 +1063,173 @@ Deno.serve(async (req: Request) => {
 
     const orderId = orderData.id;
     const clientName = orderData.customerName || 'Cliente AQUI TEM';
-    const clientPhone = orderData.customerPhone || 'Não informado';
     const clientEmail = orderData.customerEmail || 'Não informado';
     const totalKz = Number(orderData.total || 0).toLocaleString('pt-AO');
     const paymentMeth = orderData.paymentMethod || 'Transferência Bancária / Multicaixa Express';
     const addressStr = `${orderData.address || ''}, ${orderData.municipality || ''}, ${orderData.province || 'Luanda'}`.replace(/^[\s,]+|[\s,]+$/g, '');
 
+    // 6.1 Regras de Isolamento e Validação por Canal
+    let finalRecipient = COMPANY_WHATSAPP_NUMBER;
+    let templateName: string | null = null;
+
+    if (channel === 'customer') {
+      // Regra 1: lead_captured é estritamente exclusivo do canal interno
+      if (eventType === 'lead_captured') {
+        return new Response(
+          JSON.stringify({ success: false, message: 'Evento lead_captured é restrito ao canal interno da empresa.' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Regra 2: Obter e validar o número de telemóvel do cliente sem fallback silencioso
+      let cleanCustomerPhone = (orderData.customerPhone || '').replace(/\D/g, '');
+      if (cleanCustomerPhone.startsWith('00')) cleanCustomerPhone = cleanCustomerPhone.slice(2);
+      if (cleanCustomerPhone.length === 9 && cleanCustomerPhone.startsWith('9')) {
+        cleanCustomerPhone = '244' + cleanCustomerPhone;
+      }
+
+      if (!cleanCustomerPhone || cleanCustomerPhone.length < 9) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'INVALID_CUSTOMER_PHONE',
+            message: `Número de telefone do cliente inválido para notificações WhatsApp: '${orderData.customerPhone || ''}'. Sem fallback silencioso para a empresa.`
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      finalRecipient = cleanCustomerPhone;
+
+      // Mapeamento de Templates Oficiais da Meta (UTILITY)
+      const templateMap: Record<string, string> = {
+        'order_created': 'aquitem_order_pending',
+        'receipt_submitted': 'aquitem_receipt_received',
+        'payment_confirmed': 'aquitem_payment_confirmed',
+        'order_processing': 'aquitem_order_processing',
+        'order_shipped': 'aquitem_order_shipped',
+        'order_delivered': 'aquitem_order_delivered'
+      };
+      templateName = templateMap[eventType] || 'aquitem_order_pending';
+
+      // Chave de Idempotência Independente para o Canal do Cliente
+      const finalCustomerKey = deduplicationKey || `customer-${eventType}-${orderId}-${finalRecipient}`;
+
+      // Regra 3: Verificação de Opt-Out no CRM Leads
+      let isOptedOut = false;
+      if (supabaseAdmin) {
+        try {
+          const { data: leadRecord } = await supabaseAdmin
+            .from('crm_leads')
+            .select('whatsapp_opt_out, whatsapp_consent')
+            .or(`phone.ilike.%${finalRecipient.slice(-9)}%,lead_code.eq.${orderId}`)
+            .maybeSingle();
+
+          if (leadRecord?.whatsapp_opt_out) {
+            isOptedOut = true;
+          }
+
+          // Verificação adicional no histórico de auditoria de opt-out (whatsapp_dispatch_logs)
+          if (!isOptedOut) {
+            const { data: optLog } = await supabaseAdmin
+              .from('whatsapp_dispatch_logs')
+              .select('id')
+              .eq('recipient', finalRecipient)
+              .eq('event_type', 'customer_opt_out')
+              .limit(1)
+              .maybeSingle();
+
+            if (optLog) {
+              isOptedOut = true;
+            }
+          }
+        } catch (_optErr) { }
+      }
+
+      if (isOptedOut) {
+        if (supabaseAdmin) {
+          try {
+            await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
+              event_type: eventType,
+              order_code: orderId,
+              channel: 'customer',
+              recipient: finalRecipient,
+              status: 'BLOCKED_OPT_OUT',
+              dispatch_mode: whatsappMode,
+              message_type: 'template',
+              meta_message_id: null,
+              deduplication_key: finalCustomerKey,
+              customer_consent: false,
+              consent_source: consentSource,
+              template_name: templateName,
+              formatted_body: `[BLOQUEADO: OPT-OUT ACTIVO] Cliente solicitou PARAR notificações. Evento: ${eventType}`,
+              payload: { orderId, clientName, total: totalKz, eventType, blockedReason: 'OPT_OUT', isSimulation: true }
+            }], { onConflict: 'deduplication_key' });
+          } catch (_e) { }
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            blocked: true,
+            channel: 'customer',
+            reason: 'OPTED_OUT',
+            message: 'Envio bloqueado: o cliente solicitou opt-out através da palavra PARAR.'
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Regra 4: Verificação de Consentimento Voluntário do Cliente
+      if (!customerConsent) {
+        if (supabaseAdmin) {
+          try {
+            await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
+              event_type: eventType,
+              order_code: orderId,
+              channel: 'customer',
+              recipient: finalRecipient,
+              status: 'BLOCKED_NO_CONSENT',
+              dispatch_mode: whatsappMode,
+              message_type: 'template',
+              meta_message_id: null,
+              deduplication_key: finalCustomerKey,
+              customer_consent: false,
+              consent_source: consentSource,
+              template_name: templateName,
+              formatted_body: `[BLOQUEADO: SEM CONSENTIMENTO] Cliente não autorizou notificações WhatsApp no checkout. Evento: ${eventType}`,
+              payload: { orderId, clientName, total: totalKz, eventType, blockedReason: 'NO_CONSENT', isSimulation: true }
+            }], { onConflict: 'deduplication_key' });
+          } catch (_e) { }
+        }
+
+        return new Response(
+          JSON.stringify({
+            success: false,
+            blocked: true,
+            channel: 'customer',
+            reason: 'NO_CONSENT',
+            message: 'Envio bloqueado: o cliente não autorizou voluntariamente notificações por WhatsApp no checkout.'
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      // Canal Interno: Destinatário corporativo estrito
+      finalRecipient = COMPANY_WHATSAPP_NUMBER;
+    }
+
+    // Chave de Idempotência Determinística Final por Canal
+    const finalKey = deduplicationKey || (channel === 'internal'
+      ? `internal-${eventType}-${orderId}`
+      : `customer-${eventType}-${orderId}-${finalRecipient}`);
+
     // Deduplicação no banco de dados
-    const finalKey = deduplicationKey || `wa-${orderId}-${eventType}`;
     if (supabaseAdmin) {
       try {
         const { data: existingLog } = await supabaseAdmin
           .from('whatsapp_dispatch_logs')
-          .select('id, status, meta_message_id, created_at')
+          .select('id, status, meta_message_id, created_at, channel')
           .eq('deduplication_key', finalKey)
           .maybeSingle();
 
@@ -987,9 +1238,10 @@ Deno.serve(async (req: Request) => {
             JSON.stringify({
               success: true,
               duplicate: true,
+              channel,
               mode: isMockMode ? 'mock' : 'cloud_api',
               status: existingLog.status,
-              message: `Notificação WhatsApp para ${orderId} (${eventType}) já foi registada com status '${existingLog.status}'.`,
+              message: `Notificação WhatsApp (${channel}) para ${orderId} (${eventType}) já foi registada com status '${existingLog.status}'.`,
               existingLog
             }),
             { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -998,171 +1250,250 @@ Deno.serve(async (req: Request) => {
       } catch (_dedupErr) { }
     }
 
-    // Resolução do Comprovativo Bancário (Storage Privado)
-    let receiptRelativePath: string | null = orderData.receiptStoragePath || null;
+    // =========================================================================
+    // 6.2 Resolução Segura de Comprovativo Bancário (EXCLUSIVO PARA CANAL INTERNO)
+    // =========================================================================
+    let receiptRelativePath: string | null = null;
     let isReceiptPdf = false;
     let isReceiptImage = false;
     let receiptFileName = `Recibo-${orderId}.pdf`;
     let receiptMimeType = 'application/pdf';
     let tempSignedUrlForMetaOrPreview = '';
 
-    if ((eventType === 'receipt_submitted' || eventType === 'payment_confirmed') && supabaseAdmin) {
-      if (!receiptRelativePath) {
-        try {
-          const { data: lead } = await supabaseAdmin
-            .from('crm_leads')
-            .select('receipt_storage_path')
-            .or(`lead_code.eq.${orderId},notes.ilike.%${orderId}%`)
-            .maybeSingle();
-          if (lead?.receipt_storage_path) {
-            receiptRelativePath = lead.receipt_storage_path;
+    // Acesso ao Storage Privado estritamente restrito ao canal interno
+    if (channel === 'internal') {
+      receiptRelativePath = orderData.receiptStoragePath || null;
+      if ((eventType === 'receipt_submitted' || eventType === 'payment_confirmed') && supabaseAdmin) {
+        if (!receiptRelativePath) {
+          try {
+            const { data: lead } = await supabaseAdmin
+              .from('crm_leads')
+              .select('receipt_storage_path')
+              .or(`lead_code.eq.${orderId},notes.ilike.%${orderId}%`)
+              .maybeSingle();
+            if (lead?.receipt_storage_path) {
+              receiptRelativePath = lead.receipt_storage_path;
+            }
+          } catch (_leadLookupErr) { }
+        }
+
+        if (receiptRelativePath) {
+          const ext = receiptRelativePath.split('.').pop()?.toLowerCase() || '';
+          isReceiptPdf = ext === 'pdf';
+          isReceiptImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
+          receiptMimeType = isReceiptPdf ? 'application/pdf' : (ext === 'png' ? 'image/png' : 'image/jpeg');
+          receiptFileName = receiptRelativePath.split('/').pop() || `Recibo-${orderId}.${isReceiptPdf ? 'pdf' : 'jpg'}`;
+
+          // Redução da validade da Signed URL ao mínimo operacional (30 minutos = 1800 segundos)
+          // NUNCA gravada no banco de dados
+          try {
+            const { data: signedData } = await supabaseAdmin.storage
+              .from('payment-receipts')
+              .createSignedUrl(receiptRelativePath, 1800);
+
+            if (signedData?.signedUrl) {
+              tempSignedUrlForMetaOrPreview = signedData.signedUrl;
+            }
+          } catch (signErr: any) {
+            console.warn('Aviso ao gerar URL assinado de comprovativo:', signErr.message);
           }
-        } catch (_leadLookupErr) { }
-      }
-
-      if (receiptRelativePath) {
-        const ext = receiptRelativePath.split('.').pop()?.toLowerCase() || '';
-        isReceiptPdf = ext === 'pdf';
-        isReceiptImage = ['jpg', 'jpeg', 'png', 'webp'].includes(ext);
-        receiptMimeType = isReceiptPdf ? 'application/pdf' : (ext === 'png' ? 'image/png' : 'image/jpeg');
-        receiptFileName = receiptRelativePath.split('/').pop() || `Recibo-${orderId}.${isReceiptPdf ? 'pdf' : 'jpg'}`;
-
-        // Gerar URL assinado temporário em memória (NUNCA gravado no banco)
-        try {
-          const { data: signedData } = await supabaseAdmin.storage
-            .from('payment-receipts')
-            .createSignedUrl(receiptRelativePath, 86400); // 24h
-
-          if (signedData?.signedUrl) {
-            tempSignedUrlForMetaOrPreview = signedData.signedUrl;
-          }
-        } catch (signErr: any) {
-          console.warn('Aviso ao gerar URL assinado de comprovativo:', signErr.message);
         }
       }
     }
 
-    // Formatação da Mensagem Estruturada
+    // =========================================================================
+    // 6.3 Formatação da Mensagem Estruturada por Canal
+    // =========================================================================
     const prefix = isMockMode ? `🧪 *[SIMULAÇÃO / MOCK — AQUI TEM ANGOLA]*\n` : '';
     let formattedMessage = '';
 
-    switch (eventType) {
-      case 'order_created': {
-        formattedMessage = `${prefix}🔔 *NOVA ENCOMENDA REGISTADA — AQUI TEM ANGOLA*\n\n` +
-          `📦 *Código:* #${orderId}\n` +
-          `👤 *Cliente:* ${clientName}\n` +
-          `📞 *Telefone:* ${clientPhone}\n` +
-          `✉️ *E-mail:* ${clientEmail}\n` +
-          (addressStr ? `📍 *Endereço:* ${addressStr}\n` : '') +
-          `\n🛍️ *Produtos Encomendados:*\n`;
-        if (orderData.items && orderData.items.length > 0) {
-          orderData.items.forEach((item, idx) => {
-            const q = item.quantity || 1;
-            const p = Number(item.price || 0).toLocaleString('pt-AO');
-            formattedMessage += `• ${idx + 1}. *${item.name}* (x${q}) — ${p} Kz\n`;
-          });
+    if (channel === 'customer') {
+      // -----------------------------------------------------------------------
+      // MODELO B: Notificações Automáticas ao Cliente (Templates Oficiais)
+      // -----------------------------------------------------------------------
+      switch (eventType) {
+        case 'order_created': {
+          formattedMessage = `${prefix}🛍️ *AQUI TEM ANGOLA — Encomenda Registada*\n\n` +
+            `Olá *${clientName}*, a sua encomenda *#${orderId}* foi registada com sucesso!\n` +
+            `💰 *Valor Total:* ${totalKz} Kz\n` +
+            `⏳ *Estado:* Aguardando Pagamento\n\n` +
+            `Por favor, efectue a transferência bancária ou Multicaixa Express e anexe o comprovativo na sua Área de Cliente para agendarmos a entrega prioritária.\n\n` +
+            `_Para deixar de receber notificações no WhatsApp, responda PARAR._`;
+          break;
         }
-        if (orderData.subtotal) {
-          formattedMessage += `\n📊 *Subtotal:* ${Number(orderData.subtotal).toLocaleString('pt-AO')} Kz\n`;
+
+        case 'receipt_submitted': {
+          formattedMessage = `${prefix}📄 *AQUI TEM ANGOLA — Comprovativo Recebido*\n\n` +
+            `Olá *${clientName}*, confirmamos a recepção do comprovativo da sua encomenda *#${orderId}*!\n` +
+            `🔍 A nossa equipa de tesouraria está a validar a transacção bancária. Assim que confirmada, a sua encomenda será agendada para expedição.\n\n` +
+            `_Para deixar de receber notificações no WhatsApp, responda PARAR._`;
+          break;
         }
-        if (orderData.deliveryFee !== undefined) {
-          formattedMessage += `🚚 *Taxa de Entrega:* ${Number(orderData.deliveryFee).toLocaleString('pt-AO')} Kz\n`;
+
+        case 'payment_confirmed': {
+          formattedMessage = `${prefix}✅ *AQUI TEM ANGOLA — Pagamento Confirmado*\n\n` +
+            `Olá *${clientName}*, o pagamento da sua encomenda *#${orderId}* (${totalKz} Kz) foi aprovado com sucesso!\n` +
+            `📅 *Previsão de Entrega:* ${orderData.estimatedDeliveryDate || '3 dias úteis'}\n` +
+            `📍 *Código de Rastreio:* ${orderData.trackingNumber || `AQT-EXP-${orderId}`}\n\n` +
+            `_Para deixar de receber notificações no WhatsApp, responda PARAR._`;
+          break;
         }
-        formattedMessage += `💵 *VALOR TOTAL:* ${totalKz} Kz\n` +
-          `💳 *Método de Pagamento:* ${paymentMeth}\n` +
-          `⏳ *Estado:* Aguardando Pagamento\n\n` +
-          (isMockMode
-            ? `⚠️ _[Simulação]: Notificação fictícia de teste de encomenda gerada no sistema._`
-            : `⚠️ _Aguardando realização da transferência ou anexo de comprovativo._`);
-        break;
-      }
 
-      case 'receipt_submitted': {
-        const nowFormatted = orderData.receiptDate || new Date().toLocaleString('pt-AO');
-        formattedMessage = `${prefix}📄 *NOVO COMPROVATIVO RECEBIDO — AQUI TEM ANGOLA*\n\n` +
-          `📦 *Código da Encomenda:* #${orderId}\n` +
-          `👤 *Cliente:* ${clientName} (${clientPhone})\n` +
-          `💰 *Valor da Encomenda:* ${totalKz} Kz\n` +
-          `🕒 *Data/Hora do Envio:* ${nowFormatted}\n\n` +
-          `⚠️ *Estado:* PENDENTE DE VALIDAÇÃO FINANCEIRA\n` +
-          `_Aviso de Segurança: O envio do comprovativo não confirma o pagamento automaticamente._\n\n` +
-          (receiptRelativePath ? `📁 *Documento no Bucket Privado:* ${receiptRelativePath}\n` : '') +
-          (tempSignedUrlForMetaOrPreview ? `🔐 *Ligação Segura Temporária (Painel Admin):*\n${tempSignedUrlForMetaOrPreview}\n\n` : '') +
-          (isMockMode
-            ? `🧪 _[Simulação]: Teste de recepção de comprovativo processado com sucesso._`
-            : `👉 _Aceda ao Painel Administrativo para validar a entrada bancária e aprovar a entrega._`);
-        break;
-      }
+        case 'order_processing': {
+          formattedMessage = `${prefix}📦 *AQUI TEM ANGOLA — Encomenda em Preparação*\n\n` +
+            `Olá *${clientName}*, a sua encomenda *#${orderId}* está em processo de embalamento anti-impacto e conferência técnica no nosso centro de expedição.\n\n` +
+            `_Para deixar de receber notificações no WhatsApp, responda PARAR._`;
+          break;
+        }
 
-      case 'payment_confirmed': {
-        formattedMessage = `${prefix}✅ *PAGAMENTO APROVADO & ENCOMENDA AGENDADA*\n\n` +
-          `📦 *Código:* #${orderId}\n` +
-          `👤 *Cliente:* ${clientName}\n` +
-          `💰 *Valor Confirmado:* ${totalKz} Kz\n` +
-          (orderData.estimatedDeliveryDate ? `📅 *Previsão de Entrega (3 dias úteis):* ${orderData.estimatedDeliveryDate}\n` : '') +
-          (orderData.trackingNumber ? `📍 *Código de Rastreio Oficial:* ${orderData.trackingNumber}\n` : '') +
-          (receiptRelativePath ? `\n📁 *Recibo no Storage:* ${receiptRelativePath}\n` : '') +
-          (tempSignedUrlForMetaOrPreview ? `🔐 *Recibo Anexado (Link Seguro 24h):*\n${tempSignedUrlForMetaOrPreview}\n` : '') +
-          (isMockMode
-            ? `\n🧪 _[Simulação]: Aprovação financeira simulada. Auditoria real preservada._`
-            : `\n🚀 _A administração confirmou a entrada financeira. Encomenda agendada para expedição._`);
-        break;
-      }
+        case 'order_shipped': {
+          formattedMessage = `${prefix}🚚 *AQUI TEM ANGOLA — Encomenda a Caminho*\n\n` +
+            `Olá *${clientName}*, a sua encomenda *#${orderId}* já foi despachada para entrega prioritária!\n` +
+            (addressStr ? `📍 *Destino:* ${addressStr}\n` : '') +
+            (orderData.trackingNumber ? `🔍 *Código de Rastreio:* ${orderData.trackingNumber}\n\n` : '\n') +
+            `_Para deixar de receber notificações no WhatsApp, responda PARAR._`;
+          break;
+        }
 
-      case 'order_processing': {
-        formattedMessage = `${prefix}📦 *ENCOMENDA EM PREPARAÇÃO & CONTROLO DE QUALIDADE*\n\n` +
-          `📦 *Código:* #${orderId}\n` +
-          `👤 *Cliente:* ${clientName} (${clientPhone})\n` +
-          `🔍 *Estado:* Empacotamento anti-impacto e conferência técnica dos equipamentos em curso no centro de expedição.\n`;
-        break;
-      }
+        case 'order_delivered': {
+          formattedMessage = `${prefix}🎉 *AQUI TEM ANGOLA — Encomenda Entregue*\n\n` +
+            `Olá *${clientName}*, a sua encomenda *#${orderId}* foi entregue com sucesso!\n` +
+            `🛡️ A sua *Garantia Oficial de 7 Dias* da AQUI TEM ANGOLA está activa a partir de hoje.\n` +
+            `Obrigado pela sua confiança!\n\n` +
+            `_Para deixar de receber notificações no WhatsApp, responda PARAR._`;
+          break;
+        }
 
-      case 'order_shipped': {
-        formattedMessage = `${prefix}🚚 *ENCOMENDA EM ROTA DE ENTREGA*\n\n` +
-          `📦 *Código:* #${orderId}\n` +
-          `👤 *Cliente:* ${clientName} (${clientPhone})\n` +
-          (addressStr ? `📍 *Endereço de Destino:* ${addressStr}\n` : '') +
-          `🛵 *Estado:* Viatura express / estafeta despachado com a encomenda para entrega prioritária.\n`;
-        break;
+        default: {
+          formattedMessage = `${prefix}ℹ️ *AQUI TEM ANGOLA — Encomenda #${orderId}*\nOlá ${clientName}, actualização sobre a sua encomenda: ${eventType}.`;
+        }
       }
+    } else {
+      // -----------------------------------------------------------------------
+      // MODELO A: Notificações Internas e Privadas (Equipa Operacional)
+      // -----------------------------------------------------------------------
+      switch (eventType) {
+        case 'order_created': {
+          formattedMessage = `${prefix}🔔 *NOVA ENCOMENDA REGISTADA — AQUI TEM ANGOLA*\n\n` +
+            `📦 *Código:* #${orderId}\n` +
+            `👤 *Cliente:* ${clientName}\n` +
+            `📞 *Telefone:* ${orderData.customerPhone || 'Não informado'}\n` +
+            `✉️ *E-mail:* ${clientEmail}\n` +
+            (addressStr ? `📍 *Endereço:* ${addressStr}\n` : '') +
+            `\n🛍️ *Produtos Encomendados:*\n`;
+          if (orderData.items && orderData.items.length > 0) {
+            orderData.items.forEach((item, idx) => {
+              const q = item.quantity || 1;
+              const p = Number(item.price || 0).toLocaleString('pt-AO');
+              formattedMessage += `• ${idx + 1}. *${item.name}* (x${q}) — ${p} Kz\n`;
+            });
+          }
+          if (orderData.subtotal) {
+            formattedMessage += `\n📊 *Subtotal:* ${Number(orderData.subtotal).toLocaleString('pt-AO')} Kz\n`;
+          }
+          if (orderData.deliveryFee !== undefined) {
+            formattedMessage += `🚚 *Taxa de Entrega:* ${Number(orderData.deliveryFee).toLocaleString('pt-AO')} Kz\n`;
+          }
+          formattedMessage += `💵 *VALOR TOTAL:* ${totalKz} Kz\n` +
+            `💳 *Método de Pagamento:* ${paymentMeth}\n` +
+            `⏳ *Estado:* Aguardando Pagamento\n\n` +
+            (isMockMode
+              ? `⚠️ _[Simulação]: Notificação fictícia de teste de encomenda gerada no sistema._`
+              : `⚠️ _Aguardando realização da transferência ou anexo de comprovativo._`);
+          break;
+        }
 
-      case 'order_delivered': {
-        formattedMessage = `${prefix}🎉 *ENCOMENDA ENTREGUE COM SUCESSO*\n\n` +
-          `📦 *Código:* #${orderId}\n` +
-          `👤 *Cliente:* ${clientName}\n` +
-          `✅ *Estado:* Entrega concluída com sucesso no endereço do cliente. Garantia oficial de 7 dias activada.\n`;
-        break;
-      }
+        case 'receipt_submitted': {
+          const nowFormatted = orderData.receiptDate || new Date().toLocaleString('pt-AO');
+          formattedMessage = `${prefix}📄 *NOVO COMPROVATIVO RECEBIDO — AQUI TEM ANGOLA*\n\n` +
+            `📦 *Código da Encomenda:* #${orderId}\n` +
+            `👤 *Cliente:* ${clientName} (${orderData.customerPhone || 'Não informado'})\n` +
+            `💰 *Valor da Encomenda:* ${totalKz} Kz\n` +
+            `🕒 *Data/Hora do Envio:* ${nowFormatted}\n\n` +
+            `⚠️ *Estado:* PENDENTE DE VALIDAÇÃO FINANCEIRA\n` +
+            `_Aviso de Segurança: O envio do comprovativo não confirma o pagamento automaticamente._\n\n` +
+            (receiptRelativePath ? `📁 *Documento no Bucket Privado:* ${receiptRelativePath}\n` : '') +
+            (tempSignedUrlForMetaOrPreview ? `🔐 *Ligação Segura Temporária (30 min - Painel Admin):*\n${tempSignedUrlForMetaOrPreview}\n\n` : '') +
+            (isMockMode
+              ? `🧪 _[Simulação]: Teste de recepção de comprovativo processado com sucesso._`
+              : `👉 _Aceda ao Painel Administrativo para validar a entrada bancária e aprovar a entrega._`);
+          break;
+        }
 
-      default: {
-        formattedMessage = `${prefix}ℹ️ *NOTIFICAÇÃO DE ENCOMENDA #${orderId}*\nCliente: ${clientName}\nEstado: ${eventType}\nTotal: ${totalKz} Kz`;
+        case 'payment_confirmed': {
+          formattedMessage = `${prefix}✅ *PAGAMENTO APROVADO & ENCOMENDA AGENDADA*\n\n` +
+            `📦 *Código:* #${orderId}\n` +
+            `👤 *Cliente:* ${clientName}\n` +
+            `💰 *Valor Confirmado:* ${totalKz} Kz\n` +
+            (orderData.estimatedDeliveryDate ? `📅 *Previsão de Entrega (3 dias úteis):* ${orderData.estimatedDeliveryDate}\n` : '') +
+            (orderData.trackingNumber ? `📍 *Código de Rastreio Oficial:* ${orderData.trackingNumber}\n` : '') +
+            (receiptRelativePath ? `\n📁 *Recibo no Storage:* ${receiptRelativePath}\n` : '') +
+            (tempSignedUrlForMetaOrPreview ? `🔐 *Recibo Anexado (Link Seguro 30 min):*\n${tempSignedUrlForMetaOrPreview}\n` : '') +
+            (isMockMode
+              ? `\n🧪 _[Simulação]: Aprovação financeira simulada. Auditoria real preservada._`
+              : `\n🚀 _A administração confirmou a entrada financeira. Encomenda agendada para expedição._`);
+          break;
+        }
+
+        case 'order_processing': {
+          formattedMessage = `${prefix}📦 *ENCOMENDA EM PREPARAÇÃO & CONTROLO DE QUALIDADE*\n\n` +
+            `📦 *Código:* #${orderId}\n` +
+            `👤 *Cliente:* ${clientName} (${orderData.customerPhone || 'Não informado'})\n` +
+            `🔍 *Estado:* Empacotamento anti-impacto e conferência técnica dos equipamentos em curso no centro de expedição.\n`;
+          break;
+        }
+
+        case 'order_shipped': {
+          formattedMessage = `${prefix}🚚 *ENCOMENDA EM ROTA DE ENTREGA*\n\n` +
+            `📦 *Código:* #${orderId}\n` +
+            `👤 *Cliente:* ${clientName} (${orderData.customerPhone || 'Não informado'})\n` +
+            (addressStr ? `📍 *Endereço de Destino:* ${addressStr}\n` : '') +
+            `🛵 *Estado:* Viatura express / estafeta despachado com a encomenda para entrega prioritária.\n`;
+          break;
+        }
+
+        case 'order_delivered': {
+          formattedMessage = `${prefix}🎉 *ENCOMENDA ENTREGUE COM SUCESSO*\n\n` +
+            `📦 *Código:* #${orderId}\n` +
+            `👤 *Cliente:* ${clientName}\n` +
+            `✅ *Estado:* Entrega concluída com sucesso no endereço do cliente. Garantia oficial de 7 dias activada.\n`;
+          break;
+        }
+
+        default: {
+          formattedMessage = `${prefix}ℹ️ *NOTIFICAÇÃO INTERNA #${orderId}*\nCliente: ${clientName}\nEstado: ${eventType}\nTotal: ${totalKz} Kz`;
+        }
       }
     }
 
-    const waLink = `https://wa.me/${COMPANY_WHATSAPP_NUMBER}?text=${encodeURIComponent(formattedMessage)}`;
+    const waLink = `https://wa.me/${finalRecipient}?text=${encodeURIComponent(formattedMessage)}`;
 
     // =========================================================================
     // 7. EXECUÇÃO EM MODO MOCK (SIMULAÇÃO)
     // =========================================================================
     if (isMockMode) {
-      const mockMetaId = `mock_wamid_${orderId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+      const mockMetaId = `mock_wamid_${channel}_${orderId}_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
 
       if (supabaseAdmin) {
         try {
           await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
             event_type: eventType,
             order_code: orderId,
-            recipient: COMPANY_WHATSAPP_NUMBER,
+            channel: channel,
+            recipient: finalRecipient,
             status: 'SIMULATED',
             dispatch_mode: 'mock',
-            message_type: receiptRelativePath ? (isReceiptPdf ? 'document' : 'image') : 'text',
+            message_type: channel === 'customer' ? 'template' : (receiptRelativePath ? (isReceiptPdf ? 'document' : 'image') : 'text'),
             meta_message_id: mockMetaId,
-            document_storage_path: receiptRelativePath || null,
-            document_filename: receiptRelativePath ? receiptFileName : null,
-            document_mime_type: receiptRelativePath ? receiptMimeType : null,
+            document_storage_path: channel === 'internal' ? (receiptRelativePath || null) : null,
+            document_filename: channel === 'internal' ? (receiptRelativePath ? receiptFileName : null) : null,
+            document_mime_type: channel === 'internal' ? (receiptRelativePath ? receiptMimeType : null) : null,
             deduplication_key: finalKey,
             formatted_body: formattedMessage,
-            payload: { orderId, clientName, total: totalKz, eventType, isSimulation: true }
+            customer_consent: channel === 'customer' ? customerConsent : true,
+            consent_source: channel === 'customer' ? consentSource : 'internal_system',
+            template_name: templateName,
+            payload: { orderId, clientName, total: totalKz, eventType, channel, customerConsent, templateName, isSimulation: true }
           }], { onConflict: 'deduplication_key' });
         } catch (logErr: any) {
           console.warn('Aviso ao registar log de simulação WhatsApp:', logErr.message);
@@ -1172,23 +1503,25 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: true,
+          channel,
           mode: 'mock',
           status: 'SIMULATED',
           simulated: true,
           apiUsed: false,
           configured: false,
-          destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+          destination: `+${finalRecipient}`,
+          templateName,
           metaMessageId: mockMetaId,
-          documentProcessed: receiptRelativePath ? {
+          documentProcessed: (channel === 'internal' && receiptRelativePath) ? {
             storagePath: receiptRelativePath,
             fileName: receiptFileName,
             mimeType: receiptMimeType,
             hasTemporarySignedUrl: Boolean(tempSignedUrlForMetaOrPreview)
           } : null,
-          message: `Notificação #${orderId} (${eventType}) simulada com sucesso em modo MOCK. Registada com status SIMULATED.`,
+          message: `Notificação #${orderId} (${eventType} - canal ${channel}) simulada com sucesso em modo MOCK. Registada com status SIMULATED.`,
           formattedMessage,
           waLink,
-          temporarySignedUrl: tempSignedUrlForMetaOrPreview || null
+          temporarySignedUrl: (channel === 'internal' && tempSignedUrlForMetaOrPreview) ? tempSignedUrlForMetaOrPreview : null
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -1201,13 +1534,13 @@ Deno.serve(async (req: Request) => {
     let mediaMetaId = null;
     let textMetaId = null;
 
-    // 8.1 Envio de Comprovativo como Documento/Imagem Nativo
-    if (tempSignedUrlForMetaOrPreview && (isReceiptPdf || isReceiptImage)) {
+    // 8.1 Envio de Comprovativo como Documento/Imagem Nativo (Apenas Canal Interno)
+    if (channel === 'internal' && tempSignedUrlForMetaOrPreview && (isReceiptPdf || isReceiptImage)) {
       try {
         const mediaPayload = isReceiptPdf
           ? {
             messaging_product: 'whatsapp',
-            to: COMPANY_WHATSAPP_NUMBER,
+            to: finalRecipient,
             type: 'document',
             document: {
               link: tempSignedUrlForMetaOrPreview,
@@ -1217,7 +1550,7 @@ Deno.serve(async (req: Request) => {
           }
           : {
             messaging_product: 'whatsapp',
-            to: COMPANY_WHATSAPP_NUMBER,
+            to: finalRecipient,
             type: 'image',
             image: {
               link: tempSignedUrlForMetaOrPreview,
@@ -1243,16 +1576,42 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 8.2 Envio da Mensagem de Texto
-    const textPayload = {
-      messaging_product: 'whatsapp',
-      to: COMPANY_WHATSAPP_NUMBER,
-      type: 'text',
-      text: {
-        preview_url: true,
-        body: formattedMessage
-      }
-    };
+    // 8.2 Envio da Mensagem (Template para Clientes, Texto Livre para Canal Interno)
+    let outboundPayload: any = null;
+
+    if (channel === 'customer' && templateName) {
+      // Disparo com Template Oficial Meta (Categoria UTILITY)
+      outboundPayload = {
+        messaging_product: 'whatsapp',
+        to: finalRecipient,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: 'pt_PT' },
+          components: [
+            {
+              type: 'body',
+              parameters: [
+                { type: 'text', text: clientName },
+                { type: 'text', text: orderId },
+                { type: 'text', text: totalKz }
+              ]
+            }
+          ]
+        }
+      };
+    } else {
+      // Canal Interno: Texto livre estruturado
+      outboundPayload = {
+        messaging_product: 'whatsapp',
+        to: finalRecipient,
+        type: 'text',
+        text: {
+          preview_url: true,
+          body: formattedMessage
+        }
+      };
+    }
 
     const textRes = await fetch(metaBaseUrl, {
       method: 'POST',
@@ -1260,7 +1619,7 @@ Deno.serve(async (req: Request) => {
         'Authorization': `Bearer ${whatsappToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(textPayload)
+      body: JSON.stringify(outboundPayload)
     });
 
     const textJson = await textRes.json();
@@ -1275,18 +1634,22 @@ Deno.serve(async (req: Request) => {
         await supabaseAdmin.from('whatsapp_dispatch_logs').upsert([{
           event_type: eventType,
           order_code: orderId,
-          recipient: COMPANY_WHATSAPP_NUMBER,
+          channel: channel,
+          recipient: finalRecipient,
           status: isOverallSuccess ? 'SENT' : 'FAILED',
           dispatch_mode: 'cloud_api',
-          message_type: receiptRelativePath ? (isReceiptPdf ? 'document' : 'image') : 'text',
+          message_type: channel === 'customer' ? 'template' : (receiptRelativePath ? (isReceiptPdf ? 'document' : 'image') : 'text'),
           meta_message_id: textMetaId || mediaMetaId,
-          document_storage_path: receiptRelativePath || null,
-          document_filename: receiptRelativePath ? receiptFileName : null,
-          document_mime_type: receiptRelativePath ? receiptMimeType : null,
+          document_storage_path: channel === 'internal' ? (receiptRelativePath || null) : null,
+          document_filename: channel === 'internal' ? (receiptRelativePath ? receiptFileName : null) : null,
+          document_mime_type: channel === 'internal' ? (receiptRelativePath ? receiptMimeType : null) : null,
           deduplication_key: finalKey,
           formatted_body: formattedMessage,
+          customer_consent: channel === 'customer' ? customerConsent : true,
+          consent_source: channel === 'customer' ? consentSource : 'internal_system',
+          template_name: templateName,
           last_error: isOverallSuccess ? null : JSON.stringify(textJson),
-          payload: { orderId, clientName, total: totalKz, eventType }
+          payload: { orderId, clientName, total: totalKz, eventType, channel, customerConsent, templateName }
         }], { onConflict: 'deduplication_key' });
       } catch (_logErr) { }
     }
@@ -1295,11 +1658,12 @@ Deno.serve(async (req: Request) => {
       return new Response(
         JSON.stringify({
           success: false,
+          channel,
           mode: 'cloud_api',
           status: 'FAILED',
           apiUsed: true,
           configured: true,
-          destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+          destination: `+${finalRecipient}`,
           metaStatus: textRes.status,
           metaError: textJson,
           message: 'Erro na chamada à WhatsApp Cloud API da Meta.',
@@ -1313,14 +1677,16 @@ Deno.serve(async (req: Request) => {
     return new Response(
       JSON.stringify({
         success: true,
+        channel,
         mode: 'cloud_api',
         status: 'SENT',
         apiUsed: true,
         configured: true,
-        destination: `+${COMPANY_WHATSAPP_NUMBER}`,
+        destination: `+${finalRecipient}`,
+        templateName,
         metaResponse: textJson,
         mediaSent: Boolean(mediaMetaId),
-        message: 'Notificação enviada com sucesso para o WhatsApp da empresa via WhatsApp Cloud API.',
+        message: `Notificação enviada com sucesso para o WhatsApp (+${finalRecipient} - canal ${channel}) via Cloud API.`,
         formattedMessage,
         waLink
       }),
