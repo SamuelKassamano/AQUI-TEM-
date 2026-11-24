@@ -139,7 +139,21 @@ Deno.serve(async (req: Request) => {
   const whatsappPhoneNumberId = Deno.env.get('WHATSAPP_PHONE_NUMBER_ID') || '';
   const whatsappBusinessAccountId = Deno.env.get('WHATSAPP_BUSINESS_ACCOUNT_ID') || '';
   const webhookVerifyToken = Deno.env.get('WHATSAPP_WEBHOOK_VERIFY_TOKEN') || DEFAULT_WEBHOOK_VERIFY_TOKEN;
-  const metaAppSecret = Deno.env.get('META_APP_SECRET') || Deno.env.get('WHATSAPP_APP_SECRET') || '';
+  
+  // Resolução robusta de META_APP_SECRET (casing insensível, espaços aparados, sinónimos)
+  let metaAppSecret = (Deno.env.get('META_APP_SECRET') || Deno.env.get('WHATSAPP_APP_SECRET') || '').trim();
+  if (!metaAppSecret) {
+    try {
+      const allEnv = Deno.env.toObject();
+      for (const [k, v] of Object.entries(allEnv)) {
+        const cleanK = k.trim().toUpperCase();
+        if (cleanK === 'META_APP_SECRET' || cleanK === 'WHATSAPP_APP_SECRET' || cleanK === 'META_SECRET' || cleanK === 'APP_SECRET') {
+          metaAppSecret = (v || '').trim();
+          break;
+        }
+      }
+    } catch (_e) { }
+  }
 
   // Validador de sessão administrativa
   const verifyAdminSession = async (request: Request): Promise<boolean> => {
@@ -474,6 +488,10 @@ Deno.serve(async (req: Request) => {
             ...(!whatsappPhoneNumberId ? ['WHATSAPP_PHONE_NUMBER_ID'] : [])
           ],
           hasAppSecretConfigured: Boolean(metaAppSecret),
+          envSecretKeysDetected: Object.keys(Deno.env.toObject()).map(k => k.trim()).filter(k => {
+            const u = k.toUpperCase();
+            return u.includes('META') || u.includes('SECRET') || u.includes('WHATSAPP');
+          }),
           message: whatsappMode === 'mock'
             ? 'Sistema a operar em MODO SIMULAÇÃO (MOCK). Nenhuma mensagem real é enviada à Meta.'
             : (isConfigured
